@@ -44,6 +44,7 @@ export default function HomeScreen() {
   const userName = user
     ? `${user.firstName ?? ""} ${user.lastName ?? ""}`.trim() || "Usuario"
     : "Cargando...";
+  const role = user?.role
 
   return (
     <SafeAreaView style={styles.container} edges={["bottom", "left", "right"]}>
@@ -52,6 +53,7 @@ export default function HomeScreen() {
         userName={userName}
         onLogout={handleLogout}
         onNotifications={() => console.log("Notificaciones")}
+        role={role ?? ""}
       />
       <View style={styles.content}>
         <ModuleGrid />
