@@ -28,7 +28,9 @@ export const Header = ({ userName, onLogout, onNotifications, role }: HeaderProp
     "DOCTOR": "Doctor",
     "SECRETARY": "Secretario",
     "PATIENT": "Paciente"
-  }
+  };
+
+  const roleLabel = role && roles[role] ? roles[role].toLocaleUpperCase() : "Usuario";
 
   return (
     <View style={[styles.container, { paddingTop: insets.top + 20 }]}>
@@ -42,7 +44,7 @@ export const Header = ({ userName, onLogout, onNotifications, role }: HeaderProp
           <View style={styles.roleContainer}>
             <View style={styles.roleIconContainer}>
               <LucideIcons.User size={12} color="#69a4f7ff" />
-              <Text style={styles.roleText}>{roles[role].toLocaleUpperCase()}</Text>
+              <Text style={styles.roleText}>{roleLabel}</Text>
             </View>
           </View>
           <Text style={styles.welcomeText}>{greeting}</Text>

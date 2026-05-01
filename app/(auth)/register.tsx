@@ -1,3 +1,4 @@
+import { useAuthStore } from "@/shared/zustand/auth/useAuthStore";
 import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import React, { useState } from "react";
@@ -29,6 +30,7 @@ interface RegisterForm {
 
 export default function RegisterScreen() {
   const router = useRouter();
+  const { register, loading, error, clearError } = useAuthStore();
   const [form, setForm] = useState<RegisterForm & { confirmPassword: string }>({
     firstName: "",
     lastName: "",
@@ -36,10 +38,47 @@ export default function RegisterScreen() {
     password: "",
     confirmPassword: "",
   });
+  const [validationError, setValidationError] = useState<string | null>(null);
 
-  const handleRegister = () => {
-    console.log("Register with:", form);
-    router.replace("/(main)/home");
+  const updateField = (field: keyof RegisterForm & { confirmPassword }, value: string) => {
+    setForm({ ...form, [field]: value.trim() });
+    if (validationError) setValidationError(null);
+    if (error) clearError();
+  };
+
+  const handleRegister = async () => {
+    const { firstName, lastName, email, password, confirmPassword } = form;
+
+    if (!firstName || !lastName || !email || !password || !confirmPassword) {
+      setValidationError("Todos los campos son requeridos");
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      setValidationError("Las contraseñas no coinciden");
+      return;
+    }
+
+    if (password.length < 6) {
+      setValidationError("La contraseña debe tener al menos 6 caracteres");
+      return;
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      setValidationError("Ingresa un correo electrónico válido");
+      return;
+    }
+
+    try {
+      const success = await register(email, password, firstName, lastName);
+
+      if (success) {
+        router.replace("/(main)/home");
+      }
+    } catch (err) {
+      // El error ya se maneja en el store
+    }
   };
 
   return (
@@ -71,19 +110,19 @@ export default function RegisterScreen() {
                 <CustomInput
                   label="Nombre"
                   value={form.firstName}
-                  onChangeText={(text) => setForm({ ...form, firstName: text })}
+                  onChangeText={(text) => updateField("firstName", text)}
                 />
 
                 <CustomInput
                   label="Apellido"
                   value={form.lastName}
-                  onChangeText={(text) => setForm({ ...form, lastName: text })}
+                  onChangeText={(text) => updateField("lastName", text)}
                 />
 
                 <CustomInput
                   label="Correo Electrónico"
                   value={form.email}
-                  onChangeText={(text) => setForm({ ...form, email: text })}
+                  onChangeText={(text) => updateField("email", text)}
                   keyboardType="email-address"
                   autoCapitalize="none"
                 />
@@ -91,20 +130,27 @@ export default function RegisterScreen() {
                 <CustomInput
                   label="Contraseña"
                   value={form.password}
-                  onChangeText={(text) => setForm({ ...form, password: text })}
+                  onChangeText={(text) => updateField("password", text)}
                   isPassword
+                  autoCapitalize="none"
                 />
 
                 <CustomInput
                   label="Confirmar Contraseña"
                   value={form.confirmPassword}
-                  onChangeText={(text) => setForm({ ...form, confirmPassword: text })}
+                  onChangeText={(text) => updateField("confirmPassword", text)}
                   isPassword
+                  autoCapitalize="none"
                 />
+
+                {(validationError || error) && (
+                  <Text style={styles.errorText}>{validationError || error}</Text>
+                )}
 
                 <CustomButton
                   title="Registrarse"
                   onPress={handleRegister}
+                  isLoading={loading}
                   style={{ marginTop: 10 }}
                 />
 
@@ -152,6 +198,13 @@ const styles = StyleSheet.create({
   },
   form: {
     width: "100%",
+  },
+  errorText: {
+    color: "#EF4444",
+    fontSize: 14,
+    marginBottom: 20,
+    textAlign: "center",
+    fontWeight: "500",
   },
   footer: {
     flexDirection: "row",

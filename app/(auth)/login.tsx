@@ -23,19 +23,31 @@ import { CustomInput } from "../../components/common/CustomInput";
 
 export default function LoginScreen() {
   const router = useRouter();
-  const { login, loading, error } = useAuthStore();
+  const { login, loading, error, clearError } = useAuthStore();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
   const handleLogin = async () => {
-    if (!email || !password) return;
+    const trimmedEmail = email.trim();
+    const trimmedPassword = password.trim();
 
-    // Al usar el valor de retorno directo, evitamos el problema del estado asíncrono
-    const success = await login(email, password);
+    if (!trimmedEmail || !trimmedPassword) return;
+
+    const success = await login(trimmedEmail, trimmedPassword);
 
     if (success) {
       router.replace("/(main)/home");
     }
+  };
+
+  const handleEmailChange = (text: string) => {
+    setEmail(text);
+    if (error) clearError();
+  };
+
+  const handlePasswordChange = (text: string) => {
+    setPassword(text);
+    if (error) clearError();
   };
 
   return (
@@ -67,7 +79,7 @@ export default function LoginScreen() {
                 <CustomInput
                   label="Email"
                   value={email}
-                  onChangeText={setEmail}
+                  onChangeText={handleEmailChange}
                   keyboardType="email-address"
                   autoCapitalize="none"
                 />
@@ -75,7 +87,7 @@ export default function LoginScreen() {
                 <CustomInput
                   label="Contraseña"
                   value={password}
-                  onChangeText={setPassword}
+                  onChangeText={handlePasswordChange}
                   autoCapitalize="none"
                   isPassword
                 />

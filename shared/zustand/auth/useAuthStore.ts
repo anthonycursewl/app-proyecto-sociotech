@@ -1,6 +1,5 @@
 import { User, UserProfile, UserRole } from "@/shared/entities/User";
 import { HttpClient } from "@/shared/http/http.client";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { create } from "zustand";
 
 interface AuthState {
@@ -18,35 +17,27 @@ interface AuthState {
         accessToken: string;
         refreshToken: string;
     };
-    setTokens: (tokens: {
-        accessToken: string;
-        refreshToken: string;
-    }) => void;
+    setTokens: (tokens: { accessToken: string; refreshToken: string }) => void;
     clearTokens: () => void;
 
     login: (email: string, password: string) => Promise<boolean>;
-    register: (user: User) => Promise<void>;
+    register: (email: string, password: string, firstName: string, lastName: string) => Promise<boolean>;
     updateUser: (user: User) => Promise<void>;
     logout: () => void;
     clearError: () => void;
     verifyToken: () => Promise<boolean>;
-    saveSession: (tokens: { accessToken: string, refreshToken: string }) => Promise<void>;
-    loadSession: () => Promise<void>;
-    clearSession: () => Promise<void>;
 }
 
 interface AuthResponse {
+    accessToken: string;
+    refreshToken: string;
     user: {
-        id: string,
-        email: string,
-        firstName: string,
-        lastName: string,
-        role: UserRole
-    },
-    tokens: {
-        accessToken: string,
-        refreshToken: string
-    }
+        id: string;
+        email: string;
+        firstName: string;
+        lastName: string;
+        role: string;
+    };
 }
 
 export const useAuthStore = create<AuthState>((set, get) => {
@@ -82,28 +73,10 @@ export const useAuthStore = create<AuthState>((set, get) => {
             accessToken: "",
             refreshToken: ""
         },
-        setTokens: (tokens: {
-            accessToken: string;
-            refreshToken: string;
-        }) => set({ tokens }),
+        setTokens: (tokens: { accessToken: string; refreshToken: string }) => set({ tokens }),
 
         // Stuff about session. This is to load session and re-create accessToken when gets invalid.
         clearTokens: () => set({ tokens: { accessToken: "", refreshToken: "" } }),
-        saveSession: async (tokens: { accessToken: string, refreshToken: string }) => {
-            await AsyncStorage.setItem("accessToken", tokens.accessToken);
-            await AsyncStorage.setItem("refreshToken", tokens.refreshToken);
-        },
-        loadSession: async () => {
-            const accessToken = await AsyncStorage.getItem("accessToken");
-            const refreshToken = await AsyncStorage.getItem("refreshToken");
-            if (accessToken && refreshToken) {
-                set({ tokens: { accessToken, refreshToken } });
-            }
-        },
-        clearSession: async () => {
-            await AsyncStorage.removeItem("accessToken");
-            await AsyncStorage.removeItem("refreshToken");
-        },
 
         /**
          * Loggea un usuario y almacena los tokens
@@ -113,15 +86,26 @@ export const useAuthStore = create<AuthState>((set, get) => {
         login: async (email: string, password: string): Promise<boolean> => {
             const success = await runAction(async () => {
                 if (!email || !password) return false;
-                const { setTokens, saveSession } = get()
+                const { setTokens, setUser } = get()
                 const response = await HttpClient.post<AuthResponse>("/auth/login", {
                     email: email,
                     password: password,
                 });
 
                 if (response) {
-                    await saveSession(response.tokens);
-                    setTokens(response.tokens);
+                    await HttpClient.saveTokens(response.accessToken, response.refreshToken);
+                    setTokens({ accessToken: response.accessToken, refreshToken: response.refreshToken });
+                    setUser({
+                        id: response.user.id,
+                        email: response.user.email,
+                        firstName: response.user.firstName,
+                        lastName: response.user.lastName,
+                        role: response.user.role.toUpperCase() as UserRole,
+                        passwordHash: "",
+                        isActive: true,
+                        createdAt: new Date().toISOString(),
+                        updatedAt: new Date().toISOString(),
+                    });
                     return true;
                 }
                 return false;
@@ -131,17 +115,40 @@ export const useAuthStore = create<AuthState>((set, get) => {
 
         /**
          * Registra un usuario
-         * @param user usuario a registrar
+         * @param email email del usuario
+         * @param password password del usuario
+         * @param firstName nombre del usuario
+         * @param lastName apellido del usuario
          */
-        register: async (user: User): Promise<void> => {
-            await runAction(async () => {
-                const { setTokens, saveSession } = get()
-                const response = await HttpClient.post<AuthResponse>("/auth/register", user);
+        register: async (email: string, password: string, firstName: string, lastName: string): Promise<boolean> => {
+            const success = await runAction(async () => {
+                const { setTokens, setUser } = get()
+                const response = await HttpClient.post<AuthResponse>("/auth/register", {
+                    email,
+                    password,
+                    firstName,
+                    lastName,
+                });
+
                 if (response) {
-                    await saveSession(response.tokens);
-                    setTokens(response.tokens);
+                    await HttpClient.saveTokens(response.accessToken, response.refreshToken);
+                    setTokens({ accessToken: response.accessToken, refreshToken: response.refreshToken });
+                    setUser({
+                        id: response.user.id,
+                        email: response.user.email,
+                        firstName: response.user.firstName,
+                        lastName: response.user.lastName,
+                        role: response.user.role.toUpperCase() as UserRole,
+                        passwordHash: "",
+                        isActive: true,
+                        createdAt: new Date().toISOString(),
+                        updatedAt: new Date().toISOString(),
+                    });
+                    return true;
                 }
+                return false;
             });
+            return success ?? false;
         },
 
         /**
@@ -149,10 +156,10 @@ export const useAuthStore = create<AuthState>((set, get) => {
          */
         verifyToken: async (): Promise<boolean> => {
             const success = await runAction(async () => {
-                const { loadSession } = get()
-                await loadSession();
-                const response = await HttpClient.get<UserProfile>("/auth/me", {}, true);
-                if (response) set({ user: response.user, permissions: response.metadata.permissions });
+                const response = await HttpClient.get<UserProfile>("/auth/me", {}, { requireAuth: true });
+                if (response) {
+                    set({ user: response.user, permissions: [] });
+                }
                 return true;
             });
             return success ?? false;
@@ -164,7 +171,7 @@ export const useAuthStore = create<AuthState>((set, get) => {
          */
         updateUser: async (user: User): Promise<void> => {
             await runAction(async () => {
-                const response = await HttpClient.put<User>("/auth/user", user, {}, true);
+                const response = await HttpClient.put<User>("/auth/user", user, { requireAuth: true });
                 if (response) {
                     set({
                         user: response,
@@ -177,7 +184,7 @@ export const useAuthStore = create<AuthState>((set, get) => {
          * Cierra sesión y elimina los tokens
          */
         logout: () => {
-            get().clearSession()
+            HttpClient.clearTokens();
             set({
                 user: null,
                 tokens: {
