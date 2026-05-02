@@ -14,7 +14,6 @@ if (!BASE_URL) {
     throw new Error(`Missing ${envType} environment variable. Check your .env file.`);
 }
 
-
 export interface RequestOptions extends RequestInit {
     params?: Record<string, any>;
     timeout?: number;
@@ -98,6 +97,7 @@ export class HttpClient {
         } = options;
 
         const url = `${BASE_URL}${endpoint}${this.serializeParams(params)}`;
+        console.log("BASE URL =>", url)
 
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), timeout);
