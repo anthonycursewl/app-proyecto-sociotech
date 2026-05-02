@@ -8,7 +8,7 @@
       "developmentClient": true,
       "distribution": "internal",
       "android": {
-        "applicationArchiveFormat": "apk"
+        "buildType": "apk"
       },
       "env": {
         "EXPO_PUBLIC_API_URL_DEV": "http://192.168.0.112:5002"
@@ -17,13 +17,13 @@
     "preview": {
       "distribution": "internal",
       "android": {
-        "applicationArchiveFormat": "apk"
+        "buildType": "apk"
       }
     },
     "production": {
       "autoIncrement": true,
       "android": {
-        "applicationArchiveFormat": "apk"
+        "buildType": "apk"
       },
       "env": {
         "EXPO_PUBLIC_API_URL_PROD": "https://backend-proyecto-sociotech.onrender.com"
