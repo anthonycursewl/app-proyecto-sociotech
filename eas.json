@@ -18,6 +18,9 @@
       "distribution": "internal",
       "android": {
         "buildType": "apk"
+      },
+      "env": {
+        "EXPO_PUBLIC_API_URL_PROD": "https://backend-proyecto-sociotech.onrender.com"
       }
     },
     "production": {
