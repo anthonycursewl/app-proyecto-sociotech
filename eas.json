@@ -1,0 +1,27 @@
+{
+  "cli": {
+    "version": ">= 18.9.1",
+    "appVersionSource": "remote"
+  },
+  "build": {
+    "development": {
+      "developmentClient": true,
+      "distribution": "internal",
+      "env": {
+        "EXPO_PUBLIC_API_URL_DEV": "http://192.168.0.112:5002"
+      }
+    },
+    "preview": {
+      "distribution": "internal"
+    },
+    "production": {
+      "autoIncrement": true,
+      "env": {
+        "EXPO_PUBLIC_API_URL_PROD": "https://backend-proyecto-sociotech.onrender.com"
+      }
+    }
+  },
+  "submit": {
+    "production": {}
+  }
+}
