@@ -5,7 +5,14 @@ import * as SecureStore from 'expo-secure-store';
  * Features: Timeouts, Interceptors, Query Param Serialization, Atomic Auth Refresh
  */
 
-const BASE_URL = process.env.EXPO_PUBLIC_API_URL || "http://192.168.0.106:5002";
+const BASE_URL = __DEV__
+    ? process.env.EXPO_PUBLIC_API_URL_DEV
+    : process.env.EXPO_PUBLIC_API_URL_PROD;
+
+if (!BASE_URL) {
+    const envType = __DEV__ ? 'EXPO_PUBLIC_API_URL_DEV' : 'EXPO_PUBLIC_API_URL_PROD';
+    throw new Error(`Missing ${envType} environment variable. Check your .env file.`);
+}
 
 
 export interface RequestOptions extends RequestInit {
