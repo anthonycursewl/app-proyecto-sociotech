@@ -36,7 +36,9 @@ interface AuthResponse {
         email: string;
         firstName: string;
         lastName: string;
-        role: string;
+        roleId: string;
+        roleName: string;
+        permissions: string[];
     };
 }
 
@@ -86,7 +88,7 @@ export const useAuthStore = create<AuthState>((set, get) => {
         login: async (email: string, password: string): Promise<boolean> => {
             const success = await runAction(async () => {
                 if (!email || !password) return false;
-                const { setTokens, setUser } = get()
+                const { setTokens, setUser, setPermissions } = get()
                 const response = await HttpClient.post<AuthResponse>("/auth/login", {
                     email: email,
                     password: password,
@@ -100,12 +102,15 @@ export const useAuthStore = create<AuthState>((set, get) => {
                         email: response.user.email,
                         firstName: response.user.firstName,
                         lastName: response.user.lastName,
-                        role: response.user.role.toUpperCase() as UserRole,
+                        role: response.user.roleName.toUpperCase() as UserRole,
+                        roleId: response.user.roleId,
                         passwordHash: "",
                         isActive: true,
                         createdAt: new Date().toISOString(),
                         updatedAt: new Date().toISOString(),
+                        permissions: response.user.permissions,
                     });
+                    setPermissions(response.user.permissions);
                     return true;
                 }
                 return false;
@@ -122,7 +127,7 @@ export const useAuthStore = create<AuthState>((set, get) => {
          */
         register: async (email: string, password: string, firstName: string, lastName: string): Promise<boolean> => {
             const success = await runAction(async () => {
-                const { setTokens, setUser } = get()
+                const { setTokens, setUser, setPermissions } = get()
                 const response = await HttpClient.post<AuthResponse>("/auth/register", {
                     email,
                     password,
@@ -138,12 +143,15 @@ export const useAuthStore = create<AuthState>((set, get) => {
                         email: response.user.email,
                         firstName: response.user.firstName,
                         lastName: response.user.lastName,
-                        role: response.user.role.toUpperCase() as UserRole,
+                        role: response.user.roleName.toUpperCase() as UserRole,
+                        roleId: response.user.roleId,
                         passwordHash: "",
                         isActive: true,
                         createdAt: new Date().toISOString(),
                         updatedAt: new Date().toISOString(),
+                        permissions: response.user.permissions,
                     });
+                    setPermissions(response.user.permissions);
                     return true;
                 }
                 return false;
@@ -158,7 +166,10 @@ export const useAuthStore = create<AuthState>((set, get) => {
             const success = await runAction(async () => {
                 const response = await HttpClient.get<UserProfile>("/auth/me", {}, { requireAuth: true });
                 if (response) {
-                    set({ user: response.user, permissions: [] });
+                    set({
+                        user: response.user,
+                        permissions: response.user.permissions || [],
+                    });
                 }
                 return true;
             });

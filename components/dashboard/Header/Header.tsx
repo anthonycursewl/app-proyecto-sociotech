@@ -2,6 +2,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import * as LucideIcons from "lucide-react-native";
 import React from "react";
 import { Text, TouchableOpacity, View } from "react-native";
+import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { styles } from "./Header.styles";
 
@@ -20,17 +21,22 @@ const getGreeting = () => {
 };
 
 export const Header = ({ userName, onLogout, onNotifications, role }: HeaderProps) => {
+  const router = useRouter();
   const greeting = getGreeting();
   const insets = useSafeAreaInsets();
   const roles: Record<string, string> = {
-    "OWNER": "Propietario",
-    "ADMIN": "Administrador",
-    "DOCTOR": "Doctor",
-    "SECRETARY": "Secretario",
-    "PATIENT": "Paciente"
+    PATIENT: "Paciente",
+    DOCTOR: "Doctor",
+    ASSISTANT: "Asistente",
+    ADMIN: "Administrador",
+    SUPER_ADMIN: "Super Admin",
   };
 
   const roleLabel = role && roles[role] ? roles[role].toLocaleUpperCase() : "Usuario";
+
+  const handleProfilePress = () => {
+    router.push("/(main)/profile");
+  };
 
   return (
     <View style={[styles.container, { paddingTop: insets.top + 20 }]}>
@@ -39,7 +45,7 @@ export const Header = ({ userName, onLogout, onNotifications, role }: HeaderProp
         style={[styles.gradient, { height: 120 + insets.top }]}
       />
       <View style={styles.userInfo}>
-        <View>
+        <TouchableOpacity onPress={handleProfilePress}>
           <Text style={styles.userName}>{userName}</Text>
           <View style={styles.roleContainer}>
             <View style={styles.roleIconContainer}>
@@ -48,7 +54,7 @@ export const Header = ({ userName, onLogout, onNotifications, role }: HeaderProp
             </View>
           </View>
           <Text style={styles.welcomeText}>{greeting}</Text>
-        </View>
+        </TouchableOpacity>
       </View>
 
       <View style={styles.actions}>

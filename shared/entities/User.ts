@@ -1,9 +1,9 @@
 export enum UserRole {
-    OWNER = 'OWNER',
-    ADMIN = 'ADMIN',
-    DOCTOR = 'DOCTOR',
-    SECRETARY = 'SECRETARY',
     PATIENT = 'PATIENT',
+    DOCTOR = 'DOCTOR',
+    ASSISTANT = 'ASSISTANT',
+    ADMIN = 'ADMIN',
+    SUPER_ADMIN = 'SUPER_ADMIN',
 }
 
 export interface User {
@@ -11,11 +11,13 @@ export interface User {
     email: string;
     passwordHash?: string;
     role: UserRole;
+    roleId: string;
     firstName: string;
     lastName: string;
     isActive: boolean;
     createdAt: string;
     updatedAt: string;
+    permissions: string[];
 }
 
 

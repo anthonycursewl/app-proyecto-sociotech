@@ -1,0 +1,1 @@
+export { MedicalRecordsHeader } from "./MedicalRecordsHeader";

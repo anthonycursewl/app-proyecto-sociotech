@@ -1,0 +1,1 @@
+export { ManageDoctorsHeader } from "./ManageDoctorsHeader";
