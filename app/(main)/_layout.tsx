@@ -19,7 +19,6 @@ export default function MainLayout() {
       <Stack.Screen name="doctors" />
       <Stack.Screen name="doctor/profile" />
       <Stack.Screen name="doctor/edit-profile" />
-      <Stack.Screen name="patient/edit" />
       <Stack.Screen name="schedules" />
       <Stack.Screen name="roles" />
       <Stack.Screen name="users" />
