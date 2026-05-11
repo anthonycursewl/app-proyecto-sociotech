@@ -1,132 +1,165 @@
+import { ServiceResponse, serviceService } from "@/shared/services/service.service";
 import { StatusBar } from "expo-status-bar";
-import React, { useState } from "react";
-import { FlatList, StyleSheet, Text, View } from "react-native";
+import * as LucideIcons from "lucide-react-native";
+import React, { useCallback, useEffect, useState } from "react";
+import { ActivityIndicator, Alert, FlatList, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { ServicesHeader } from "../../components/services/ServicesHeader";
+import { ServiceCardSkeleton } from "../../components/common/Skeleton";
 import { ServiceCard, ServiceData } from "../../components/services/ServiceCard";
+import { ServicesHeader } from "../../components/services/ServicesHeader";
 
-const MOCK_SERVICES: ServiceData[] = [
-  {
-    id: "1",
-    name: "Medicina General",
-    description: "Consulta general para diagnóstico y tratamiento de enfermedades comunes",
-    durationMin: 30,
-    price: 25.00,
-    category: "General",
-    isActive: true,
-  },
-  {
-    id: "2",
-    name: "Cardiología",
-    description: "Estudio y tratamiento del corazón y del sistema circulatorio",
-    durationMin: 45,
-    price: 60.00,
-    category: "Especialidad",
-    isActive: true,
-  },
-  {
-    id: "3",
-    name: "Pediatría",
-    description: "Atención médica para bebés, niños y adolescentes",
-    durationMin: 30,
-    price: 30.00,
-    category: "Especialidad",
-    isActive: true,
-  },
-  {
-    id: "4",
-    name: "Laboratorio Clínico",
-    description: "Análisis de sangre, orina y otros estudios de laboratorio",
-    durationMin: 15,
-    price: 15.00,
-    category: "Diagnóstico",
-    isActive: true,
-  },
-  {
-    id: "5",
-    name: "Odontología",
-    description: "Cuidado dental preventivo y tratamientos odontológicos",
-    durationMin: 40,
-    price: 35.00,
-    category: "Especialidad",
-    isActive: true,
-  },
-  {
-    id: "6",
-    name: "Psicología",
-    description: "Terapia y acompañamiento psicológico profesional",
-    durationMin: 50,
-    price: 45.00,
-    category: "Mental",
-    isActive: false,
-  },
-  {
-    id: "7",
-    name: "Rayos X",
-    description: "Estudios radiológicos para diagnóstico por imagen",
-    durationMin: 20,
-    price: 40.00,
-    category: "Diagnóstico",
-    isActive: true,
-  },
-  {
-    id: "8",
-    name: "Oftalmología",
-    description: "Especialidad médica dedicada al cuidado de los ojos",
-    durationMin: 30,
-    price: 50.00,
-    category: "Especialidad",
-    isActive: true,
-  },
-];
+const PAGE_LIMIT = 20;
+
+const mapService = (s: ServiceResponse): ServiceData => ({
+  id: s.id,
+  name: s.name,
+  description: s.description ?? "",
+  durationMin: s.durationMin,
+  price: s.price ?? 0,
+  isActive: s.isActive,
+});
 
 export default function ServicesScreen() {
+  const [services, setServices] = useState<ServiceData[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
-  const [filteredServices, setFilteredServices] = useState(MOCK_SERVICES);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [nextCursor, setNextCursor] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchServices = useCallback(async (cursor?: string) => {
+    try {
+      const response = await serviceService.getAll({
+        cursor,
+        limit: PAGE_LIMIT,
+        includeInactive: true,
+      });
+      if (cursor) {
+        setServices((prev) => [...prev, ...response.data.map(mapService)]);
+      } else {
+        setServices(response.data.map(mapService));
+      }
+      setNextCursor(response.nextCursor);
+      setError(null);
+    } catch (err: any) {
+      setError(err.message || "Error al cargar servicios");
+    }
+  }, []);
+
+  useEffect(() => {
+    (async () => {
+      setLoading(true);
+      await fetchServices();
+      setLoading(false);
+    })();
+  }, [fetchServices]);
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await fetchServices();
+    setRefreshing(false);
+  };
+
+  const handleLoadMore = async () => {
+    if (!nextCursor || loadingMore) return;
+    setLoadingMore(true);
+    await fetchServices(nextCursor);
+    setLoadingMore(false);
+  };
 
   const handleSearch = (query: string) => {
     setSearchQuery(query);
-    if (!query.trim()) {
-      setFilteredServices(MOCK_SERVICES);
-    } else {
-      const lowerQuery = query.toLowerCase();
-      setFilteredServices(
-        MOCK_SERVICES.filter(
-          (service) =>
-            service.name.toLowerCase().includes(lowerQuery) ||
-            service.description.toLowerCase().includes(lowerQuery) ||
-            service.category?.toLowerCase().includes(lowerQuery)
-        )
-      );
-    }
   };
+
+  const handleCreate = () => {
+    Alert.alert("Crear Servicio", "Funcionalidad próximamente");
+  };
+
+  const filteredServices = searchQuery.trim()
+    ? services.filter(
+      (s) =>
+        s.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        s.description.toLowerCase().includes(searchQuery.toLowerCase())
+    )
+    : services;
 
   const renderItem = ({ item }: { item: ServiceData }) => (
     <ServiceCard service={item} />
   );
 
-  const activeCount = filteredServices.filter((s) => s.isActive).length;
+  const renderFooter = () => {
+    if (!loadingMore) return null;
+    return (
+      <View style={styles.footerLoader}>
+        <ActivityIndicator size="small" color="#4CB1B1" />
+      </View>
+    );
+  };
+
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.container} edges={["bottom", "left", "right"]}>
+        <StatusBar style="dark" />
+        <ServicesHeader onSearch={handleSearch} onCreate={handleCreate} />
+        <View style={styles.list}>
+          <ServiceCardSkeleton />
+          <ServiceCardSkeleton />
+          <ServiceCardSkeleton />
+          <ServiceCardSkeleton />
+          <ServiceCardSkeleton />
+          <ServiceCardSkeleton />
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  if (error && services.length === 0) {
+    return (
+      <SafeAreaView style={styles.container} edges={["bottom", "left", "right"]}>
+        <StatusBar style="dark" />
+        <ServicesHeader onSearch={handleSearch} onCreate={handleCreate} />
+        <View style={styles.centerLoader}>
+          <Text style={styles.errorText}>{error}</Text>
+          <Text style={styles.retryText} onPress={() => { setLoading(true); fetchServices().then(() => setLoading(false)); }}>
+            Toca para reintentar
+          </Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container} edges={["bottom", "left", "right"]}>
       <StatusBar style="dark" />
-      <ServicesHeader onSearch={handleSearch} />
+      <ServicesHeader onSearch={handleSearch} onCreate={handleCreate} />
       <FlatList
         data={filteredServices}
         renderItem={renderItem}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.list}
         showsVerticalScrollIndicator={false}
+        refreshing={refreshing}
+        onRefresh={handleRefresh}
+        onEndReached={handleLoadMore}
+        onEndReachedThreshold={0.3}
         ListHeaderComponent={
           <Text style={styles.countText}>
-            {filteredServices.length} servicios
-            {searchQuery ? ` encontrados` : ` disponibles`}
-            {filteredServices.length !== MOCK_SERVICES.length && ` de ${MOCK_SERVICES.length}`}
+            {filteredServices.length} servicio{filteredServices.length !== 1 ? "s" : ""}
           </Text>
         }
+        ListFooterComponent={renderFooter}
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
-            <Text style={styles.emptyText}>No se encontraron servicios</Text>
+            <LucideIcons.Stethoscope size={48} color="#bebebeff" strokeWidth={2} />
+            <Text style={styles.emptyText}>
+              {searchQuery ? "No se encontraron servicios" : "No hay servicios disponibles"}
+            </Text>
+            {!searchQuery && (
+              <TouchableOpacity style={styles.emptyCta} onPress={handleCreate}>
+                <Text style={styles.emptyCtaText}>Crear Servicio</Text>
+              </TouchableOpacity>
+            )}
           </View>
         }
       />
@@ -135,26 +168,26 @@ export default function ServicesScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#F8FAFC",
+  container: { flex: 1, backgroundColor: "#F8FAFC" },
+  list: { padding: 16 },
+  countText: { fontSize: 13, color: "#64748B", marginBottom: 12, fontWeight: "500" },
+  emptyContainer: { flex: 1, justifyContent: "center", alignItems: "center", paddingVertical: 80 },
+  emptyIcon: { fontSize: 48, marginBottom: 16 },
+  emptyText: { fontSize: 16, color: "#64748B", fontWeight: "600", textAlign: "center", marginBottom: 20, marginTop: 20 },
+  emptyCta: {
+    backgroundColor: "#4CB1B1",
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 12,
+    shadowColor: "#4CB1B1",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 3,
   },
-  list: {
-    padding: 16,
-  },
-  countText: {
-    fontSize: 13,
-    color: "#64748B",
-    marginBottom: 12,
-    fontWeight: "500",
-  },
-  emptyContainer: {
-    paddingVertical: 40,
-    alignItems: "center",
-  },
-  emptyText: {
-    fontSize: 15,
-    color: "#94A3B8",
-    fontWeight: "500",
-  },
+  emptyCtaText: { fontSize: 15, fontWeight: "700", color: "#FFFFFF" },
+  centerLoader: { flex: 1, justifyContent: "center", alignItems: "center", gap: 12 },
+  footerLoader: { paddingVertical: 16, alignItems: "center" },
+  errorText: { fontSize: 15, color: "#EF4444", fontWeight: "500" },
+  retryText: { fontSize: 14, color: "#4CB1B1", fontWeight: "600", marginTop: 4 },
 });

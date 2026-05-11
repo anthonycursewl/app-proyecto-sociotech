@@ -59,7 +59,7 @@ export const ServiceCard = ({ service, onPress }: ServiceCardProps) => {
       </View>
 
       <View style={styles.chevronContainer}>
-        <LucideIcons.ChevronRight size={18} color="#94A3B8" strokeWidth={2.5} />
+        <LucideIcons.ChevronRight size={18} color="#5187d3ff" strokeWidth={2.5} />
       </View>
     </TouchableOpacity>
   );

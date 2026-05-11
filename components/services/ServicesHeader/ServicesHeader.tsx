@@ -8,9 +8,10 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 interface ServicesHeaderProps {
   title?: string;
   onSearch?: (query: string) => void;
+  onCreate?: () => void;
 }
 
-export const ServicesHeader = ({ title = "Servicios", onSearch }: ServicesHeaderProps) => {
+export const ServicesHeader = ({ title = "Servicios", onSearch, onCreate }: ServicesHeaderProps) => {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const [searchQuery, setSearchQuery] = useState("");
@@ -52,7 +53,10 @@ export const ServicesHeader = ({ title = "Servicios", onSearch }: ServicesHeader
 
         <View style={styles.bottomRow}>
           <Text style={styles.title}>{title}</Text>
-          <Text style={styles.count}>8 disponibles</Text>
+          <TouchableOpacity style={styles.createButton} onPress={onCreate}>
+            <LucideIcons.Plus size={16} color="#FFFFFF" strokeWidth={2.5} />
+            <Text style={styles.createButtonText}>Crear</Text>
+          </TouchableOpacity>
         </View>
       </View>
     </View>
@@ -140,9 +144,23 @@ const styles = StyleSheet.create({
     color: "#0F172A",
     letterSpacing: -0.5,
   },
-  count: {
+  createButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    backgroundColor: "#4CB1B1",
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 10,
+    shadowColor: "#4CB1B1",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  createButtonText: {
     fontSize: 13,
-    color: "#64748B",
-    fontWeight: "500",
+    fontWeight: "700",
+    color: "#FFFFFF",
   },
 });
