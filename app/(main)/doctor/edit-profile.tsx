@@ -1,6 +1,7 @@
+import * as LucideIcons from "lucide-react-native";
 import { StatusBar } from "expo-status-bar";
 import React, { useState } from "react";
-import { FlatList, StyleSheet, Text, TextInput, TouchableOpacity, View, Alert } from "react-native";
+import { Alert, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useAuthStore } from "@/shared/zustand/auth/useAuthStore";
 import { DoctorEditHeader } from "../../../components/doctor/DoctorEditHeader";
@@ -37,126 +38,114 @@ export default function DoctorEditProfileScreen() {
       <StatusBar style="light" />
       <DoctorEditHeader />
 
-      <FlatList
-        data={[]}
-        renderItem={() => null}
-        contentContainerStyle={styles.form}
-        showsVerticalScrollIndicator={false}
-        ListHeaderComponent={
-          <>
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Información Personal</Text>
+      <ScrollView contentContainerStyle={styles.form} showsVerticalScrollIndicator={false}>
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Información Personal</Text>
 
-              <View style={styles.inputGroup}>
-                <Text style={styles.label}>Nombre</Text>
-                <TextInput
-                  style={styles.input}
-                  value={form.firstName}
-                  onChangeText={(v) => updateField("firstName", v)}
-                  placeholder="Tu nombre"
-                  placeholderTextColor="#94A3B8"
-                />
-              </View>
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Nombre</Text>
+            <TextInput
+              style={styles.input}
+              value={form.firstName}
+              onChangeText={(v) => updateField("firstName", v)}
+              placeholder="Tu nombre"
+              placeholderTextColor="#94A3B8"
+            />
+          </View>
 
-              <View style={styles.inputGroup}>
-                <Text style={styles.label}>Apellido</Text>
-                <TextInput
-                  style={styles.input}
-                  value={form.lastName}
-                  onChangeText={(v) => updateField("lastName", v)}
-                  placeholder="Tu apellido"
-                  placeholderTextColor="#94A3B8"
-                />
-              </View>
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Apellido</Text>
+            <TextInput
+              style={styles.input}
+              value={form.lastName}
+              onChangeText={(v) => updateField("lastName", v)}
+              placeholder="Tu apellido"
+              placeholderTextColor="#94A3B8"
+            />
+          </View>
 
-              <View style={styles.inputGroup}>
-                <Text style={styles.label}>Correo electrónico</Text>
-                <TextInput
-                  style={styles.input}
-                  value={form.email}
-                  onChangeText={(v) => updateField("email", v)}
-                  placeholder="correo@ejemplo.com"
-                  placeholderTextColor="#94A3B8"
-                  keyboardType="email-address"
-                  autoCapitalize="none"
-                />
-              </View>
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Correo electrónico</Text>
+            <TextInput
+              style={styles.input}
+              value={form.email}
+              onChangeText={(v) => updateField("email", v)}
+              placeholder="correo@ejemplo.com"
+              placeholderTextColor="#94A3B8"
+              keyboardType="email-address"
+              autoCapitalize="none"
+            />
+          </View>
 
-              <View style={styles.inputGroup}>
-                <Text style={styles.label}>Teléfono</Text>
-                <TextInput
-                  style={styles.input}
-                  value={form.phone}
-                  onChangeText={(v) => updateField("phone", v)}
-                  placeholder="0414-0000000"
-                  placeholderTextColor="#94A3B8"
-                  keyboardType="phone-pad"
-                />
-              </View>
-            </View>
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Teléfono</Text>
+            <TextInput
+              style={styles.input}
+              value={form.phone}
+              onChangeText={(v) => updateField("phone", v)}
+              placeholder="0414-0000000"
+              placeholderTextColor="#94A3B8"
+              keyboardType="phone-pad"
+            />
+          </View>
+        </View>
 
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Información Profesional</Text>
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Información Profesional</Text>
 
-              <View style={styles.inputGroup}>
-                <Text style={styles.label}>Especialidad</Text>
-                <TouchableOpacity style={styles.selectButton}>
-                  <Text style={styles.selectText}>{form.specialty}</Text>
-                  <LucideIcons.ChevronDown size={18} color="#64748B" strokeWidth={2} />
-                </TouchableOpacity>
-              </View>
-
-              <View style={styles.inputGroup}>
-                <Text style={styles.label}>Número de Licencia</Text>
-                <TextInput
-                  style={styles.input}
-                  value={form.license}
-                  onChangeText={(v) => updateField("license", v)}
-                  placeholder="MED-XXXX-XXXX"
-                  placeholderTextColor="#94A3B8"
-                />
-              </View>
-
-              <View style={styles.inputGroup}>
-                <Text style={styles.label}>Años de Experiencia</Text>
-                <TextInput
-                  style={styles.input}
-                  value={form.yearsExperience}
-                  onChangeText={(v) => updateField("yearsExperience", v)}
-                  placeholder="5"
-                  placeholderTextColor="#94A3B8"
-                  keyboardType="number-pad"
-                />
-              </View>
-
-              <View style={styles.inputGroup}>
-                <Text style={styles.label}>Biografía</Text>
-                <TextInput
-                  style={[styles.input, styles.textArea]}
-                  value={form.bio}
-                  onChangeText={(v) => updateField("bio", v)}
-                  placeholder="Cuéntanos sobre ti..."
-                  placeholderTextColor="#94A3B8"
-                  multiline
-                  numberOfLines={4}
-                  textAlignVertical="top"
-                />
-              </View>
-            </View>
-
-            <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
-              <Text style={styles.saveButtonText}>Guardar Cambios</Text>
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Especialidad</Text>
+            <TouchableOpacity style={styles.selectButton}>
+              <Text style={styles.selectText}>{form.specialty}</Text>
+              <LucideIcons.ChevronDown size={18} color="#64748B" strokeWidth={2} />
             </TouchableOpacity>
-          </>
-        }
-      />
+          </View>
+
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Número de Licencia</Text>
+            <TextInput
+              style={styles.input}
+              value={form.license}
+              onChangeText={(v) => updateField("license", v)}
+              placeholder="MED-XXXX-XXXX"
+              placeholderTextColor="#94A3B8"
+            />
+          </View>
+
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Años de Experiencia</Text>
+            <TextInput
+              style={styles.input}
+              value={form.yearsExperience}
+              onChangeText={(v) => updateField("yearsExperience", v)}
+              placeholder="5"
+              placeholderTextColor="#94A3B8"
+              keyboardType="number-pad"
+            />
+          </View>
+
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Biografía</Text>
+            <TextInput
+              style={[styles.input, styles.textArea]}
+              value={form.bio}
+              onChangeText={(v) => updateField("bio", v)}
+              placeholder="Cuéntanos sobre ti..."
+              placeholderTextColor="#94A3B8"
+              multiline
+              numberOfLines={4}
+              textAlignVertical="top"
+            />
+          </View>
+        </View>
+
+        <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
+          <Text style={styles.saveButtonText}>Guardar Cambios</Text>
+        </TouchableOpacity>
+      </ScrollView>
     </SafeAreaView>
   );
 }
-
-const LucideIcons = {
-  ChevronDown: ({ size, color, strokeWidth }: { size: number; color: string; strokeWidth: number }) => null,
-};
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#F8FAFC" },

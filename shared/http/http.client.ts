@@ -97,7 +97,6 @@ export class HttpClient {
         } = options;
 
         const url = `${BASE_URL}${endpoint}${this.serializeParams(params)}`;
-        console.log("BASE URL =>", url)
 
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), timeout);

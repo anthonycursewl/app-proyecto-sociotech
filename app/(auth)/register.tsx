@@ -70,14 +70,10 @@ export default function RegisterScreen() {
       return;
     }
 
-    try {
-      const success = await register(email, password, firstName, lastName);
+    const success = await register(email, password, firstName, lastName);
 
-      if (success) {
-        router.replace("/(main)/home");
-      }
-    } catch (err) {
-      // El error ya se maneja en el store
+    if (success) {
+      router.replace("/(main)/home");
     }
   };
 

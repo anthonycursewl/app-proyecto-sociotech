@@ -1,5 +1,5 @@
 import { StatusBar } from "expo-status-bar";
-import React from "react";
+import React, { useState } from "react";
 import { FlatList, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ReportsHeader } from "../../components/reports/ReportsHeader";
@@ -54,6 +54,26 @@ const MOCK_REPORTS: ReportData[] = [
 ];
 
 export default function ReportsScreen() {
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filteredReports, setFilteredReports] = useState(MOCK_REPORTS);
+
+  const handleSearch = (query: string) => {
+    setSearchQuery(query);
+    if (!query.trim()) {
+      setFilteredReports(MOCK_REPORTS);
+    } else {
+      const lowerQuery = query.toLowerCase();
+      setFilteredReports(
+        MOCK_REPORTS.filter(
+          (r) =>
+            r.title.toLowerCase().includes(lowerQuery) ||
+            r.description.toLowerCase().includes(lowerQuery) ||
+            r.type.toLowerCase().includes(lowerQuery)
+        )
+      );
+    }
+  };
+
   const renderItem = ({ item }: { item: ReportData }) => (
     <ReportCard report={item} />
   );
@@ -61,15 +81,22 @@ export default function ReportsScreen() {
   return (
     <SafeAreaView style={styles.container} edges={["bottom", "left", "right"]}>
       <StatusBar style="dark" />
-      <ReportsHeader />
+      <ReportsHeader onSearch={handleSearch} />
       <FlatList
-        data={MOCK_REPORTS}
+        data={filteredReports}
         renderItem={renderItem}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.list}
         showsVerticalScrollIndicator={false}
         ListHeaderComponent={
-          <Text style={styles.countText}>{MOCK_REPORTS.length} reportes disponibles</Text>
+          <Text style={styles.countText}>
+            {filteredReports.length} reportes encontrados
+          </Text>
+        }
+        ListEmptyComponent={
+          <View style={styles.emptyContainer}>
+            <Text style={styles.emptyText}>No se encontraron reportes</Text>
+          </View>
         }
       />
     </SafeAreaView>
@@ -80,4 +107,6 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#F8FAFC" },
   list: { padding: 16 },
   countText: { fontSize: 13, color: "#64748B", marginBottom: 12, fontWeight: "500" },
+  emptyContainer: { paddingVertical: 40, alignItems: "center" },
+  emptyText: { fontSize: 15, color: "#94A3B8", fontWeight: "500" },
 });

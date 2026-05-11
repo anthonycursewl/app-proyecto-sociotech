@@ -9,7 +9,6 @@ export enum UserRole {
 export interface User {
     id: string;
     email: string;
-    passwordHash?: string;
     role: UserRole;
     roleId: string;
     firstName: string;
@@ -18,9 +17,4 @@ export interface User {
     createdAt: string;
     updatedAt: string;
     permissions: string[];
-}
-
-
-export interface UserProfile {
-    user: User
 }

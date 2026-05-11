@@ -1,8 +1,8 @@
 import { LinearGradient } from "expo-linear-gradient";
+import { useRouter } from "expo-router";
 import * as LucideIcons from "lucide-react-native";
 import React from "react";
 import { Text, TouchableOpacity, View } from "react-native";
-import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { styles } from "./Header.styles";
 
@@ -47,12 +47,6 @@ export const Header = ({ userName, onLogout, onNotifications, role }: HeaderProp
       <View style={styles.userInfo}>
         <TouchableOpacity onPress={handleProfilePress}>
           <Text style={styles.userName}>{userName}</Text>
-          <View style={styles.roleContainer}>
-            <View style={styles.roleIconContainer}>
-              <LucideIcons.User size={12} color="#69a4f7ff" />
-              <Text style={styles.roleText}>{roleLabel}</Text>
-            </View>
-          </View>
           <Text style={styles.welcomeText}>{greeting}</Text>
         </TouchableOpacity>
       </View>

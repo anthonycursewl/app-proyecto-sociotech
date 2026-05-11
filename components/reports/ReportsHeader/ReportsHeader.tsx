@@ -1,17 +1,24 @@
 import * as LucideIcons from "lucide-react-native";
-import React from "react";
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import React, { useState } from "react";
+import { StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 interface ReportsHeaderProps {
   title?: string;
+  onSearch?: (query: string) => void;
 }
 
-export const ReportsHeader = ({ title = "Reportes" }: ReportsHeaderProps) => {
+export const ReportsHeader = ({ title = "Reportes", onSearch }: ReportsHeaderProps) => {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const handleSearch = (text: string) => {
+    setSearchQuery(text);
+    onSearch?.(text);
+  };
 
   return (
     <View style={styles.wrapper}>
@@ -26,15 +33,32 @@ export const ReportsHeader = ({ title = "Reportes" }: ReportsHeaderProps) => {
           <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
             <LucideIcons.ChevronLeft size={22} color="#0F172A" strokeWidth={2.5} />
           </TouchableOpacity>
-          <Text style={styles.titleText}>{title}</Text>
+
+          {onSearch ? (
+            <View style={styles.searchContainer}>
+              <LucideIcons.Search size={16} color="#94A3B8" strokeWidth={2.5} />
+              <TextInput
+                style={styles.searchInput}
+                placeholder="Buscar reporte..."
+                placeholderTextColor="#94A3B8"
+                value={searchQuery}
+                onChangeText={handleSearch}
+              />
+            </View>
+          ) : (
+            <Text style={styles.titleText}>{title}</Text>
+          )}
+
           <TouchableOpacity style={styles.actionButton}>
             <LucideIcons.Plus size={20} color="#FFFFFF" strokeWidth={2} />
           </TouchableOpacity>
         </View>
 
-        <View style={styles.descriptionSection}>
-          <Text style={styles.description}>Genera y descarga reportes en PDF, Excel y CSV</Text>
-        </View>
+        {!onSearch && (
+          <View style={styles.descriptionSection}>
+            <Text style={styles.description}>Genera y descarga reportes en PDF, Excel y CSV</Text>
+          </View>
+        )}
 
         <View style={styles.statsRow}>
           <View style={styles.statItem}>
@@ -60,13 +84,19 @@ export const ReportsHeader = ({ title = "Reportes" }: ReportsHeaderProps) => {
 
 const styles = StyleSheet.create({
   wrapper: { position: "relative" },
-  gradient: { position: "absolute", top: 0, left: 0, right: 0, height: 180 },
+  gradient: { position: "absolute", top: 0, left: 0, right: 0, height: 200 },
   container: { position: "relative", paddingHorizontal: 16, paddingBottom: 16 },
   topRow: { flexDirection: "row", alignItems: "center", gap: 10, marginBottom: 16 },
   backButton: {
     width: 38, height: 38, borderRadius: 10, backgroundColor: "#FFFFFF",
     justifyContent: "center", alignItems: "center", shadowColor: "#000", shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 1,
   },
+  searchContainer: {
+    flex: 1, height: 40, backgroundColor: "#FFFFFF", borderRadius: 10, paddingHorizontal: 12,
+    flexDirection: "row", alignItems: "center", gap: 8,
+    shadowColor: "#000", shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 1,
+  },
+  searchInput: { flex: 1, fontSize: 14, color: "#0F172A", fontWeight: "500" },
   titleText: { flex: 1, fontSize: 22, fontWeight: "800", color: "#0F172A", letterSpacing: -0.5 },
   actionButton: {
     width: 38, height: 38, borderRadius: 10, backgroundColor: "#4CB1B1",

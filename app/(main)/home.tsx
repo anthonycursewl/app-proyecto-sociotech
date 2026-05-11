@@ -9,7 +9,7 @@ import { ModuleGrid } from "../../components/dashboard/ModuleGrid/ModuleGrid";
 
 export default function HomeScreen() {
   const router = useRouter();
-  const { verifyToken, user, logout, permissions } = useAuthStore()
+  const { verifyToken, user, logout } = useAuthStore()
 
   useEffect(() => {
     const verify = async () => {
@@ -18,8 +18,6 @@ export default function HomeScreen() {
         router.replace("/(auth)/login");
       }
     }
-
-    console.log(permissions)
 
     verify();
   }, []);

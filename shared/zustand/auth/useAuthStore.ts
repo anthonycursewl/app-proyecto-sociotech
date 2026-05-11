@@ -1,5 +1,6 @@
-import { User, UserProfile, UserRole } from "@/shared/entities/User";
+import { User, UserRole } from "@/shared/entities/User";
 import { HttpClient } from "@/shared/http/http.client";
+import { authService } from "@/shared/services/auth.service";
 import { create } from "zustand";
 
 interface AuthState {
@@ -28,19 +29,18 @@ interface AuthState {
     verifyToken: () => Promise<boolean>;
 }
 
-interface AuthResponse {
-    accessToken: string;
-    refreshToken: string;
-    user: {
-        id: string;
-        email: string;
-        firstName: string;
-        lastName: string;
-        roleId: string;
-        roleName: string;
-        permissions: string[];
-    };
-}
+const mapAuthUser = (au: { id: string; email: string; firstName: string; lastName: string; roleId: string; roleName: string; permissions: string[] }): User => ({
+    id: au.id,
+    email: au.email,
+    firstName: au.firstName,
+    lastName: au.lastName,
+    role: au.roleName.toUpperCase() as UserRole,
+    roleId: au.roleId,
+    isActive: true,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    permissions: au.permissions,
+});
 
 export const useAuthStore = create<AuthState>((set, get) => {
     const runAction = async <T>(action: () => Promise<T>): Promise<T | null> => {
@@ -77,39 +77,18 @@ export const useAuthStore = create<AuthState>((set, get) => {
         },
         setTokens: (tokens: { accessToken: string; refreshToken: string }) => set({ tokens }),
 
-        // Stuff about session. This is to load session and re-create accessToken when gets invalid.
         clearTokens: () => set({ tokens: { accessToken: "", refreshToken: "" } }),
 
-        /**
-         * Loggea un usuario y almacena los tokens
-         * @param email email del usuario
-         * @param password password del usuario
-         */
         login: async (email: string, password: string): Promise<boolean> => {
             const success = await runAction(async () => {
                 if (!email || !password) return false;
                 const { setTokens, setUser, setPermissions } = get()
-                const response = await HttpClient.post<AuthResponse>("/auth/login", {
-                    email: email,
-                    password: password,
-                });
+                const response = await authService.login({ email, password });
 
                 if (response) {
                     await HttpClient.saveTokens(response.accessToken, response.refreshToken);
                     setTokens({ accessToken: response.accessToken, refreshToken: response.refreshToken });
-                    setUser({
-                        id: response.user.id,
-                        email: response.user.email,
-                        firstName: response.user.firstName,
-                        lastName: response.user.lastName,
-                        role: response.user.roleName.toUpperCase() as UserRole,
-                        roleId: response.user.roleId,
-                        passwordHash: "",
-                        isActive: true,
-                        createdAt: new Date().toISOString(),
-                        updatedAt: new Date().toISOString(),
-                        permissions: response.user.permissions,
-                    });
+                    setUser(mapAuthUser(response.user));
                     setPermissions(response.user.permissions);
                     return true;
                 }
@@ -118,39 +97,15 @@ export const useAuthStore = create<AuthState>((set, get) => {
             return success ?? false;
         },
 
-        /**
-         * Registra un usuario
-         * @param email email del usuario
-         * @param password password del usuario
-         * @param firstName nombre del usuario
-         * @param lastName apellido del usuario
-         */
         register: async (email: string, password: string, firstName: string, lastName: string): Promise<boolean> => {
             const success = await runAction(async () => {
                 const { setTokens, setUser, setPermissions } = get()
-                const response = await HttpClient.post<AuthResponse>("/auth/register", {
-                    email,
-                    password,
-                    firstName,
-                    lastName,
-                });
+                const response = await authService.register({ email, password, firstName, lastName });
 
                 if (response) {
                     await HttpClient.saveTokens(response.accessToken, response.refreshToken);
                     setTokens({ accessToken: response.accessToken, refreshToken: response.refreshToken });
-                    setUser({
-                        id: response.user.id,
-                        email: response.user.email,
-                        firstName: response.user.firstName,
-                        lastName: response.user.lastName,
-                        role: response.user.roleName.toUpperCase() as UserRole,
-                        roleId: response.user.roleId,
-                        passwordHash: "",
-                        isActive: true,
-                        createdAt: new Date().toISOString(),
-                        updatedAt: new Date().toISOString(),
-                        permissions: response.user.permissions,
-                    });
+                    setUser(mapAuthUser(response.user));
                     setPermissions(response.user.permissions);
                     return true;
                 }
@@ -159,12 +114,9 @@ export const useAuthStore = create<AuthState>((set, get) => {
             return success ?? false;
         },
 
-        /**
-         * Verifica el token
-         */
         verifyToken: async (): Promise<boolean> => {
             const success = await runAction(async () => {
-                const response = await HttpClient.get<UserProfile>("/auth/me", {}, { requireAuth: true });
+                const response = await authService.me();
                 if (response) {
                     set({
                         user: response.user,
@@ -176,32 +128,20 @@ export const useAuthStore = create<AuthState>((set, get) => {
             return success ?? false;
         },
 
-        /**
-         * Actualiza un usuario
-         * @param user usuario a actualizar
-         */
         updateUser: async (user: User): Promise<void> => {
             await runAction(async () => {
-                const response = await HttpClient.put<User>("/auth/user", user, { requireAuth: true });
+                const response = await authService.updateUser(user);
                 if (response) {
-                    set({
-                        user: response,
-                    });
+                    set({ user: response });
                 }
             });
         },
 
-        /**
-         * Cierra sesión y elimina los tokens
-         */
         logout: () => {
             HttpClient.clearTokens();
             set({
                 user: null,
-                tokens: {
-                    accessToken: "",
-                    refreshToken: ""
-                },
+                tokens: { accessToken: "", refreshToken: "" },
             });
         },
     };
