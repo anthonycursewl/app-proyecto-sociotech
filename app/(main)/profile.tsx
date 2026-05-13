@@ -3,7 +3,8 @@ import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import * as LucideIcons from "lucide-react-native";
 import React from "react";
-import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Alert, ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
+import { Text } from "@/components/common/SText"
 import { SafeAreaView } from "react-native-safe-area-context";
 
 const ROLE_LABELS: Record<string, string> = {

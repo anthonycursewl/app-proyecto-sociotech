@@ -1,6 +1,7 @@
 import { StatusBar } from "expo-status-bar";
 import React from "react";
-import { FlatList, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { FlatList, StyleSheet, TouchableOpacity, View } from "react-native";
+import { Text } from "@/components/common/SText"
 import { SafeAreaView } from "react-native-safe-area-context";
 import * as LucideIcons from "lucide-react-native";
 import { DoctorProfileHeader } from "../../../components/doctors/DoctorProfileHeader";
@@ -25,7 +26,7 @@ export default function DoctorProfileScreen() {
   );
 
   return (
-    <SafeAreaView style={styles.container} edges={["bottom", "left", "right"]}>
+    <SafeAreaView style={styles.container} edges={["top", "bottom", "left", "right"]}>
       <StatusBar style="light" />
       <DoctorProfileHeader />
       <FlatList

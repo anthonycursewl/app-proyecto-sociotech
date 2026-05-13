@@ -1,7 +1,8 @@
 import * as LucideIcons from "lucide-react-native";
 import { StatusBar } from "expo-status-bar";
 import React, { useState } from "react";
-import { Alert, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { Alert, ScrollView, StyleSheet, TextInput, TouchableOpacity, View } from "react-native";
+import { Text } from "@/components/common/SText"
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useAuthStore } from "@/shared/zustand/auth/useAuthStore";
 import { DoctorEditHeader } from "../../../components/doctor/DoctorEditHeader";

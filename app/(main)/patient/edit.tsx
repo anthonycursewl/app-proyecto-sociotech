@@ -1,6 +1,7 @@
 import { StatusBar } from "expo-status-bar";
 import React, { useState } from "react";
-import { FlatList, StyleSheet, Text, TextInput, TouchableOpacity, View, Alert, ScrollView } from "react-native";
+import { FlatList, StyleSheet, TextInput, TouchableOpacity, View, Alert, ScrollView } from "react-native";
+import { Text } from "@/components/common/SText"
 import { SafeAreaView } from "react-native-safe-area-context";
 import * as LucideIcons from "lucide-react-native";
 import { useRouter } from "expo-router";

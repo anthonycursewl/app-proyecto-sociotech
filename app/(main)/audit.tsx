@@ -1,6 +1,7 @@
 import { StatusBar } from "expo-status-bar";
 import React from "react";
-import { FlatList, StyleSheet, Text, View } from "react-native";
+import { FlatList, StyleSheet, View } from "react-native";
+import { Text } from "@/components/common/SText"
 import { SafeAreaView } from "react-native-safe-area-context";
 import * as LucideIcons from "lucide-react-native";
 import { AuditHeader } from "../../components/audit/AuditHeader";

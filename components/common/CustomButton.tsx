@@ -1,11 +1,6 @@
 import React from "react";
-import {
-  ActivityIndicator,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  TouchableOpacityProps,
-} from "react-native";
+import { ActivityIndicator, StyleSheet, TouchableOpacity, TouchableOpacityProps } from "react-native";
+import { Text } from "@/components/common/SText"
 
 interface CustomButtonProps extends TouchableOpacityProps {
   title: string;

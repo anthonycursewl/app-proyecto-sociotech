@@ -1,6 +1,7 @@
 import { StatusBar } from "expo-status-bar";
 import React, { useState } from "react";
-import { FlatList, StyleSheet, Text, View } from "react-native";
+import { FlatList, StyleSheet, View } from "react-native";
+import { Text } from "@/components/common/SText"
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ManageDoctorsHeader } from "../../components/doctors/ManageDoctorsHeader";
 import { DoctorCard, DoctorData } from "../../components/doctors/DoctorCard";

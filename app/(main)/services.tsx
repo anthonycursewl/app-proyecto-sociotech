@@ -2,7 +2,8 @@ import { ServiceResponse, serviceService } from "@/shared/services/service.servi
 import { StatusBar } from "expo-status-bar";
 import * as LucideIcons from "lucide-react-native";
 import React, { useCallback, useEffect, useState } from "react";
-import { ActivityIndicator, Alert, FlatList, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { ActivityIndicator, Alert, FlatList, StyleSheet, TouchableOpacity, View } from "react-native";
+import { Text } from "@/components/common/SText"
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ServiceCardSkeleton } from "../../components/common/Skeleton";
 import { ServiceCard, ServiceData } from "../../components/services/ServiceCard";

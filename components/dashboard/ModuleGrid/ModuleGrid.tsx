@@ -1,6 +1,7 @@
 import * as LucideIcons from "lucide-react-native";
 import React from "react";
-import { ScrollView, Text, TouchableOpacity, View } from "react-native";
+import { ScrollView, TouchableOpacity, View } from "react-native";
+import { Text } from "@/components/common/SText"
 import { ModuleCard } from "../ModuleCard/ModuleCard";
 import { styles } from './ModuleGrid.styles';
 import { useModuleGrid } from './useModuleGrid';

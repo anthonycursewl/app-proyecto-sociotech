@@ -1,6 +1,7 @@
 import { StatusBar } from "expo-status-bar";
 import React, { useState } from "react";
-import { FlatList, StyleSheet, Text, View } from "react-native";
+import { FlatList, StyleSheet, View } from "react-native";
+import { Text } from "@/components/common/SText"
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ManageAppointmentsHeader } from "../../../components/appointments/ManageAppointmentsHeader";
 import { AdminAppointmentCard, AdminAppointmentData } from "../../../components/appointments/AdminAppointmentCard";
