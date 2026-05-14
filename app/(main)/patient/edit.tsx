@@ -99,8 +99,8 @@ export default function PatientEditScreen() {
       try {
         const profile = await patientService.getMyProfile();
         setForm({
-          cedulaLetter: "V",
-          cedulaNumber: "",
+          cedulaLetter: profile.cedula ? profile.cedula.charAt(0) : "V",
+          cedulaNumber: profile.cedula ? profile.cedula.replace(/^[A-Z]-?/, "") : "",
           firstName: user?.firstName ?? "",
           lastName: user?.lastName ?? "",
           birthDate: fromApiDate(profile.dateOfBirth),
@@ -129,9 +129,31 @@ export default function PatientEditScreen() {
   }, []);
 
   const handleSave = async () => {
+    if (!form.cedulaNumber.trim()) {
+      Alert.alert("Validación", "La cédula es obligatoria");
+      return;
+    }
+    if (!form.phone.trim()) {
+      Alert.alert("Validación", "El teléfono es obligatorio");
+      return;
+    }
+    if (!form.address.trim()) {
+      Alert.alert("Validación", "La dirección es obligatoria");
+      return;
+    }
+    if (!form.emergencyContact.trim()) {
+      Alert.alert("Validación", "El contacto de emergencia es obligatorio");
+      return;
+    }
+    if (!form.emergencyPhone.trim()) {
+      Alert.alert("Validación", "El teléfono de emergencia es obligatorio");
+      return;
+    }
+
     setSaving(true);
     try {
       const payload = {
+        cedula: `${form.cedulaLetter}-${form.cedulaNumber}`,
         dateOfBirth: toApiDate(form.birthDate),
         phone: form.phone,
         address: form.address,

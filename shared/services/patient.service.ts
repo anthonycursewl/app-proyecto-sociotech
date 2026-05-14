@@ -3,6 +3,7 @@ import { HttpClient } from "@/shared/http/http.client";
 export interface PatientResponse {
   id: string;
   userId: string;
+  cedula?: string;
   dateOfBirth: string;
   gender?: string;
   occupation?: string;
@@ -20,6 +21,7 @@ export interface PatientResponse {
 }
 
 export interface CreatePatientData {
+  cedula: string;
   dateOfBirth: string;
   gender?: string;
   occupation?: string;
@@ -35,6 +37,7 @@ export interface CreatePatientData {
 }
 
 export interface UpdatePatientData {
+  cedula?: string;
   dateOfBirth?: string;
   gender?: string;
   occupation?: string;
