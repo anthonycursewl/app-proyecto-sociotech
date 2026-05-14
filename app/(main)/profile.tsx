@@ -1,10 +1,20 @@
+import { Text } from "@/components/common/SText";
 import { useAuthStore } from "@/shared/zustand/auth/useAuthStore";
 import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import * as LucideIcons from "lucide-react-native";
-import React from "react";
-import { Alert, ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
-import { Text } from "@/components/common/SText"
+import React, { useCallback, useEffect, useRef, useState } from "react";
+import {
+  ActivityIndicator,
+  Alert,
+  Animated,
+  Keyboard,
+  ScrollView,
+  StyleSheet,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 const ROLE_LABELS: Record<string, string> = {
@@ -15,22 +25,145 @@ const ROLE_LABELS: Record<string, string> = {
   SUPER_ADMIN: "Super Admin",
 };
 
-const MENU_ITEMS = [
-  { id: "edit", title: "Editar Perfil", icon: LucideIcons.UserPen, color: "#4CB1B1", route: "/patient/edit" },
-  { id: "security", title: "Seguridad", icon: LucideIcons.Shield, color: "#3B82F6", route: null },
-  { id: "notifications", title: "Notificaciones", icon: LucideIcons.Bell, color: "#8B5CF6", route: null },
-];
+const ACCENT = "#4CB1B1";
+const ACCENT_DARK = "#3A9494";
+const ACCENT_LIGHT = "#E0F7F7";
 
 export default function ProfileScreen() {
   const router = useRouter();
-  const { user, logout } = useAuthStore();
+  const { user, logout, updateUser, loading } = useAuthStore();
+
+  const [isEditing, setIsEditing] = useState(false);
+  const [firstName, setFirstName] = useState(user?.firstName ?? "");
+  const [lastName, setLastName] = useState(user?.lastName ?? "");
+  const [email, setEmail] = useState(user?.email ?? "");
+
+  const [showToast, setShowToast] = useState(false);
+  const toastOpacity = useRef(new Animated.Value(0)).current;
+  const toastTranslateY = useRef(new Animated.Value(-20)).current;
+
+  const editModeAnim = useRef(new Animated.Value(0)).current;
+  const avatarScale = useRef(new Animated.Value(1)).current;
+
+  useEffect(() => {
+    if (user) {
+      setFirstName(user.firstName);
+      setLastName(user.lastName);
+      setEmail(user.email);
+    }
+  }, [user]);
+
+  const showSuccessToast = useCallback(() => {
+    setShowToast(true);
+    toastOpacity.setValue(0);
+    toastTranslateY.setValue(-20);
+
+    Animated.parallel([
+      Animated.timing(toastOpacity, {
+        toValue: 1,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+      Animated.spring(toastTranslateY, {
+        toValue: 0,
+        friction: 8,
+        tension: 80,
+        useNativeDriver: true,
+      }),
+    ]).start();
+
+    setTimeout(() => {
+      Animated.parallel([
+        Animated.timing(toastOpacity, {
+          toValue: 0,
+          duration: 250,
+          useNativeDriver: true,
+        }),
+        Animated.timing(toastTranslateY, {
+          toValue: -20,
+          duration: 250,
+          useNativeDriver: true,
+        }),
+      ]).start(() => setShowToast(false));
+    }, 2500);
+  }, [toastOpacity, toastTranslateY]);
+
+  const toggleEditMode = useCallback(() => {
+    const entering = !isEditing;
+    setIsEditing(entering);
+
+    Animated.parallel([
+      Animated.spring(editModeAnim, {
+        toValue: entering ? 1 : 0,
+        friction: 8,
+        tension: 65,
+        useNativeDriver: false,
+      }),
+      Animated.sequence([
+        Animated.timing(avatarScale, {
+          toValue: 0.92,
+          duration: 120,
+          useNativeDriver: true,
+        }),
+        Animated.spring(avatarScale, {
+          toValue: 1,
+          friction: 4,
+          tension: 120,
+          useNativeDriver: true,
+        }),
+      ]),
+    ]).start();
+
+    if (!entering && user) {
+      // Reset values on cancel
+      setFirstName(user.firstName);
+      setLastName(user.lastName);
+      setEmail(user.email);
+    }
+  }, [isEditing, user, editModeAnim, avatarScale]);
+
+  const handleSave = useCallback(async () => {
+    if (!user) return;
+
+    const trimmedFirst = firstName.trim();
+    const trimmedLast = lastName.trim();
+    const trimmedEmail = email.trim();
+
+    if (!trimmedFirst || !trimmedLast) {
+      Alert.alert("Error", "El nombre y apellido son obligatorios.");
+      return;
+    }
+    if (!trimmedEmail || !trimmedEmail.includes("@")) {
+      Alert.alert("Error", "Ingresa un correo electrónico válido.");
+      return;
+    }
+
+    Keyboard.dismiss();
+
+    await updateUser({
+      ...user,
+      firstName: trimmedFirst,
+      lastName: trimmedLast,
+      email: trimmedEmail,
+    });
+
+    setIsEditing(false);
+    Animated.spring(editModeAnim, {
+      toValue: 0,
+      friction: 8,
+      tension: 65,
+      useNativeDriver: false,
+    }).start();
+
+    showSuccessToast();
+  }, [user, firstName, lastName, email, updateUser, editModeAnim, showSuccessToast]);
 
   const handleLogout = () => {
-    Alert.alert('¿Cerrar sesión?', '¿Seguro que quieres salir?', [
-      { text: 'Cancelar', style: 'cancel' },
+    Alert.alert("¿Cerrar sesión?", "¿Seguro que quieres salir?", [
+      { text: "Cancelar", style: "cancel" },
       {
-        text: 'Cerrar sesión',
-        style: 'destructive',
+        text: "Cerrar sesión",
+        style: "destructive",
         onPress: () => {
           logout();
           router.replace("/(auth)/login");
@@ -42,93 +175,249 @@ export default function ProfileScreen() {
   if (!user) {
     return (
       <SafeAreaView style={styles.container}>
-        <Text style={styles.loadingText}>Cargando...</Text>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={ACCENT} />
+          <Text style={styles.loadingText}>Cargando perfil...</Text>
+        </View>
       </SafeAreaView>
     );
   }
 
-  const initials = `${user.firstName?.charAt(0) ?? ''}${user.lastName?.charAt(0) ?? ''}`;
-  const fullName = `${user.firstName ?? ''} ${user.lastName ?? ''}`.trim();
+  const initials = `${user.firstName?.charAt(0) ?? ""}${user.lastName?.charAt(0) ?? ""}`;
+  const fullName = `${user.firstName ?? ""} ${user.lastName ?? ""}`.trim();
   const roleLabel = ROLE_LABELS[user.role] || user.role;
-  const memberSince = new Date(user.createdAt).toLocaleDateString('es-ES', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
+  const memberSince = new Date(user.createdAt).toLocaleDateString("es-ES", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
   });
+
+  const cardBorderColor = editModeAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: ["#F1F5F9", ACCENT],
+  });
+
+  const hasChanges =
+    firstName.trim() !== user.firstName ||
+    lastName.trim() !== user.lastName ||
+    email.trim() !== user.email;
 
   return (
     <SafeAreaView style={styles.container} edges={["top", "bottom", "left", "right"]}>
       <StatusBar style="dark" />
+
+      {/* Success Toast */}
+      {showToast && (
+        <Animated.View
+          style={[
+            styles.toast,
+            {
+              opacity: toastOpacity,
+              transform: [{ translateY: toastTranslateY }],
+            },
+          ]}
+        >
+          <LucideIcons.CheckCircle size={18} color="#22C55E" strokeWidth={2.5} />
+          <Text style={styles.toastText}>Perfil actualizado correctamente</Text>
+        </Animated.View>
+      )}
+
+      {/* Top Bar */}
       <View style={styles.topBar}>
         <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
           <LucideIcons.ChevronLeft size={22} color="#0F172A" strokeWidth={2.5} />
         </TouchableOpacity>
-        <Text style={styles.topBarTitle}>Perfil</Text>
-        <View style={styles.topBarSpacer} />
+        <Text style={styles.topBarTitle}>Mi Perfil</Text>
+        <TouchableOpacity
+          style={[styles.editToggle, isEditing && styles.editToggleActive]}
+          onPress={isEditing ? undefined : toggleEditMode}
+          activeOpacity={isEditing ? 1 : 0.7}
+        >
+          {isEditing ? (
+            <LucideIcons.PenLine size={18} color="#FFFFFF" strokeWidth={2.5} />
+          ) : (
+            <LucideIcons.PenLine size={18} color={ACCENT} strokeWidth={2.5} />
+          )}
+        </TouchableOpacity>
       </View>
 
-      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
-        <View style={styles.avatarSection}>
-          <View style={styles.avatar}>
-            <Text style={styles.avatarText}>{initials}</Text>
+      <ScrollView
+        contentContainerStyle={styles.scroll}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
+        {/* Avatar Section */}
+        <Animated.View style={[styles.avatarSection, { transform: [{ scale: avatarScale }] }]}>
+          <View style={styles.avatarRing}>
+            <View style={styles.avatar}>
+              <Text style={styles.avatarText}>{initials}</Text>
+            </View>
           </View>
           <Text style={styles.name}>{fullName}</Text>
-          <View style={styles.roleBadge}>
-            <LucideIcons.User size={12} color="#4CB1B1" strokeWidth={2.5} />
-            <Text style={styles.roleText}>{roleLabel}</Text>
-          </View>
-        </View>
+        </Animated.View>
 
+        {/* Editable Info Card */}
+        <Animated.View style={[styles.card, { borderColor: cardBorderColor, borderWidth: 1.5 }]}>
+          <View style={styles.cardHeader}>
+            <Text style={styles.cardTitle}>Información Personal</Text>
+            {isEditing && (
+              <View style={styles.editingBadge}>
+                <View style={styles.editingDot} />
+                <Text style={styles.editingLabel}>Editando</Text>
+              </View>
+            )}
+          </View>
+
+          {/* First Name */}
+          <View style={styles.fieldGroup}>
+            <View style={styles.fieldLabel}>
+              <LucideIcons.User size={15} color="#94A3B8" strokeWidth={2} />
+              <Text style={styles.fieldLabelText}>Nombre</Text>
+            </View>
+            {isEditing ? (
+              <TextInput
+                style={styles.fieldInput}
+                value={firstName}
+                onChangeText={setFirstName}
+                placeholder="Tu nombre"
+                placeholderTextColor="#CBD5E1"
+                autoCapitalize="words"
+              />
+            ) : (
+              <Text style={styles.fieldValue}>{user.firstName}</Text>
+            )}
+          </View>
+
+          <View style={styles.fieldDivider} />
+
+          {/* Last Name */}
+          <View style={styles.fieldGroup}>
+            <View style={styles.fieldLabel}>
+              <LucideIcons.User size={15} color="#94A3B8" strokeWidth={2} />
+              <Text style={styles.fieldLabelText}>Apellido</Text>
+            </View>
+            {isEditing ? (
+              <TextInput
+                style={styles.fieldInput}
+                value={lastName}
+                onChangeText={setLastName}
+                placeholder="Tu apellido"
+                placeholderTextColor="#CBD5E1"
+                autoCapitalize="words"
+              />
+            ) : (
+              <Text style={styles.fieldValue}>{user.lastName}</Text>
+            )}
+          </View>
+
+          <View style={styles.fieldDivider} />
+
+          {/* Email */}
+          <View style={styles.fieldGroup}>
+            <View style={styles.fieldLabel}>
+              <LucideIcons.Mail size={15} color="#94A3B8" strokeWidth={2} />
+              <Text style={styles.fieldLabelText}>Correo electrónico</Text>
+            </View>
+            {isEditing ? (
+              <TextInput
+                style={styles.fieldInput}
+                value={email}
+                onChangeText={setEmail}
+                placeholder="correo@ejemplo.com"
+                placeholderTextColor="#CBD5E1"
+                keyboardType="email-address"
+                autoCapitalize="none"
+                autoCorrect={false}
+              />
+            ) : (
+              <Text style={styles.fieldValue}>{user.email}</Text>
+            )}
+          </View>
+        </Animated.View>
+
+        {/* Action Buttons for Edit Mode */}
+        {isEditing && (
+          <View style={styles.editActions}>
+            <TouchableOpacity
+              style={[styles.actionBtn, styles.saveBtn, !hasChanges && styles.saveBtnDisabled]}
+              onPress={handleSave}
+              disabled={loading || !hasChanges}
+              activeOpacity={0.8}
+            >
+              {loading ? (
+                <ActivityIndicator size="small" color="#FFFFFF" />
+              ) : (
+                <>
+                  <LucideIcons.Check size={18} color="#FFFFFF" strokeWidth={2.5} />
+                  <Text style={styles.saveBtnText}>Guardar Cambios</Text>
+                </>
+              )}
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.actionBtn, styles.cancelBtn]}
+              onPress={toggleEditMode}
+              disabled={loading}
+              activeOpacity={0.8}
+            >
+              <LucideIcons.X size={18} color="#64748B" strokeWidth={2.5} />
+              <Text style={styles.cancelBtnText}>Cancelar</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
+        {/* Account Details Card */}
         <View style={styles.card}>
-          <View style={styles.infoRow}>
-            <View style={styles.infoLeft}>
-              <LucideIcons.Mail size={16} color="#94A3B8" strokeWidth={2} />
-              <Text style={styles.infoLabel}>Correo</Text>
-            </View>
-            <Text style={styles.infoValue}>{user.email}</Text>
+          <View style={styles.cardHeader}>
+            <Text style={styles.cardTitle}>Cuenta</Text>
           </View>
 
-          <View style={styles.divider} />
-
-          <View style={styles.infoRow}>
-            <View style={styles.infoLeft}>
-              <LucideIcons.Calendar size={16} color="#94A3B8" strokeWidth={2} />
-              <Text style={styles.infoLabel}>Miembro desde</Text>
+          <View style={styles.fieldGroup}>
+            <View style={styles.fieldLabel}>
+              <LucideIcons.Calendar size={15} color="#94A3B8" strokeWidth={2} />
+              <Text style={styles.fieldLabelText}>Miembro desde</Text>
             </View>
-            <Text style={styles.infoValue}>{memberSince}</Text>
+            <Text style={styles.fieldValue}>{memberSince}</Text>
           </View>
 
-          <View style={styles.divider} />
+          <View style={styles.fieldDivider} />
 
-          <View style={styles.infoRow}>
-            <View style={styles.infoLeft}>
-              <LucideIcons.ShieldCheck size={16} color="#94A3B8" strokeWidth={2} />
-              <Text style={styles.infoLabel}>Estado</Text>
+          <View style={styles.fieldGroup}>
+            <View style={styles.fieldLabel}>
+              <LucideIcons.ShieldCheck size={15} color="#94A3B8" strokeWidth={2} />
+              <Text style={styles.fieldLabelText}>Estado de cuenta</Text>
             </View>
-            <View style={[styles.statusBadge, user.isActive ? styles.activeStatus : styles.inactiveStatus]}>
-              <Text style={[styles.statusText, user.isActive ? styles.activeText : styles.inactiveText]}>
-                {user.isActive ? 'Activa' : 'Inactiva'}
+            <View
+              style={[
+                styles.statusBadge,
+                user.isActive ? styles.activeStatus : styles.inactiveStatus,
+              ]}
+            >
+              <View
+                style={[
+                  styles.statusDot,
+                  { backgroundColor: user.isActive ? "#22C55E" : "#EF4444" },
+                ]}
+              />
+              <Text
+                style={[
+                  styles.statusText,
+                  user.isActive ? styles.activeText : styles.inactiveText,
+                ]}
+              >
+                {user.isActive ? "Activa" : "Inactiva"}
               </Text>
             </View>
           </View>
         </View>
 
-        <View style={styles.menuSection}>
-          {MENU_ITEMS.map((item) => (
-            <TouchableOpacity key={item.id} style={styles.menuItem}>
-              <View style={[styles.menuIcon, { backgroundColor: item.color + "15" }]}>
-                <item.icon size={18} color={item.color} strokeWidth={2.5} />
-              </View>
-              <Text style={styles.menuTitle}>{item.title}</Text>
-              <LucideIcons.ChevronRight size={16} color="#CBD5E1" strokeWidth={2} />
-            </TouchableOpacity>
-          ))}
-        </View>
-
-        <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+        {/* Logout Button */}
+        <TouchableOpacity style={styles.logoutButton} onPress={handleLogout} activeOpacity={0.8}>
           <LucideIcons.LogOut size={18} color="#EF4444" strokeWidth={2.5} />
           <Text style={styles.logoutText}>Cerrar Sesión</Text>
         </TouchableOpacity>
+
+        {/* Version info */}
+        <Text style={styles.versionText}>Versión 1.0.0</Text>
       </ScrollView>
     </SafeAreaView>
   );
@@ -139,12 +428,47 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#F8FAFC",
   },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    gap: 12,
+  },
   loadingText: {
     textAlign: "center",
-    marginTop: 40,
     fontSize: 15,
     color: "#94A3B8",
   },
+
+  // Toast
+  toast: {
+    position: "absolute",
+    top: 100,
+    left: 24,
+    right: 24,
+    zIndex: 100,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    backgroundColor: "#FFFFFF",
+    paddingHorizontal: 18,
+    paddingVertical: 14,
+    borderRadius: 14,
+    shadowColor: "#22C55E",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 8,
+    borderLeftWidth: 4,
+    borderLeftColor: "#22C55E",
+  },
+  toastText: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#0F172A",
+  },
+
+  // Top Bar
   topBar: {
     flexDirection: "row",
     alignItems: "center",
@@ -153,109 +477,238 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
   },
   backButton: {
-    width: 38,
-    height: 38,
-    borderRadius: 10,
+    width: 40,
+    height: 40,
+    borderRadius: 12,
     backgroundColor: "#FFFFFF",
     justifyContent: "center",
     alignItems: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 1,
+    shadowColor: "#0F172A",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 2,
   },
   topBarTitle: {
     fontSize: 18,
     fontWeight: "700",
     color: "#0F172A",
+    letterSpacing: -0.3,
   },
-  topBarSpacer: {
-    width: 38,
+  editToggle: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: ACCENT_LIGHT,
+    justifyContent: "center",
+    alignItems: "center",
   },
+  editToggleActive: {
+    backgroundColor: ACCENT,
+  },
+
+  // Scroll
   scroll: {
     paddingHorizontal: 16,
     paddingBottom: 40,
   },
+
+  // Avatar
   avatarSection: {
     alignItems: "center",
-    paddingVertical: 24,
+    paddingVertical: 20,
   },
-  avatar: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: "#4CB1B1",
+  avatarRing: {
+    width: 96,
+    height: 96,
+    borderRadius: 48,
+    borderWidth: 3,
+    borderColor: ACCENT,
     justifyContent: "center",
     alignItems: "center",
-    marginBottom: 12,
+    marginBottom: 14,
+    shadowColor: ACCENT,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 12,
+    elevation: 4,
+  },
+  avatar: {
+    width: 82,
+    height: 82,
+    borderRadius: 41,
+    backgroundColor: ACCENT,
+    justifyContent: "center",
+    alignItems: "center",
   },
   avatarText: {
-    fontSize: 28,
+    fontSize: 30,
     fontWeight: "700",
     color: "#FFFFFF",
+    letterSpacing: 1,
   },
   name: {
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: "700",
     color: "#0F172A",
     marginBottom: 8,
+    letterSpacing: -0.4,
   },
   roleBadge: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 4,
-    backgroundColor: "#E0F2F1",
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 16,
+    gap: 5,
+    backgroundColor: ACCENT_LIGHT,
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderRadius: 20,
   },
   roleText: {
     fontSize: 13,
     fontWeight: "600",
-    color: "#4CB1B1",
+    color: ACCENT_DARK,
   },
+
+  // Card
   card: {
     backgroundColor: "#FFFFFF",
-    borderRadius: 16,
-    padding: 16,
+    borderRadius: 18,
+    padding: 18,
     marginBottom: 16,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
+    shadowColor: "#0F172A",
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.04,
-    shadowRadius: 6,
-    elevation: 1,
+    shadowRadius: 12,
+    elevation: 2,
+    borderWidth: 1.5,
+    borderColor: "#F1F5F9",
   },
-  infoRow: {
+  cardHeader: {
     flexDirection: "row",
-    justifyContent: "space-between",
     alignItems: "center",
-    paddingVertical: 12,
+    justifyContent: "space-between",
+    marginBottom: 16,
   },
-  infoLeft: {
+  cardTitle: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: "#0F172A",
+    letterSpacing: -0.2,
+  },
+  editingBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    backgroundColor: ACCENT_LIGHT,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  editingDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: ACCENT,
+  },
+  editingLabel: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: ACCENT_DARK,
+  },
+
+  // Fields
+  fieldGroup: {
+    paddingVertical: 10,
+    gap: 6,
+  },
+  fieldLabel: {
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
   },
-  infoLabel: {
-    fontSize: 14,
-    color: "#64748B",
+  fieldLabelText: {
+    fontSize: 13,
+    color: "#94A3B8",
+    fontWeight: "500",
   },
-  infoValue: {
-    fontSize: 14,
+  fieldValue: {
+    fontSize: 15,
     fontWeight: "600",
     color: "#0F172A",
-    textAlign: "right",
-    maxWidth: "55%",
+    paddingLeft: 23,
   },
-  divider: {
+  fieldInput: {
+    fontSize: 15,
+    fontWeight: "600",
+    color: "#0F172A",
+    backgroundColor: "#F8FAFC",
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
+    marginTop: 2,
+  },
+  fieldDivider: {
     height: 1,
     backgroundColor: "#F1F5F9",
   },
+
+  // Edit Actions
+  editActions: {
+    gap: 10,
+    marginBottom: 16,
+  },
+  actionBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    borderRadius: 14,
+    paddingVertical: 14,
+  },
+  saveBtn: {
+    backgroundColor: ACCENT,
+    shadowColor: ACCENT,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  saveBtnDisabled: {
+    backgroundColor: "#CBD5E1",
+    shadowOpacity: 0,
+    elevation: 0,
+  },
+  saveBtnText: {
+    fontSize: 15,
+    fontWeight: "700",
+    color: "#FFFFFF",
+  },
+  cancelBtn: {
+    backgroundColor: "#F1F5F9",
+  },
+  cancelBtnText: {
+    fontSize: 15,
+    fontWeight: "600",
+    color: "#64748B",
+  },
+
+  // Status
   statusBadge: {
-    paddingHorizontal: 10,
-    paddingVertical: 3,
-    borderRadius: 10,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+    borderRadius: 12,
+    marginLeft: 23,
+    alignSelf: "flex-start",
+  },
+  statusDot: {
+    width: 7,
+    height: 7,
+    borderRadius: 4,
   },
   activeStatus: {
     backgroundColor: "#DCFCE7",
@@ -264,7 +717,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#FEE2E2",
   },
   statusText: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: "600",
   },
   activeText: {
@@ -273,37 +726,8 @@ const styles = StyleSheet.create({
   inactiveText: {
     color: "#EF4444",
   },
-  menuSection: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 16,
-    marginBottom: 24,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.04,
-    shadowRadius: 6,
-    elevation: 1,
-  },
-  menuItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: "#F8FAFC",
-  },
-  menuIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
-    justifyContent: "center",
-    alignItems: "center",
-    marginRight: 12,
-  },
-  menuTitle: {
-    flex: 1,
-    fontSize: 15,
-    fontWeight: "600",
-    color: "#0F172A",
-  },
+
+  // Logout
   logoutButton: {
     flexDirection: "row",
     alignItems: "center",
@@ -311,11 +735,21 @@ const styles = StyleSheet.create({
     gap: 8,
     backgroundColor: "#FEF2F2",
     borderRadius: 14,
-    padding: 16,
+    paddingVertical: 16,
+    borderWidth: 1,
+    borderColor: "#FECACA",
   },
   logoutText: {
     fontSize: 15,
     fontWeight: "600",
     color: "#EF4444",
+  },
+
+  // Version
+  versionText: {
+    textAlign: "center",
+    fontSize: 12,
+    color: "#CBD5E1",
+    marginTop: 20,
   },
 });

@@ -60,7 +60,10 @@ const toApiDate = (display: string): string => {
   if (!display) return new Date().toISOString().split("T")[0];
   if (display.includes("-")) return display;
   const parts = display.split("/");
-  if (parts.length === 3) return `${parts[2]}-${parts[1]}-${parts[0]}`;
+  if (parts.length === 3) {
+    const y = parts[2].length === 2 ? `20${parts[2]}` : parts[2];
+    return `${y}-${parts[1]}-${parts[0]}`;
+  }
   return display;
 };
 
@@ -76,6 +79,16 @@ const fromApiDate = (iso: string): string => {
 
 const arrayToText = (arr?: string[]): string => (arr && arr.length > 0) ? arr.join(", ") : "";
 const textToArray = (text: string): string[] => text.split(",").map(s => s.trim()).filter(Boolean);
+
+const formatDateInput = (text: string): string => {
+  const digits = text.replace(/\D/g, "").slice(0, 8);
+  let formatted = "";
+  for (let i = 0; i < digits.length; i++) {
+    if (i === 2 || i === 4) formatted += "/";
+    formatted += digits[i];
+  }
+  return formatted;
+};
 
 export default function PatientEditScreen() {
   const router = useRouter();
@@ -152,7 +165,7 @@ export default function PatientEditScreen() {
 
     setSaving(true);
     try {
-      const payload = {
+      const payload: Record<string, any> = {
         cedula: `${form.cedulaLetter}-${form.cedulaNumber}`,
         dateOfBirth: toApiDate(form.birthDate),
         phone: form.phone,
@@ -323,17 +336,23 @@ export default function PatientEditScreen() {
                 />
               </View>
             </View>
-            {renderInput("birthDate", "Fecha de Nacimiento", <LucideIcons.Cake size={16} color="#94A3B8" strokeWidth={2} style={styles.fieldIcon} />, "DD/MM/AAAA")}
-            {renderPicker("Género", form.gender, "Seleccionar", <LucideIcons.UserCheck size={16} color="#94A3B8" strokeWidth={2} style={styles.fieldIcon} />, () => setGenderPickerOpen(true))}
-            <View style={styles.row}>
-              <View style={{ flex: 1 }}>
-                {renderInput("phone", "Teléfono", <LucideIcons.Phone size={16} color="#94A3B8" strokeWidth={2} style={styles.fieldIcon} />, "809-555-1234", { keyboardType: "phone-pad" })}
-              </View>
-              <View style={{ width: 12 }} />
-              <View style={{ flex: 1 }}>
-                {renderInput("email", "Correo electrónico", <LucideIcons.Mail size={16} color="#94A3B8" strokeWidth={2} style={styles.fieldIcon} />, "correo@ejemplo.com", { keyboardType: "email-address", autoCapitalize: "none" })}
+            <View style={styles.inputWrapper}>
+              <Text style={styles.fieldLabel}>Fecha de Nacimiento</Text>
+              <View style={styles.fieldContainer}>
+                <LucideIcons.Cake size={16} color="#94A3B8" strokeWidth={2} style={styles.fieldIcon} />
+                <TextInput
+                  style={styles.fieldInput}
+                  value={form.birthDate}
+                  onChangeText={(v) => updateField("birthDate", formatDateInput(v))}
+                  placeholder="DD/MM/AAAA"
+                  placeholderTextColor="#C5CDD8"
+                  keyboardType="number-pad"
+                />
               </View>
             </View>
+            {renderPicker("Género", form.gender, "Seleccionar", <LucideIcons.UserCheck size={16} color="#94A3B8" strokeWidth={2} style={styles.fieldIcon} />, () => setGenderPickerOpen(true))}
+            {renderInput("phone", "Teléfono", <LucideIcons.Phone size={16} color="#94A3B8" strokeWidth={2} style={styles.fieldIcon} />, "809-555-1234", { keyboardType: "phone-pad" })}
+            {renderInput("email", "Correo electrónico", <LucideIcons.Mail size={16} color="#94A3B8" strokeWidth={2} style={styles.fieldIcon} />, "correo@ejemplo.com", { keyboardType: "email-address", autoCapitalize: "none" })}
             {renderInput("address", "Dirección", <LucideIcons.MapPin size={16} color="#94A3B8" strokeWidth={2} style={styles.fieldIcon} />, "Calle Principal #42", { multiline: true })}
           </View>
 
@@ -418,7 +437,7 @@ export default function PatientEditScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#F8FAFC" },
-  headerGradient: { position: "absolute", top: 0, left: 0, right: 0, height: 105 },
+  headerGradient: { position: "absolute", top: 0, left: 0, right: 0, height: 140 },
 
   header: {
     position: "relative",
@@ -446,7 +465,7 @@ const styles = StyleSheet.create({
   },
   headerSubtitle: {
     fontSize: 12,
-    color: "rgba(255,255,255,0.7)",
+    color: "rgba(255,255,255,0.85)",
     marginTop: 1,
   },
 
