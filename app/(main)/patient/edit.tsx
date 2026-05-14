@@ -14,7 +14,11 @@ const BLOOD_TYPES = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
 const GENDER_OPTIONS = ["Masculino", "Femenino", "Otro"];
 const CIVIL_STATUS_OPTIONS = ["Soltero", "Casado", "Divorciado", "Viudo", "Unión Libre"];
 
+const CEDULA_LETTERS = ["V", "J", "E"];
+
 interface FormField {
+  cedulaLetter: string;
+  cedulaNumber: string;
   firstName: string;
   lastName: string;
   birthDate: string;
@@ -33,6 +37,8 @@ interface FormField {
 }
 
 const emptyForm = (user?: { firstName?: string; lastName?: string; email?: string }): FormField => ({
+  cedulaLetter: "V",
+  cedulaNumber: "",
   firstName: user?.firstName ?? "",
   lastName: user?.lastName ?? "",
   birthDate: "",
@@ -93,6 +99,8 @@ export default function PatientEditScreen() {
       try {
         const profile = await patientService.getMyProfile();
         setForm({
+          cedulaLetter: "V",
+          cedulaNumber: "",
           firstName: user?.firstName ?? "",
           lastName: user?.lastName ?? "",
           birthDate: fromApiDate(profile.dateOfBirth),
@@ -268,6 +276,31 @@ export default function PatientEditScreen() {
                 {renderInput("lastName", "Apellido", <LucideIcons.User size={16} color="#94A3B8" strokeWidth={2} style={styles.fieldIcon} />, "Tu apellido", { autoCapitalize: "words" })}
               </View>
             </View>
+            <View style={styles.inputWrapper}>
+              <Text style={styles.fieldLabel}>Cédula / RIF</Text>
+              <View style={styles.cedulaRow}>
+                <TouchableOpacity
+                  style={styles.cedulaLetterBtn}
+                  onPress={() => {
+                    const idx = CEDULA_LETTERS.indexOf(form.cedulaLetter);
+                    updateField("cedulaLetter", CEDULA_LETTERS[(idx + 1) % CEDULA_LETTERS.length]);
+                  }}
+                  activeOpacity={0.7}
+                >
+                  <Text style={styles.cedulaLetterText}>{form.cedulaLetter}</Text>
+                  <LucideIcons.ChevronDown size={12} color="#4CB1B1" strokeWidth={3} />
+                </TouchableOpacity>
+                <LucideIcons.Minus size={14} color="#94A3B8" strokeWidth={2} style={{ marginHorizontal: 4 }} />
+                <TextInput
+                  style={styles.cedulaNumberInput}
+                  value={form.cedulaNumber}
+                  onChangeText={(v) => updateField("cedulaNumber", v.replace(/[^0-9]/g, "").slice(0, 9))}
+                  placeholder="12345678"
+                  placeholderTextColor="#C5CDD8"
+                  keyboardType="number-pad"
+                />
+              </View>
+            </View>
             {renderInput("birthDate", "Fecha de Nacimiento", <LucideIcons.Cake size={16} color="#94A3B8" strokeWidth={2} style={styles.fieldIcon} />, "DD/MM/AAAA")}
             {renderPicker("Género", form.gender, "Seleccionar", <LucideIcons.UserCheck size={16} color="#94A3B8" strokeWidth={2} style={styles.fieldIcon} />, () => setGenderPickerOpen(true))}
             <View style={styles.row}>
@@ -419,6 +452,41 @@ const styles = StyleSheet.create({
   },
 
   row: { flexDirection: "row" },
+
+  cedulaRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#FFFFFF",
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#E8EDF2",
+    minHeight: 44,
+    paddingRight: 12,
+  },
+  cedulaLetterBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 2,
+    backgroundColor: "#F0FDF9",
+    borderTopLeftRadius: 11,
+    borderBottomLeftRadius: 11,
+    paddingHorizontal: 14,
+    alignSelf: "stretch",
+    minWidth: 48,
+    justifyContent: "center",
+  },
+  cedulaLetterText: {
+    fontSize: 15,
+    fontWeight: "800",
+    color: "#4CB1B1",
+  },
+  cedulaNumberInput: {
+    flex: 1,
+    fontSize: 15,
+    color: "#0F172A",
+    fontWeight: "500",
+    paddingVertical: 10,
+  },
 
   inputWrapper: { marginBottom: 14 },
   fieldLabel: {
