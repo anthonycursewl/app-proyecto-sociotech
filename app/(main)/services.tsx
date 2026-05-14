@@ -2,12 +2,14 @@ import { ServiceResponse, serviceService } from "@/shared/services/service.servi
 import { StatusBar } from "expo-status-bar";
 import * as LucideIcons from "lucide-react-native";
 import React, { useCallback, useEffect, useState } from "react";
-import { ActivityIndicator, Alert, FlatList, StyleSheet, TouchableOpacity, View } from "react-native";
+import { ActivityIndicator, FlatList, StyleSheet, TouchableOpacity, View } from "react-native";
 import { Text } from "@/components/common/SText"
 import { SafeAreaView } from "react-native-safe-area-context";
+import { usePermissions } from "@/shared/permissions/usePermissions";
 import { ServiceCardSkeleton } from "../../components/common/Skeleton";
 import { ServiceCard, ServiceData } from "../../components/services/ServiceCard";
 import { ServicesHeader } from "../../components/services/ServicesHeader";
+import { ServiceFormModal } from "../../components/services/ServiceFormModal";
 
 const PAGE_LIMIT = 20;
 
@@ -21,6 +23,9 @@ const mapService = (s: ServiceResponse): ServiceData => ({
 });
 
 export default function ServicesScreen() {
+  const { canAccess } = usePermissions();
+  const canCreate = canAccess("services:create");
+  const canUpdate = canAccess("services:update");
   const [services, setServices] = useState<ServiceData[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(true);
@@ -28,6 +33,8 @@ export default function ServicesScreen() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [formModalOpen, setFormModalOpen] = useState(false);
+  const [editingService, setEditingService] = useState<ServiceData | null>(null);
 
   const fetchServices = useCallback(async (cursor?: string) => {
     try {
@@ -73,8 +80,19 @@ export default function ServicesScreen() {
     setSearchQuery(query);
   };
 
-  const handleCreate = () => {
-    Alert.alert("Crear Servicio", "Funcionalidad próximamente");
+  const openCreate = () => {
+    setEditingService(null);
+    setFormModalOpen(true);
+  };
+
+  const openEdit = (service: ServiceData) => {
+    if (!canUpdate) return;
+    setEditingService(service);
+    setFormModalOpen(true);
+  };
+
+  const handleFormSaved = () => {
+    fetchServices();
   };
 
   const filteredServices = searchQuery.trim()
@@ -86,7 +104,7 @@ export default function ServicesScreen() {
     : services;
 
   const renderItem = ({ item }: { item: ServiceData }) => (
-    <ServiceCard service={item} />
+    <ServiceCard service={item} onPress={() => openEdit(item)} />
   );
 
   const renderFooter = () => {
@@ -102,7 +120,7 @@ export default function ServicesScreen() {
     return (
       <SafeAreaView style={styles.container} edges={["bottom", "left", "right"]}>
         <StatusBar style="dark" />
-        <ServicesHeader onSearch={handleSearch} onCreate={handleCreate} />
+        <ServicesHeader onSearch={handleSearch} onCreate={canCreate ? openCreate : undefined} />
         <View style={styles.list}>
           <ServiceCardSkeleton />
           <ServiceCardSkeleton />
@@ -119,7 +137,7 @@ export default function ServicesScreen() {
     return (
       <SafeAreaView style={styles.container} edges={["bottom", "left", "right"]}>
         <StatusBar style="dark" />
-        <ServicesHeader onSearch={handleSearch} onCreate={handleCreate} />
+        <ServicesHeader onSearch={handleSearch} onCreate={canCreate ? openCreate : undefined} />
         <View style={styles.centerLoader}>
           <Text style={styles.errorText}>{error}</Text>
           <Text style={styles.retryText} onPress={() => { setLoading(true); fetchServices().then(() => setLoading(false)); }}>
@@ -133,7 +151,7 @@ export default function ServicesScreen() {
   return (
     <SafeAreaView style={styles.container} edges={["bottom", "left", "right"]}>
       <StatusBar style="dark" />
-      <ServicesHeader onSearch={handleSearch} onCreate={handleCreate} />
+      <ServicesHeader onSearch={handleSearch} onCreate={canCreate ? openCreate : undefined} />
       <FlatList
         data={filteredServices}
         renderItem={renderItem}
@@ -156,14 +174,15 @@ export default function ServicesScreen() {
             <Text style={styles.emptyText}>
               {searchQuery ? "No se encontraron servicios" : "No hay servicios disponibles"}
             </Text>
-            {!searchQuery && (
-              <TouchableOpacity style={styles.emptyCta} onPress={handleCreate}>
+            {!searchQuery && canCreate && (
+              <TouchableOpacity style={styles.emptyCta} onPress={openCreate}>
                 <Text style={styles.emptyCtaText}>Crear Servicio</Text>
               </TouchableOpacity>
             )}
           </View>
         }
       />
+      <ServiceFormModal visible={formModalOpen} editingService={editingService} onClose={() => setFormModalOpen(false)} onSaved={handleFormSaved} />
     </SafeAreaView>
   );
 }

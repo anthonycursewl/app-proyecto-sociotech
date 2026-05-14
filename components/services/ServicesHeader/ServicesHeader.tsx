@@ -54,10 +54,12 @@ export const ServicesHeader = ({ title = "Servicios", onSearch, onCreate }: Serv
 
         <View style={styles.bottomRow}>
           <Text style={styles.title}>{title}</Text>
-          <TouchableOpacity style={styles.createButton} onPress={onCreate}>
-            <LucideIcons.Plus size={16} color="#FFFFFF" strokeWidth={2.5} />
-            <Text style={styles.createButtonText}>Crear</Text>
-          </TouchableOpacity>
+          {onCreate && (
+            <TouchableOpacity style={styles.createButton} onPress={onCreate}>
+              <LucideIcons.Plus size={16} color="#FFFFFF" strokeWidth={2.5} />
+              <Text style={styles.createButtonText}>Crear</Text>
+            </TouchableOpacity>
+          )}
         </View>
       </View>
     </View>
