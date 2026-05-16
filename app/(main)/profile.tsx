@@ -36,7 +36,6 @@ export default function ProfileScreen() {
   const [isEditing, setIsEditing] = useState(false);
   const [firstName, setFirstName] = useState(user?.firstName ?? "");
   const [lastName, setLastName] = useState(user?.lastName ?? "");
-  const [email, setEmail] = useState(user?.email ?? "");
 
   const [showToast, setShowToast] = useState(false);
   const toastOpacity = useRef(new Animated.Value(0)).current;
@@ -49,7 +48,6 @@ export default function ProfileScreen() {
     if (user) {
       setFirstName(user.firstName);
       setLastName(user.lastName);
-      setEmail(user.email);
     }
   }, [user]);
 
@@ -118,7 +116,6 @@ export default function ProfileScreen() {
       // Reset values on cancel
       setFirstName(user.firstName);
       setLastName(user.lastName);
-      setEmail(user.email);
     }
   }, [isEditing, user, editModeAnim, avatarScale]);
 
@@ -127,25 +124,27 @@ export default function ProfileScreen() {
 
     const trimmedFirst = firstName.trim();
     const trimmedLast = lastName.trim();
-    const trimmedEmail = email.trim();
 
     if (!trimmedFirst || !trimmedLast) {
       Alert.alert("Error", "El nombre y apellido son obligatorios.");
       return;
     }
-    if (!trimmedEmail || !trimmedEmail.includes("@")) {
-      Alert.alert("Error", "Ingresa un correo electrónico válido.");
-      return;
-    }
 
     Keyboard.dismiss();
 
-    await updateUser({
-      ...user,
+    const ok = await updateUser({
       firstName: trimmedFirst,
       lastName: trimmedLast,
-      email: trimmedEmail,
     });
+
+    if (!ok) {
+      Alert.alert("Error", "No se pudieron guardar los datos.");
+      return;
+    }
+
+    // Sync local state immediately
+    setFirstName(trimmedFirst);
+    setLastName(trimmedLast);
 
     setIsEditing(false);
     Animated.spring(editModeAnim, {
@@ -156,7 +155,7 @@ export default function ProfileScreen() {
     }).start();
 
     showSuccessToast();
-  }, [user, firstName, lastName, email, updateUser, editModeAnim, showSuccessToast]);
+  }, [user, firstName, lastName, updateUser, editModeAnim, showSuccessToast]);
 
   const handleLogout = () => {
     Alert.alert("¿Cerrar sesión?", "¿Seguro que quieres salir?", [
@@ -198,9 +197,8 @@ export default function ProfileScreen() {
   });
 
   const hasChanges =
-    firstName.trim() !== user.firstName ||
-    lastName.trim() !== user.lastName ||
-    email.trim() !== user.email;
+    (firstName?.trim() ?? "") !== (user?.firstName ?? "") ||
+    (lastName?.trim() ?? "") !== (user?.lastName ?? "");
 
   return (
     <SafeAreaView style={styles.container} edges={["top", "bottom", "left", "right"]}>
@@ -312,26 +310,13 @@ export default function ProfileScreen() {
 
           <View style={styles.fieldDivider} />
 
-          {/* Email */}
+          {/* Email (read-only) */}
           <View style={styles.fieldGroup}>
             <View style={styles.fieldLabel}>
               <LucideIcons.Mail size={15} color="#94A3B8" strokeWidth={2} />
               <Text style={styles.fieldLabelText}>Correo electrónico</Text>
             </View>
-            {isEditing ? (
-              <TextInput
-                style={styles.fieldInput}
-                value={email}
-                onChangeText={setEmail}
-                placeholder="correo@ejemplo.com"
-                placeholderTextColor="#CBD5E1"
-                keyboardType="email-address"
-                autoCapitalize="none"
-                autoCorrect={false}
-              />
-            ) : (
-              <Text style={styles.fieldValue}>{user.email}</Text>
-            )}
+            <Text style={styles.fieldValue}>{user.email}</Text>
           </View>
         </Animated.View>
 

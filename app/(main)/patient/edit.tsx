@@ -197,13 +197,13 @@ export default function PatientEditScreen() {
     }
   };
 
-  const renderInput = (key: keyof FormField, label: string, icon: React.ReactNode, placeholder: string, opts?: { multiline?: boolean; keyboardType?: "default" | "email-address" | "phone-pad"; autoCapitalize?: "none" | "sentences" | "words" | "characters" }) => (
+  const renderInput = (key: keyof FormField, label: string, icon: React.ReactNode, placeholder: string, opts?: { multiline?: boolean; keyboardType?: "default" | "email-address" | "phone-pad"; autoCapitalize?: "none" | "sentences" | "words" | "characters"; editable?: boolean }) => (
     <View key={key} style={styles.inputWrapper}>
-      <Text style={styles.fieldLabel}>{label}</Text>
-      <View style={styles.fieldContainer}>
+      <Text style={[styles.fieldLabel, opts?.editable === false && { color: "#94A3B8" }]}>{label}</Text>
+      <View style={[styles.fieldContainer, opts?.editable === false && { backgroundColor: "#F1F5F9" }]}>
         {icon}
         <TextInput
-          style={[styles.fieldInput, opts?.multiline && styles.fieldTextarea]}
+          style={[styles.fieldInput, opts?.multiline && styles.fieldTextarea, opts?.editable === false && { color: "#64748B" }]}
           value={form[key]}
           onChangeText={(v) => updateField(key, v)}
           placeholder={placeholder}
@@ -212,6 +212,7 @@ export default function PatientEditScreen() {
           autoCapitalize={opts?.autoCapitalize ?? "none"}
           multiline={opts?.multiline}
           textAlignVertical={opts?.multiline ? "top" : "center"}
+          editable={opts?.editable}
         />
       </View>
     </View>
@@ -304,11 +305,11 @@ export default function PatientEditScreen() {
             </View>
             <View style={styles.row}>
               <View style={{ flex: 1 }}>
-                {renderInput("firstName", "Nombre", <LucideIcons.User size={16} color="#94A3B8" strokeWidth={2} style={styles.fieldIcon} />, "Tu nombre", { autoCapitalize: "words" })}
+                {renderInput("firstName", "Nombre", <LucideIcons.User size={16} color="#94A3B8" strokeWidth={2} style={styles.fieldIcon} />, "Tu nombre", { autoCapitalize: "words", editable: false })}
               </View>
               <View style={{ width: 12 }} />
               <View style={{ flex: 1 }}>
-                {renderInput("lastName", "Apellido", <LucideIcons.User size={16} color="#94A3B8" strokeWidth={2} style={styles.fieldIcon} />, "Tu apellido", { autoCapitalize: "words" })}
+                {renderInput("lastName", "Apellido", <LucideIcons.User size={16} color="#94A3B8" strokeWidth={2} style={styles.fieldIcon} />, "Tu apellido", { autoCapitalize: "words", editable: false })}
               </View>
             </View>
             <View style={styles.inputWrapper}>
@@ -352,7 +353,7 @@ export default function PatientEditScreen() {
             </View>
             {renderPicker("Género", form.gender, "Seleccionar", <LucideIcons.UserCheck size={16} color="#94A3B8" strokeWidth={2} style={styles.fieldIcon} />, () => setGenderPickerOpen(true))}
             {renderInput("phone", "Teléfono", <LucideIcons.Phone size={16} color="#94A3B8" strokeWidth={2} style={styles.fieldIcon} />, "809-555-1234", { keyboardType: "phone-pad" })}
-            {renderInput("email", "Correo electrónico", <LucideIcons.Mail size={16} color="#94A3B8" strokeWidth={2} style={styles.fieldIcon} />, "correo@ejemplo.com", { keyboardType: "email-address", autoCapitalize: "none" })}
+            {renderInput("email", "Correo electrónico", <LucideIcons.Mail size={16} color="#94A3B8" strokeWidth={2} style={styles.fieldIcon} />, "correo@ejemplo.com", { keyboardType: "email-address", autoCapitalize: "none", editable: false })}
             {renderInput("address", "Dirección", <LucideIcons.MapPin size={16} color="#94A3B8" strokeWidth={2} style={styles.fieldIcon} />, "Calle Principal #42", { multiline: true })}
           </View>
 

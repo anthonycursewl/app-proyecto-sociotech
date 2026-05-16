@@ -9,7 +9,7 @@ import { ModuleGrid } from "../../components/dashboard/ModuleGrid/ModuleGrid";
 
 export default function HomeScreen() {
   const router = useRouter();
-  const { verifyToken, user, logout, permissions } = useAuthStore()
+  const { verifyToken, user, logout } = useAuthStore()
 
   useEffect(() => {
     const verify = async () => {
@@ -21,13 +21,6 @@ export default function HomeScreen() {
 
     verify();
   }, []);
-
-  useEffect(() => {
-    if (user) {
-      const perms = permissions.length > 0 ? permissions : ["USANDO DEV_PERMISSIONS (API devolvió array vacío)"];
-      Alert.alert("Debug Permisos", `Rol: ${user.role}\nPermisos (${perms.length}):\n${perms.slice(0, 15).join("\n")}${perms.length > 15 ? "\n..." : ""}`);
-    }
-  }, [user, permissions]);
 
   const handleLogout = () => {
     Alert.alert('¿Seguro que quieres cerrar sesión?', '', [

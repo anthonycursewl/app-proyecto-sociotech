@@ -28,64 +28,11 @@ const MODULE_PERMISSIONS: Record<string, string[]> = {
   users: ["users:read", "users:create", "users:update", "users:assign-role", "users:delete"],
 };
 
-const DEV_PERMISSIONS = [
-  "services:read",
-  "services:create",
-  "services:update",
-  "services:delete",
-  "patients:read",
-  "patients:read:own",
-  "patients:register",
-  "patients:create",
-  "patients:create:own",
-  "patients:update",
-  "patients:update:own",
-  "patients:delete",
-  "appointments:read",
-  "appointments:read:own",
-  "appointments:create",
-  "appointments:create:own",
-  "appointments:update",
-  "appointments:update:own",
-  "appointments:cancel",
-  "appointments:cancel:own",
-  "appointments:manage",
-  "medical-records:read",
-  "medical-records:read:own",
-  "medical-records:create",
-  "medical-records:update",
-  "medical-records:sign",
-  "medical-records:delete",
-  "exams:read",
-  "reports:read",
-  "reports:generate",
-  "reports:export",
-  "audit:read",
-  "doctors:read",
-  "doctors:create",
-  "doctors:create:own",
-  "doctors:update",
-  "doctors:update:own",
-  "doctors:delete",
-  "doctors:manage",
-  "schedules:manage",
-  "schedules:create:own",
-  "roles:read",
-  "roles:create",
-  "roles:update",
-  "roles:delete",
-  "users:read",
-  "users:create",
-  "users:update",
-  "users:assign-role",
-  "users:delete",
-];
-
 export const useModuleGrid = () => {
   const router = useRouter();
   const permissions = useAuthStore((state) => state.permissions);
 
-  const effectivePermissions = permissions.length > 0 ? permissions : DEV_PERMISSIONS;
+  const effectivePermissions = permissions;
 
   const modules: ModuleItem[] = [
     { id: "services", title: "Servicios", icon: "Stethoscope", color: "#4CB1B1", description: "Gestionar servicios", route: "/services" },

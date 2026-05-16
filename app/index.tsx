@@ -1,7 +1,24 @@
+import { useEffect, useState } from "react";
 import { Redirect } from "expo-router";
+import { View } from "react-native";
+import { useAuthStore } from "@/shared/zustand/auth/useAuthStore";
 
 export default function Index() {
-  // In a real app, you would check auth state here
-  // For now, we redirect to the login screen
-  return <Redirect href="/(auth)/login" />;
+  const [isChecking, setIsChecking] = useState(true);
+  const [authenticated, setAuthenticated] = useState(false);
+  const verifyToken = useAuthStore((s) => s.verifyToken);
+
+  useEffect(() => {
+    (async () => {
+      const valid = await verifyToken();
+      setAuthenticated(valid);
+      setIsChecking(false);
+    })();
+  }, []);
+
+  if (isChecking) {
+    return <View style={{ flex: 1, backgroundColor: "#F8FAFC" }} />;
+  }
+
+  return <Redirect href={authenticated ? "/(main)/home" : "/(auth)/login"} />;
 }

@@ -1,6 +1,7 @@
 import { User, UserRole } from "@/shared/entities/User";
 import { HttpClient } from "@/shared/http/http.client";
 import { authService } from "@/shared/services/auth.service";
+import { userService } from "@/shared/services/user.service";
 import { create } from "zustand";
 
 interface AuthState {
@@ -23,7 +24,7 @@ interface AuthState {
 
     login: (email: string, password: string) => Promise<boolean>;
     register: (email: string, password: string, firstName: string, lastName: string) => Promise<boolean>;
-    updateUser: (user: User) => Promise<void>;
+    updateUser: (data: { firstName: string; lastName: string }) => Promise<boolean>;
     logout: () => void;
     clearError: () => void;
     verifyToken: () => Promise<boolean>;
@@ -122,19 +123,32 @@ export const useAuthStore = create<AuthState>((set, get) => {
                         user: response.user,
                         permissions: response.user.permissions || [],
                     });
+                    return true;
                 }
-                return true;
+                return false;
             });
             return success ?? false;
         },
 
-        updateUser: async (user: User): Promise<void> => {
-            await runAction(async () => {
-                const response = await authService.updateUser(user);
+        updateUser: async (data: { firstName: string; lastName: string }): Promise<boolean> => {
+            const success = await runAction(async () => {
+                const response = await userService.updateProfile(data);
+                console.log("[updateUser] API response:", JSON.stringify(response, null, 2));
                 if (response) {
-                    set({ user: response });
+                    const current = get().user;
+                    const userData = (response as any).user ?? response;
+                    set({
+                        user: current ? {
+                            ...current,
+                            firstName: userData.firstName,
+                            lastName: userData.lastName,
+                        } : null,
+                    });
+                    return true;
                 }
+                return false;
             });
+            return success ?? false;
         },
 
         logout: () => {
