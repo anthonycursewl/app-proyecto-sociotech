@@ -1,84 +1,39 @@
-import { ServiceResponse, serviceService } from "@/shared/services/service.service";
+import { ListErrorState } from "@/components/common/ListErrorState";
+import { ServiceCardSkeleton } from "@/components/common/Skeleton";
+import { ServiceCard, ServiceData } from "@/components/services/ServiceCard";
+import { ServiceFormModal } from "@/components/services/ServiceFormModal";
+import { ServicesHeader } from "@/components/services/ServicesHeader";
+import { useServicesList } from "@/shared/hooks/useServicesList";
+import { usePermissions } from "@/shared/permissions/usePermissions";
+import { colors } from "@/shared/theme/colors";
 import { StatusBar } from "expo-status-bar";
 import * as LucideIcons from "lucide-react-native";
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useState } from "react";
 import { ActivityIndicator, FlatList, StyleSheet, TouchableOpacity, View } from "react-native";
-import { Text } from "@/components/common/SText"
+import { Text } from "@/components/common/SText";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { usePermissions } from "@/shared/permissions/usePermissions";
-import { ServiceCardSkeleton } from "../../components/common/Skeleton";
-import { ServiceCard, ServiceData } from "../../components/services/ServiceCard";
-import { ServicesHeader } from "../../components/services/ServicesHeader";
-import { ServiceFormModal } from "../../components/services/ServiceFormModal";
-
-const PAGE_LIMIT = 20;
-
-const mapService = (s: ServiceResponse): ServiceData => ({
-  id: s.id,
-  name: s.name,
-  description: s.description ?? "",
-  durationMin: s.durationMin,
-  price: s.price ?? 0,
-  isActive: s.isActive,
-});
 
 export default function ServicesScreen() {
   const { canAccess } = usePermissions();
   const canCreate = canAccess("services:create");
   const canUpdate = canAccess("services:update");
-  const [services, setServices] = useState<ServiceData[]>([]);
+  const {
+    services,
+    loading,
+    refreshing,
+    loadingMore,
+    error,
+    refresh,
+    loadMore,
+    reload,
+    fetchServices,
+  } = useServicesList();
+
   const [searchQuery, setSearchQuery] = useState("");
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-  const [loadingMore, setLoadingMore] = useState(false);
-  const [nextCursor, setNextCursor] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
   const [formModalOpen, setFormModalOpen] = useState(false);
   const [editingService, setEditingService] = useState<ServiceData | null>(null);
 
-  const fetchServices = useCallback(async (cursor?: string) => {
-    try {
-      const response = await serviceService.getAll({
-        cursor,
-        limit: PAGE_LIMIT,
-        includeInactive: true,
-      });
-      if (cursor) {
-        setServices((prev) => [...prev, ...response.data.map(mapService)]);
-      } else {
-        setServices(response.data.map(mapService));
-      }
-      setNextCursor(response.nextCursor);
-      setError(null);
-    } catch (err: any) {
-      setError(err.message || "Error al cargar servicios");
-    }
-  }, []);
-
-  useEffect(() => {
-    (async () => {
-      setLoading(true);
-      await fetchServices();
-      setLoading(false);
-    })();
-  }, [fetchServices]);
-
-  const handleRefresh = async () => {
-    setRefreshing(true);
-    await fetchServices();
-    setRefreshing(false);
-  };
-
-  const handleLoadMore = async () => {
-    if (!nextCursor || loadingMore) return;
-    setLoadingMore(true);
-    await fetchServices(nextCursor);
-    setLoadingMore(false);
-  };
-
-  const handleSearch = (query: string) => {
-    setSearchQuery(query);
-  };
+  const handleSearch = (query: string) => setSearchQuery(query);
 
   const openCreate = () => {
     setEditingService(null);
@@ -97,10 +52,10 @@ export default function ServicesScreen() {
 
   const filteredServices = searchQuery.trim()
     ? services.filter(
-      (s) =>
-        s.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        s.description.toLowerCase().includes(searchQuery.toLowerCase())
-    )
+        (s) =>
+          s.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          s.description.toLowerCase().includes(searchQuery.toLowerCase()),
+      )
     : services;
 
   const renderItem = ({ item }: { item: ServiceData }) => (
@@ -111,7 +66,7 @@ export default function ServicesScreen() {
     if (!loadingMore) return null;
     return (
       <View style={styles.footerLoader}>
-        <ActivityIndicator size="small" color="#4CB1B1" />
+        <ActivityIndicator size="small" color={colors.accent} />
       </View>
     );
   };
@@ -122,12 +77,9 @@ export default function ServicesScreen() {
         <StatusBar style="dark" />
         <ServicesHeader onSearch={handleSearch} onCreate={canCreate ? openCreate : undefined} />
         <View style={styles.list}>
-          <ServiceCardSkeleton />
-          <ServiceCardSkeleton />
-          <ServiceCardSkeleton />
-          <ServiceCardSkeleton />
-          <ServiceCardSkeleton />
-          <ServiceCardSkeleton />
+          {Array.from({ length: 6 }).map((_, i) => (
+            <ServiceCardSkeleton key={i} />
+          ))}
         </View>
       </SafeAreaView>
     );
@@ -138,12 +90,7 @@ export default function ServicesScreen() {
       <SafeAreaView style={styles.container} edges={["bottom", "left", "right"]}>
         <StatusBar style="dark" />
         <ServicesHeader onSearch={handleSearch} onCreate={canCreate ? openCreate : undefined} />
-        <View style={styles.centerLoader}>
-          <Text style={styles.errorText}>{error}</Text>
-          <Text style={styles.retryText} onPress={() => { setLoading(true); fetchServices().then(() => setLoading(false)); }}>
-            Toca para reintentar
-          </Text>
-        </View>
+        <ListErrorState message={error} onRetry={reload} />
       </SafeAreaView>
     );
   }
@@ -159,8 +106,8 @@ export default function ServicesScreen() {
         contentContainerStyle={styles.list}
         showsVerticalScrollIndicator={false}
         refreshing={refreshing}
-        onRefresh={handleRefresh}
-        onEndReached={handleLoadMore}
+        onRefresh={refresh}
+        onEndReached={loadMore}
         onEndReachedThreshold={0.3}
         ListHeaderComponent={
           <Text style={styles.countText}>
@@ -182,32 +129,40 @@ export default function ServicesScreen() {
           </View>
         }
       />
-      <ServiceFormModal visible={formModalOpen} editingService={editingService} onClose={() => setFormModalOpen(false)} onSaved={handleFormSaved} />
+      <ServiceFormModal
+        visible={formModalOpen}
+        editingService={editingService}
+        onClose={() => setFormModalOpen(false)}
+        onSaved={handleFormSaved}
+      />
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#F8FAFC" },
+  container: { flex: 1, backgroundColor: colors.background },
   list: { padding: 16 },
-  countText: { fontSize: 13, color: "#64748B", marginBottom: 12, fontWeight: "500" },
+  countText: { fontSize: 13, color: colors.textSecondary, marginBottom: 12, fontWeight: "500" },
   emptyContainer: { flex: 1, justifyContent: "center", alignItems: "center", paddingVertical: 80 },
-  emptyIcon: { fontSize: 48, marginBottom: 16 },
-  emptyText: { fontSize: 16, color: "#64748B", fontWeight: "600", textAlign: "center", marginBottom: 20, marginTop: 20 },
+  emptyText: {
+    fontSize: 16,
+    color: colors.textSecondary,
+    fontWeight: "600",
+    textAlign: "center",
+    marginBottom: 20,
+    marginTop: 20,
+  },
   emptyCta: {
-    backgroundColor: "#4CB1B1",
+    backgroundColor: colors.accent,
     paddingHorizontal: 24,
     paddingVertical: 12,
     borderRadius: 12,
-    shadowColor: "#4CB1B1",
+    shadowColor: colors.accent,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 3,
   },
   emptyCtaText: { fontSize: 15, fontWeight: "700", color: "#FFFFFF" },
-  centerLoader: { flex: 1, justifyContent: "center", alignItems: "center", gap: 12 },
   footerLoader: { paddingVertical: 16, alignItems: "center" },
-  errorText: { fontSize: 15, color: "#EF4444", fontWeight: "500" },
-  retryText: { fontSize: 14, color: "#4CB1B1", fontWeight: "600", marginTop: 4 },
 });
