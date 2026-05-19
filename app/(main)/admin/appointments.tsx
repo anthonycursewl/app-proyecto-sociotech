@@ -1,131 +1,90 @@
+import { AdminAppointmentCard, AdminAppointmentData } from "@/components/appointments/AdminAppointmentCard";
+import { ManageAppointmentsHeader } from "@/components/appointments/ManageAppointmentsHeader";
+import { ListErrorState } from "@/components/common/ListErrorState";
+import { Skeleton } from "@/components/common/Skeleton";
+import { useAppointmentsList } from "@/shared/hooks/useAppointmentsList";
+import { colors } from "@/shared/theme/colors";
 import { StatusBar } from "expo-status-bar";
-import React, { useState } from "react";
-import { FlatList, StyleSheet, View } from "react-native";
-import { Text } from "@/components/common/SText"
+import React, { useMemo, useState } from "react";
+import { ActivityIndicator, FlatList, StyleSheet, View } from "react-native";
+import { Text } from "@/components/common/SText";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { ManageAppointmentsHeader } from "../../../components/appointments/ManageAppointmentsHeader";
-import { AdminAppointmentCard, AdminAppointmentData } from "../../../components/appointments/AdminAppointmentCard";
 
-const MOCK_ADMIN_APPOINTMENTS: AdminAppointmentData[] = [
-  {
-    id: "1",
-    patientName: "María García",
-    patientId: "HM-2024-0142",
-    serviceName: "Medicina General",
-    doctorName: "Dr. Carlos Rodríguez",
-    date: "2026-05-07",
-    time: "08:00",
-    durationMin: 30,
-    status: "completed",
-    location: "Consultorio 101",
-    phone: "0414-1234567",
-  },
-  {
-    id: "2",
-    patientName: "Juan Pérez",
-    patientId: "HM-2024-0089",
-    serviceName: "Cardiología",
-    doctorName: "Dra. Ana Martínez",
-    date: "2026-05-07",
-    time: "09:00",
-    durationMin: 45,
-    status: "confirmed",
-    location: "Consultorio 203",
-    phone: "0412-9876543",
-  },
-  {
-    id: "3",
-    patientName: "Laura Hernández",
-    patientId: "HM-2023-0567",
-    serviceName: "Pediatría",
-    doctorName: "Dr. Roberto Sánchez",
-    date: "2026-05-07",
-    time: "10:30",
-    durationMin: 30,
-    status: "pending",
-    location: "Consultorio 105",
-    phone: "0414-5551234",
-  },
-  {
-    id: "4",
-    patientName: "Carlos López",
-    patientId: "HM-2024-0234",
-    serviceName: "Laboratorio Clínico",
-    doctorName: "Tec. María González",
-    date: "2026-05-07",
-    time: "11:00",
-    durationMin: 15,
-    status: "confirmed",
-    location: "Área de Laboratorio",
-    phone: "0424-2223333",
-  },
-  {
-    id: "5",
-    patientName: "Ana Martínez",
-    patientId: "HM-2023-0412",
-    serviceName: "Odontología",
-    doctorName: "Dra. Patricia Rojas",
-    date: "2026-05-07",
-    time: "14:00",
-    durationMin: 40,
-    status: "cancelled",
-    location: "Consultorio 302",
-    phone: "0416-6667777",
-  },
-  {
-    id: "6",
-    patientName: "Pedro Ramírez",
-    patientId: "HM-2024-0318",
-    serviceName: "Medicina General",
-    doctorName: "Dr. Carlos Rodríguez",
-    date: "2026-05-07",
-    time: "15:30",
-    durationMin: 30,
-    status: "pending",
-    location: "Consultorio 101",
-    phone: "0426-8889999",
-  },
-];
+function AdminAppointmentRowSkeleton() {
+  return (
+    <View style={styles.skeletonCard}>
+      <Skeleton width="60%" height={16} borderRadius={6} />
+      <Skeleton width="45%" height={12} borderRadius={6} style={{ marginTop: 8 }} />
+      <Skeleton width="80%" height={12} borderRadius={6} style={{ marginTop: 6 }} />
+    </View>
+  );
+}
 
 export default function AdminAppointmentsScreen() {
+  const { appointments, loading, refreshing, loadingMore, error, refresh, loadMore, reload } =
+    useAppointmentsList("manage");
+
   const [searchQuery, setSearchQuery] = useState("");
-  const [filteredAppointments, setFilteredAppointments] = useState(MOCK_ADMIN_APPOINTMENTS);
 
-  const handleSearch = (query: string) => {
-    setSearchQuery(query);
-    if (!query.trim()) {
-      setFilteredAppointments(MOCK_ADMIN_APPOINTMENTS);
-    } else {
-      const lowerQuery = query.toLowerCase();
-      setFilteredAppointments(
-        MOCK_ADMIN_APPOINTMENTS.filter(
-          (apt) =>
-            apt.patientName.toLowerCase().includes(lowerQuery) ||
-            apt.serviceName.toLowerCase().includes(lowerQuery) ||
-            apt.doctorName.toLowerCase().includes(lowerQuery)
-        )
-      );
-    }
-  };
+  const filteredAppointments = useMemo(() => {
+    const list = appointments as AdminAppointmentData[];
+    if (!searchQuery.trim()) return list;
+    const q = searchQuery.toLowerCase();
+    return list.filter(
+      (apt) =>
+        apt.patientName.toLowerCase().includes(q) ||
+        apt.serviceName.toLowerCase().includes(q) ||
+        apt.doctorName.toLowerCase().includes(q),
+    );
+  }, [appointments, searchQuery]);
 
-  const renderItem = ({ item }: { item: AdminAppointmentData }) => (
-    <AdminAppointmentCard appointment={item} />
-  );
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.container} edges={["bottom", "left", "right"]}>
+        <StatusBar style="dark" />
+        <ManageAppointmentsHeader onSearch={setSearchQuery} />
+        <View style={styles.list}>
+          {Array.from({ length: 6 }).map((_, i) => (
+            <AdminAppointmentRowSkeleton key={i} />
+          ))}
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  if (error && appointments.length === 0) {
+    return (
+      <SafeAreaView style={styles.container} edges={["bottom", "left", "right"]}>
+        <StatusBar style="dark" />
+        <ManageAppointmentsHeader onSearch={setSearchQuery} />
+        <ListErrorState message={error} onRetry={reload} />
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container} edges={["bottom", "left", "right"]}>
       <StatusBar style="dark" />
-      <ManageAppointmentsHeader onSearch={handleSearch} />
+      <ManageAppointmentsHeader onSearch={setSearchQuery} />
       <FlatList
         data={filteredAppointments}
-        renderItem={renderItem}
+        renderItem={({ item }) => <AdminAppointmentCard appointment={item} />}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.list}
         showsVerticalScrollIndicator={false}
+        refreshing={refreshing}
+        onRefresh={refresh}
+        onEndReached={loadMore}
+        onEndReachedThreshold={0.3}
         ListHeaderComponent={
           <Text style={styles.countText}>
             {filteredAppointments.length} citas encontradas
           </Text>
+        }
+        ListFooterComponent={
+          loadingMore ? (
+            <ActivityIndicator style={{ paddingVertical: 16 }} color={colors.accent} />
+          ) : null
         }
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
@@ -138,26 +97,15 @@ export default function AdminAppointmentsScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#F8FAFC",
+  container: { flex: 1, backgroundColor: colors.background },
+  list: { padding: 16 },
+  countText: { fontSize: 13, color: colors.textSecondary, marginBottom: 12, fontWeight: "500" },
+  skeletonCard: {
+    backgroundColor: colors.surface,
+    borderRadius: 16,
+    padding: 14,
+    marginBottom: 10,
   },
-  list: {
-    padding: 16,
-  },
-  countText: {
-    fontSize: 13,
-    color: "#64748B",
-    marginBottom: 12,
-    fontWeight: "500",
-  },
-  emptyContainer: {
-    paddingVertical: 40,
-    alignItems: "center",
-  },
-  emptyText: {
-    fontSize: 15,
-    color: "#94A3B8",
-    fontWeight: "500",
-  },
+  emptyContainer: { paddingVertical: 40, alignItems: "center" },
+  emptyText: { fontSize: 15, color: colors.textMuted, fontWeight: "500" },
 });
