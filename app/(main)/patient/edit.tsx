@@ -1,6 +1,6 @@
 import { StatusBar } from "expo-status-bar";
 import React, { useEffect, useRef, useState } from "react";
-import { ActivityIndicator, StyleSheet, TextInput, TouchableOpacity, View, Alert, ScrollView, Modal, Pressable } from "react-native";
+import { ActivityIndicator, StyleSheet, TextInput, TouchableOpacity, View, Alert, ScrollView, Modal, Pressable, Animated } from "react-native";
 import { Text } from "@/components/common/SText"
 import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
@@ -8,7 +8,9 @@ import * as LucideIcons from "lucide-react-native";
 import { useRouter } from "expo-router";
 import { useAuthStore } from "@/shared/zustand/auth/useAuthStore";
 import { patientService, CreatePatientData } from "@/shared/services/patient.service";
+import { getApiErrorMessage } from "@/shared/errors/apiError";
 import { ApiError } from "@/shared/http/http.client";
+import { SkeletonLayout } from "@/components/common/Skeleton";
 
 const BLOOD_TYPES = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
 const GENDER_OPTIONS = ["Masculino", "Femenino", "Otro"];
@@ -99,9 +101,21 @@ export default function PatientEditScreen() {
   const [civilPickerOpen, setCivilPickerOpen] = useState(false);
 
   const [loading, setLoading] = useState(true);
+  const [showSkeleton, setShowSkeleton] = useState(true);
+  const skeletonOpacity = useRef(new Animated.Value(1)).current;
+  const contentOpacity = useRef(new Animated.Value(0)).current;
   const [saving, setSaving] = useState(false);
   const [mode, setMode] = useState<"create" | "update">("create");
   const [form, setForm] = useState<FormField>(emptyForm(user ?? undefined));
+
+  useEffect(() => {
+    if (!loading && showSkeleton) {
+      Animated.sequence([
+        Animated.timing(contentOpacity, { toValue: 1, duration: 200, useNativeDriver: true }),
+        Animated.timing(skeletonOpacity, { toValue: 0, duration: 200, useNativeDriver: true }),
+      ]).start(() => setShowSkeleton(false));
+    }
+  }, [loading]);
 
   const updateField = (key: keyof FormField, val: string) => {
     setForm(prev => ({ ...prev, [key]: val }));
@@ -191,7 +205,7 @@ export default function PatientEditScreen() {
         { text: "OK", onPress: () => router.back() }
       ]);
     } catch (err: any) {
-      Alert.alert("Error", err.message || "No se pudieron guardar los datos");
+      Alert.alert("Error", getApiErrorMessage(err));
     } finally {
       setSaving(false);
     }
@@ -255,23 +269,61 @@ export default function PatientEditScreen() {
     </Modal>
   );
 
-  if (loading) {
+  if (showSkeleton) {
     return (
       <SafeAreaView style={styles.container} edges={["bottom", "left", "right"]}>
         <StatusBar style="light" />
         <LinearGradient colors={['#4CB1B1', 'transparent']} start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }} style={styles.headerGradient} />
+        <SkeletonLayout>
         <View style={styles.header}>
           <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
             <LucideIcons.ChevronLeft size={20} color="#FFFFFF" strokeWidth={2.5} />
           </TouchableOpacity>
           <View style={styles.headerTextWrap}>
-            <Text style={styles.headerTitle}>Mis Datos</Text>
-            <Text style={styles.headerSubtitle}>Cargando...</Text>
+            <SkeletonLayout.Block width={140} height={18} borderRadius={9} />
+            <View style={{ height: 4 }} />
+            <SkeletonLayout.Block width={200} height={12} borderRadius={6} />
           </View>
         </View>
-        <View style={styles.centerLoader}>
-          <ActivityIndicator size="large" color="#4CB1B1" />
-        </View>
+        <Animated.View style={{ flex: 1, opacity: skeletonOpacity }}>
+          <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+            <View style={styles.form}>
+                <SkeletonLayout.Section>
+                  <SkeletonLayout.FieldRow columns={2} style={{ marginBottom: 14 }} />
+                  <SkeletonLayout.Block width={70} height={12} borderRadius={6} style={{ marginBottom: 5 }} />
+                  <SkeletonLayout.FieldRow style={{ marginBottom: 14 }} />
+                  <SkeletonLayout.Block width={120} height={12} borderRadius={6} style={{ marginBottom: 5 }} />
+                  <SkeletonLayout.FieldRow style={{ marginBottom: 14 }} />
+                  <SkeletonLayout.Block width={60} height={12} borderRadius={6} style={{ marginBottom: 5 }} />
+                  <SkeletonLayout.Block height={44} borderRadius={10} style={{ marginBottom: 14 }} />
+                  <SkeletonLayout.FieldRow style={{ marginBottom: 14 }} />
+                  <SkeletonLayout.Block width={140} height={12} borderRadius={6} style={{ marginBottom: 5 }} />
+                  <SkeletonLayout.Block height={44} borderRadius={10} style={{ marginBottom: 14 }} />
+                  <SkeletonLayout.Block width={90} height={12} borderRadius={6} style={{ marginBottom: 5 }} />
+                  <SkeletonLayout.Block height={80} borderRadius={10} />
+                </SkeletonLayout.Section>
+
+                <SkeletonLayout.Section>
+                  <SkeletonLayout.FieldRow style={{ marginBottom: 14 }} />
+                  <SkeletonLayout.FieldRow />
+                </SkeletonLayout.Section>
+
+                <SkeletonLayout.Section>
+                  <SkeletonLayout.FieldRow style={{ marginBottom: 14 }} />
+                  <SkeletonLayout.Block width={80} height={12} borderRadius={6} style={{ marginBottom: 5 }} />
+                  <SkeletonLayout.Block height={80} borderRadius={10} style={{ marginBottom: 14 }} />
+                  <SkeletonLayout.FieldRow style={{ marginBottom: 14 }} />
+                  <SkeletonLayout.FieldRow />
+                </SkeletonLayout.Section>
+
+                <SkeletonLayout.Section>
+                  <SkeletonLayout.FieldRow style={{ marginBottom: 14 }} />
+                  <SkeletonLayout.FieldRow />
+                </SkeletonLayout.Section>
+            </View>
+          </ScrollView>
+        </Animated.View>
+        </SkeletonLayout>
       </SafeAreaView>
     );
   }
@@ -295,6 +347,7 @@ export default function PatientEditScreen() {
         </View>
       </View>
 
+      <Animated.View style={{ flex: 1, opacity: contentOpacity }}>
       <ScrollView ref={scrollRef} style={styles.scrollView} showsVerticalScrollIndicator={false}>
         <View style={styles.form}>
           {/* Información Personal */}
@@ -410,6 +463,7 @@ export default function PatientEditScreen() {
           </TouchableOpacity>
         </View>
       </ScrollView>
+      </Animated.View>
 
       <Modal visible={bloodPickerOpen} transparent animationType="fade" onRequestClose={() => setBloodPickerOpen(false)}>
         <Pressable style={styles.modalOverlay} onPress={() => setBloodPickerOpen(false)}>
@@ -475,7 +529,7 @@ const styles = StyleSheet.create({
 
   centerLoader: { flex: 1, justifyContent: "center", alignItems: "center" },
 
-  section: { marginBottom: 24 },
+  section: { marginBottom: 32 },
   sectionHeader: {
     flexDirection: "row",
     alignItems: "center",

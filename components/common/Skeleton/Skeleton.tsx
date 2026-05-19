@@ -94,10 +94,12 @@ export const ServiceCardSkeleton = () => (
         <Skeleton width="40%" height={12} borderRadius={6} />
       </View>
     </View>
+
     <View style={{ gap: 6, marginBottom: 12 }}>
       <Skeleton width="100%" height={12} borderRadius={6} />
       <Skeleton width="75%" height={12} borderRadius={6} />
     </View>
+
     <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
       <View style={{ flexDirection: "row", gap: 8 }}>
         <Skeleton width={60} height={24} borderRadius={12} />
@@ -105,5 +107,6 @@ export const ServiceCardSkeleton = () => (
       </View>
       <Skeleton width={70} height={18} borderRadius={6} />
     </View>
+    
   </View>
 );

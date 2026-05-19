@@ -1,8 +1,12 @@
 import { Stack } from "expo-router";
+import { useRouteGuard } from "@/shared/permissions/useRouteGuard";
 
 export default function MainLayout() {
+  useRouteGuard();
+
   return (
     <Stack screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="access-denied" />
       <Stack.Screen name="home" />
       <Stack.Screen name="profile" />
       <Stack.Screen name="services" />
