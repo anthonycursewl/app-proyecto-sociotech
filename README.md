@@ -13,7 +13,8 @@ Aplicacion movil multiplataforma para gestion de salud, construida con **Expo** 
 | Navegacion | React Navigation + File-based routing |
 | Animaciones | React Native Reanimated |
 | Iconos | Lucide React Native |
-| Almacenamiento | AsyncStorage |
+| Tokens | expo-secure-store |
+| Permisos | RBAC por strings + guards de ruta |
 
 ## Estructura del Proyecto
 
@@ -111,14 +112,22 @@ npm run android    # Ejecutar en Android
 npm run ios        # Ejecutar en iOS
 npm run web        # Ejecutar en Web
 npm run lint       # ESLint
+npm run typecheck  # Verificación TypeScript
+npm run test       # Tests unitarios (permisos, errores API)
 npm run reset-project  # Resetear proyecto
 ```
 
 ## Configuracion
 
+Copia `.env.example` a `.env` y define:
+
+- `EXPO_PUBLIC_API_URL_DEV` — URL del backend en desarrollo
+- `EXPO_PUBLIC_API_URL_PROD` — URL de producción
+
 - **app.json**: nombre, scheme, iconos, splash screen
 - **tsconfig.json**: TypeScript config
 - **eslint.config.js**: ESLint para Expo
+- **shared/permissions/**: mapa de permisos y guards de ruta
 
 ## Colores
 
@@ -135,8 +144,21 @@ npm run reset-project  # Resetear proyecto
 
 1. Clonar el repositorio
 2. `npm install`
-3. `npm start`
-4. Escanea el codigo QR con Expo Go (iOS/Android) o abre en el navegador
+3. Copiar `.env.example` → `.env` y ajustar la URL del API
+4. `npm start`
+5. Escanea el codigo QR con Expo Go (iOS/Android) o abre en el navegador
+
+## Roadmap de mejoras (por fases)
+
+| Fase | Estado | Contenido |
+|------|--------|-----------|
+| 1 | ✅ | Guards de ruta, logout completo, loading de sesión |
+| 2 | ✅ | Errores API, pantalla access-denied, SkeletonLayout unificado |
+| 3 | ✅ | Tema (`shared/theme`), hook `useServicesList` |
+| 4 | ✅ | Citas con API (`appointment.service`, hooks) |
+| 5 | ✅ | `typecheck`, tests Jest, README y contratos |
+| 6 | ✅ | Lista admin de pacientes (`GET /patients`) |
+| 7+ | ⏳ | Historias, exámenes, reportes, auditoría, doctores (quitar mocks) |
 
 ## Licencia
 
