@@ -1,5 +1,12 @@
 import { HttpClient } from "@/shared/http/http.client";
 
+export interface PatientUserRef {
+  email?: string;
+  firstName?: string;
+  lastName?: string;
+  isActive?: boolean;
+}
+
 export interface PatientResponse {
   id: string;
   userId: string;
@@ -18,6 +25,30 @@ export interface PatientResponse {
   chronicDiseases?: string[];
   createdAt: string;
   updatedAt: string;
+}
+
+/** Item en listado admin GET /patients */
+export interface AdminPatientResponse extends PatientResponse {
+  user?: PatientUserRef;
+  firstName?: string;
+  lastName?: string;
+  email?: string;
+  medicalId?: string;
+  isActive?: boolean;
+  lastVisitAt?: string;
+  lastVisit?: string;
+  totalAppointments?: number;
+}
+
+export interface PaginatedPatientsResponse {
+  data: AdminPatientResponse[];
+  nextCursor: string | null;
+}
+
+export interface PatientsQuery {
+  cursor?: string;
+  limit?: number;
+  search?: string;
 }
 
 export interface CreatePatientData {
@@ -53,6 +84,13 @@ export interface UpdatePatientData {
 }
 
 export const patientService = {
+  getAll: (params?: PatientsQuery) =>
+    HttpClient.get<PaginatedPatientsResponse>(
+      "/patients",
+      params as Record<string, unknown>,
+      { requireAuth: true },
+    ),
+
   getMyProfile: () =>
     HttpClient.get<PatientResponse>("/patients/me", {}, { requireAuth: true }),
 

@@ -1,113 +1,95 @@
+import { ListErrorState } from "@/components/common/ListErrorState";
+import { Skeleton } from "@/components/common/Skeleton";
+import { PatientCard, PatientData } from "@/components/patients/PatientCard";
+import { ManagePatientsHeader } from "@/components/patients/ManagePatientsHeader";
+import { usePatientsList } from "@/shared/hooks/usePatientsList";
+import { colors } from "@/shared/theme/colors";
 import { StatusBar } from "expo-status-bar";
-import React, { useState } from "react";
-import { FlatList, StyleSheet, View } from "react-native";
-import { Text } from "@/components/common/SText"
+import React, { useMemo, useState } from "react";
+import { ActivityIndicator, FlatList, StyleSheet, View } from "react-native";
+import { Text } from "@/components/common/SText";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { ManagePatientsHeader } from "../../components/patients/ManagePatientsHeader";
-import { PatientCard, PatientData } from "../../components/patients/PatientCard";
 
-const MOCK_PATIENTS: PatientData[] = [
-  {
-    id: "1",
-    name: "María García",
-    medicalId: "HM-2024-0142",
-    email: "maria.garcia@email.com",
-    phone: "0414-1234567",
-    status: "active",
-    lastVisit: "05 may",
-    totalAppointments: 12,
-  },
-  {
-    id: "2",
-    name: "Juan Pérez",
-    medicalId: "HM-2024-0089",
-    email: "juan.perez@email.com",
-    phone: "0412-9876543",
-    status: "active",
-    lastVisit: "03 may",
-    totalAppointments: 8,
-  },
-  {
-    id: "3",
-    name: "Laura Hernández",
-    medicalId: "HM-2023-0567",
-    email: "laura.hernandez@email.com",
-    phone: "0414-5551234",
-    status: "active",
-    lastVisit: "01 may",
-    totalAppointments: 15,
-  },
-  {
-    id: "4",
-    name: "Carlos López",
-    medicalId: "HM-2024-0234",
-    email: "carlos.lopez@email.com",
-    phone: "0424-2223333",
-    status: "inactive",
-    lastVisit: "15 abr",
-    totalAppointments: 5,
-  },
-  {
-    id: "5",
-    name: "Ana Martínez",
-    medicalId: "HM-2023-0412",
-    email: "ana.martinez@email.com",
-    phone: "0416-6667777",
-    status: "active",
-    lastVisit: "28 abr",
-    totalAppointments: 20,
-  },
-  {
-    id: "6",
-    name: "Pedro Ramírez",
-    medicalId: "HM-2024-0318",
-    email: "pedro.ramirez@email.com",
-    phone: "0426-8889999",
-    status: "active",
-    lastVisit: "25 abr",
-    totalAppointments: 3,
-  },
-];
+function PatientRowSkeleton() {
+  return (
+    <View style={styles.skeletonCard}>
+      <Skeleton width={44} height={44} borderRadius={22} />
+      <View style={{ flex: 1, marginLeft: 12, gap: 6 }}>
+        <Skeleton width="60%" height={15} borderRadius={6} />
+        <Skeleton width="40%" height={12} borderRadius={6} />
+        <Skeleton width="75%" height={12} borderRadius={6} />
+      </View>
+    </View>
+  );
+}
 
 export default function PatientsScreen() {
+  const { patients, loading, refreshing, loadingMore, error, refresh, loadMore, reload } =
+    usePatientsList();
+
   const [searchQuery, setSearchQuery] = useState("");
-  const [filteredPatients, setFilteredPatients] = useState(MOCK_PATIENTS);
 
-  const handleSearch = (query: string) => {
-    setSearchQuery(query);
-    if (!query.trim()) {
-      setFilteredPatients(MOCK_PATIENTS);
-    } else {
-      const lowerQuery = query.toLowerCase();
-      setFilteredPatients(
-        MOCK_PATIENTS.filter(
-          (patient) =>
-            patient.name.toLowerCase().includes(lowerQuery) ||
-            patient.medicalId.toLowerCase().includes(lowerQuery) ||
-            patient.email.toLowerCase().includes(lowerQuery)
-        )
-      );
-    }
-  };
+  const filteredPatients = useMemo(() => {
+    if (!searchQuery.trim()) return patients;
+    const q = searchQuery.toLowerCase();
+    return patients.filter(
+      (patient) =>
+        patient.name.toLowerCase().includes(q) ||
+        patient.medicalId.toLowerCase().includes(q) ||
+        patient.email.toLowerCase().includes(q),
+    );
+  }, [patients, searchQuery]);
 
-  const renderItem = ({ item }: { item: PatientData }) => (
-    <PatientCard patient={item} />
-  );
+  const renderItem = ({ item }: { item: PatientData }) => <PatientCard patient={item} />;
+
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.container} edges={["bottom", "left", "right"]}>
+        <StatusBar style="dark" />
+        <ManagePatientsHeader onSearch={setSearchQuery} />
+        <View style={styles.list}>
+          {Array.from({ length: 6 }).map((_, i) => (
+            <PatientRowSkeleton key={i} />
+          ))}
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  if (error && patients.length === 0) {
+    return (
+      <SafeAreaView style={styles.container} edges={["bottom", "left", "right"]}>
+        <StatusBar style="dark" />
+        <ManagePatientsHeader onSearch={setSearchQuery} />
+        <ListErrorState message={error} onRetry={reload} />
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container} edges={["bottom", "left", "right"]}>
       <StatusBar style="dark" />
-      <ManagePatientsHeader onSearch={handleSearch} />
+      <ManagePatientsHeader onSearch={setSearchQuery} />
       <FlatList
         data={filteredPatients}
         renderItem={renderItem}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.list}
         showsVerticalScrollIndicator={false}
+        refreshing={refreshing}
+        onRefresh={refresh}
+        onEndReached={loadMore}
+        onEndReachedThreshold={0.3}
         ListHeaderComponent={
           <Text style={styles.countText}>
-            {filteredPatients.length} pacientes encontrados
+            {filteredPatients.length} paciente{filteredPatients.length !== 1 ? "s" : ""}{" "}
+            encontrado{filteredPatients.length !== 1 ? "s" : ""}
           </Text>
+        }
+        ListFooterComponent={
+          loadingMore ? (
+            <ActivityIndicator style={{ paddingVertical: 16 }} color={colors.accent} />
+          ) : null
         }
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
@@ -120,26 +102,17 @@ export default function PatientsScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#F8FAFC",
-  },
-  list: {
-    padding: 16,
-  },
-  countText: {
-    fontSize: 13,
-    color: "#64748B",
-    marginBottom: 12,
-    fontWeight: "500",
-  },
-  emptyContainer: {
-    paddingVertical: 40,
+  container: { flex: 1, backgroundColor: colors.background },
+  list: { padding: 16 },
+  countText: { fontSize: 13, color: colors.textSecondary, marginBottom: 12, fontWeight: "500" },
+  skeletonCard: {
+    flexDirection: "row",
     alignItems: "center",
+    backgroundColor: colors.surface,
+    borderRadius: 16,
+    padding: 14,
+    marginBottom: 10,
   },
-  emptyText: {
-    fontSize: 15,
-    color: "#94A3B8",
-    fontWeight: "500",
-  },
+  emptyContainer: { paddingVertical: 40, alignItems: "center" },
+  emptyText: { fontSize: 15, color: colors.textMuted, fontWeight: "500" },
 });
