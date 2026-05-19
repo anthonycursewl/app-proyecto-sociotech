@@ -1,5 +1,5 @@
-import { useMemo } from "react";
 import { useAuthStore } from "../zustand/auth/useAuthStore";
+import { hasAllPermissions, hasAnyPermission } from "./checkPermission";
 
 export const usePermissions = () => {
     const user = useAuthStore((state) => state.user);
@@ -11,11 +11,13 @@ export const usePermissions = () => {
     };
 
     const canAccessAny = (permissionList: string[]): boolean => {
-        return permissionList.some((p) => permissions.includes(p));
+        if (!user) return false;
+        return hasAnyPermission(permissions, permissionList);
     };
 
     const canAccessAll = (permissionList: string[]): boolean => {
-        return permissionList.every((p) => permissions.includes(p));
+        if (!user) return false;
+        return hasAllPermissions(permissions, permissionList);
     };
 
     return {

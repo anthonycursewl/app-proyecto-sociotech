@@ -1,7 +1,7 @@
-import { useEffect, useState } from "react";
-import { Redirect } from "expo-router";
-import { View } from "react-native";
+import { SessionLoadingScreen } from "@/components/common/SessionLoadingScreen";
 import { useAuthStore } from "@/shared/zustand/auth/useAuthStore";
+import { Redirect } from "expo-router";
+import { useEffect, useState } from "react";
 
 export default function Index() {
   const [isChecking, setIsChecking] = useState(true);
@@ -14,10 +14,10 @@ export default function Index() {
       setAuthenticated(valid);
       setIsChecking(false);
     })();
-  }, []);
+  }, [verifyToken]);
 
   if (isChecking) {
-    return <View style={{ flex: 1, backgroundColor: "#F8FAFC" }} />;
+    return <SessionLoadingScreen />;
   }
 
   return <Redirect href={authenticated ? "/(main)/home" : "/(auth)/login"} />;

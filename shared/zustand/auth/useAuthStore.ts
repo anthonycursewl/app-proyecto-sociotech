@@ -133,7 +133,6 @@ export const useAuthStore = create<AuthState>((set, get) => {
         updateUser: async (data: { firstName: string; lastName: string }): Promise<boolean> => {
             const success = await runAction(async () => {
                 const response = await userService.updateProfile(data);
-                console.log("[updateUser] API response:", JSON.stringify(response, null, 2));
                 if (response) {
                     const current = get().user;
                     const userData = (response as any).user ?? response;
@@ -155,7 +154,10 @@ export const useAuthStore = create<AuthState>((set, get) => {
             HttpClient.clearTokens();
             set({
                 user: null,
+                permissions: [],
                 tokens: { accessToken: "", refreshToken: "" },
+                error: null,
+                loading: false,
             });
         },
     };

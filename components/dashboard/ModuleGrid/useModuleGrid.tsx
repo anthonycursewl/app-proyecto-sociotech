@@ -1,5 +1,7 @@
 import { useRouter, Href } from "expo-router";
 import { useAuthStore } from "@/shared/zustand/auth/useAuthStore";
+import { MODULE_PERMISSIONS } from "@/shared/permissions/permissions.config";
+import { hasAnyPermission } from "@/shared/permissions/checkPermission";
 
 export interface ModuleItem {
   id: string;
@@ -9,24 +11,6 @@ export interface ModuleItem {
   description: string;
   route: Href;
 }
-
-const MODULE_PERMISSIONS: Record<string, string[]> = {
-  services: ["services:read", "services:create", "services:update", "services:delete"],
-  managePatients: ["patients:read"],
-  myPatientData: ["patients:read:own", "patients:create:own", "patients:update:own"],
-  myAppointments: ["appointments:read:own", "appointments:create:own", "appointments:update:own", "appointments:cancel:own"],
-  manageAppointments: ["appointments:manage", "appointments:read", "appointments:create", "appointments:update", "appointments:cancel"],
-  myRecords: ["medical-records:read:own"],
-  records: ["medical-records:read", "medical-records:create", "medical-records:update", "medical-records:sign", "medical-records:delete"],
-  exams: ["exams:read"],
-  reports: ["reports:read", "reports:generate", "reports:export"],
-  audit: ["audit:read"],
-  doctors: ["doctors:read", "doctors:create", "doctors:create:own", "doctors:update", "doctors:delete"],
-  myDoctorProfile: ["doctors:update:own"],
-  schedules: ["schedules:manage", "schedules:create:own"],
-  roles: ["roles:read", "roles:create", "roles:update", "roles:delete"],
-  users: ["users:read", "users:create", "users:update", "users:assign-role", "users:delete"],
-};
 
 export const useModuleGrid = () => {
   const router = useRouter();
@@ -55,7 +39,7 @@ export const useModuleGrid = () => {
   const accessibleModules = modules.filter((module) => {
     const requiredPerms = MODULE_PERMISSIONS[module.id];
     if (!requiredPerms) return false;
-    return requiredPerms.some((perm) => effectivePermissions.includes(perm));
+    return hasAnyPermission(effectivePermissions, requiredPerms);
   });
 
   const handleModulePress = (id: string) => {
