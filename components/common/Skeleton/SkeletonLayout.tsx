@@ -1,5 +1,6 @@
 import React from "react";
 import { View, type ViewStyle } from "react-native";
+import { ShimmerProvider } from "./ShimmerContext";
 import { Skeleton } from "./Skeleton";
 
 type BlockProps = {
@@ -21,10 +22,29 @@ const Circle = ({ size = 40, style }: { size?: number; style?: ViewStyle }) => (
   <Block width={size} height={size} borderRadius={size / 2} style={style} />
 );
 
+const sectionCardStyle: ViewStyle = {
+  backgroundColor: "#FFFFFF",
+  borderRadius: 16,
+  padding: 16,
+  marginBottom: 16,
+  borderWidth: 1,
+  borderColor: "#E2E8F0",
+};
+
 const Section = ({ style, children }: { style?: ViewStyle; children?: React.ReactNode }) => (
-  <View style={[{ marginBottom: 28 }, style]}>
-    <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 16 }}>
-      <Block width={14} height={14} borderRadius={4} />
+  <View style={[sectionCardStyle, style]}>
+    <View
+      style={{
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 10,
+        marginBottom: 16,
+        paddingBottom: 12,
+        borderBottomWidth: 1,
+        borderBottomColor: "#F1F5F9",
+      }}
+    >
+      <Block width={36} height={36} borderRadius={10} />
       <Block width={160} height={16} borderRadius={8} />
     </View>
     {children}
@@ -59,8 +79,15 @@ const FieldRow = ({
   </View>
 );
 
-/** Layout compuesto para formularios (reemplaza ShimmerSkeleton) */
-export const SkeletonLayout = Object.assign(
-  ({ children }: { children: React.ReactNode }) => <>{children}</>,
-  { Block, Line, Circle, Section, FieldRow },
+const LayoutRoot = ({ children }: { children: React.ReactNode }) => (
+  <ShimmerProvider>{children}</ShimmerProvider>
 );
+
+/** Layout compuesto para formularios; shimmer sincronizado en todos los bloques */
+export const SkeletonLayout = Object.assign(LayoutRoot, {
+  Block,
+  Line,
+  Circle,
+  Section,
+  FieldRow,
+});

@@ -3,11 +3,13 @@ import React, { useEffect, useState } from "react";
 import { LayoutChangeEvent, View, type ViewStyle } from "react-native";
 import Animated, {
   Easing,
+  interpolate,
   useAnimatedStyle,
   useSharedValue,
   withRepeat,
   withTiming,
 } from "react-native-reanimated";
+import { useSharedShimmerProgress } from "./ShimmerContext";
 
 interface SkeletonProps {
   width?: number | `${number}%`;
@@ -23,27 +25,28 @@ export const Skeleton = ({
   style,
 }: SkeletonProps) => {
   const [measuredWidth, setMeasuredWidth] = useState(0);
-  const shimmer = useSharedValue(0);
+  const localProgress = useSharedValue(0);
+  const sharedProgress = useSharedShimmerProgress();
 
   useEffect(() => {
-    if (measuredWidth <= 0) return;
-    shimmer.value = withRepeat(
-      withTiming(measuredWidth * 2, {
-        duration: 1500,
-        easing: Easing.bezier(0.4, 0, 0.6, 1),
-      }),
+    if (sharedProgress || measuredWidth <= 0) return;
+    localProgress.value = withRepeat(
+      withTiming(1, { duration: 1200, easing: Easing.linear }),
       -1,
-      false,
+      true,
     );
-  }, [measuredWidth]);
+  }, [measuredWidth, sharedProgress, localProgress]);
 
-  const highlightStyle = useAnimatedStyle(() => ({
-    transform: [{ translateX: shimmer.value - measuredWidth }],
-  }));
+  const highlightStyle = useAnimatedStyle(() => {
+    const progress = sharedProgress ?? localProgress;
+    const travel = measuredWidth * 2;
+    const translateX = interpolate(progress.value, [0, 1], [-measuredWidth, travel - measuredWidth]);
+    return { transform: [{ translateX }] };
+  }, [measuredWidth]);
 
   const onLayout = (e: LayoutChangeEvent) => {
     const w = e.nativeEvent.layout.width;
-    if (w > 0) setMeasuredWidth(w);
+    if (w > 0 && Math.abs(w - measuredWidth) > 0.5) setMeasuredWidth(w);
   };
 
   return (
@@ -55,14 +58,9 @@ export const Skeleton = ({
       ]}
     >
       {measuredWidth > 0 && (
-        <Animated.View
-          style={[
-            { width: measuredWidth, height: "100%" },
-            highlightStyle,
-          ]}
-        >
+        <Animated.View style={[{ width: measuredWidth, height: "100%" }, highlightStyle]}>
           <LinearGradient
-            colors={["transparent", "rgba(255,255,255,0.4)", "transparent"]}
+            colors={["transparent", "rgba(255,255,255,0.45)", "transparent"]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 0 }}
             style={{ flex: 1 }}
@@ -107,6 +105,5 @@ export const ServiceCardSkeleton = () => (
       </View>
       <Skeleton width={70} height={18} borderRadius={6} />
     </View>
-    
   </View>
 );

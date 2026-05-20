@@ -1,29 +1,52 @@
 import { HttpClient } from "@/shared/http/http.client";
 
-export interface UpdateUserProfileData {
-  firstName?: string;
-  lastName?: string;
+export interface AdminUserListItem {
+  id: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  roleId: string;
+  roleName: string;
+  isActive: boolean;
+  createdAt: string;
 }
 
-export interface UserProfileResponse {
-  user: {
-    id: string;
-    email: string;
-    passwordHash: string;
-    roleId: string;
-    firstName: string;
-    lastName: string;
-    isActive: boolean;
-    refreshToken: string | null;
-    refreshTokenExpires: string | null;
-    createdAt: string;
-    updatedAt: string;
-    permissions: string[];
-    roleName: string;
-  };
+export interface AdminUserDetail extends AdminUserListItem {
+  updatedAt: string;
+  permissions: string[];
+}
+
+export interface AdminUsersListResponse {
+  users: AdminUserListItem[];
+  nextCursor: string | null;
+  hasNext: boolean;
+}
+
+export interface AdminUsersListQuery {
+  cursor?: string;
+  limit?: number;
+  isActive?: boolean;
 }
 
 export const userService = {
-  updateProfile: (data: UpdateUserProfileData) =>
-    HttpClient.put<UserProfileResponse>("/users/me/profile", data, { requireAuth: true }),
+  listAdmin: (params?: AdminUsersListQuery) =>
+    HttpClient.get<AdminUsersListResponse>(
+      "/users/admin/list",
+      params as Record<string, unknown>,
+      { requireAuth: true },
+    ),
+
+  toggleActive: (userId: string) =>
+    HttpClient.put<{ user: AdminUserDetail }>(
+      `/users/admin/${userId}/toggle-active`,
+      {},
+      { requireAuth: true },
+    ),
+
+  assignRole: (userId: string, roleId: string) =>
+    HttpClient.put<{ user: AdminUserDetail }>(
+      `/users/admin/${userId}/role`,
+      { roleId },
+      { requireAuth: true },
+    ),
 };

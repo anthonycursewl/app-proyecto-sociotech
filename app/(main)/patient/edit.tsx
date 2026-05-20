@@ -92,6 +92,34 @@ const formatDateInput = (text: string): string => {
   return formatted;
 };
 
+type SectionIcon = React.ComponentType<{
+  size?: number;
+  color?: string;
+  strokeWidth?: number;
+}>;
+
+function FormSection({
+  title,
+  icon: Icon,
+  children,
+}: {
+  title: string;
+  icon: SectionIcon;
+  children: React.ReactNode;
+}) {
+  return (
+    <View style={styles.sectionCard}>
+      <View style={styles.sectionHeader}>
+        <View style={styles.sectionIconWrap}>
+          <Icon size={17} color="#0D9488" strokeWidth={2.5} />
+        </View>
+        <Text style={styles.sectionTitle}>{title}</Text>
+      </View>
+      {children}
+    </View>
+  );
+}
+
 export default function PatientEditScreen() {
   const router = useRouter();
   const user = useAuthStore((state) => state.user);
@@ -110,12 +138,12 @@ export default function PatientEditScreen() {
 
   useEffect(() => {
     if (!loading && showSkeleton) {
-      Animated.sequence([
-        Animated.timing(contentOpacity, { toValue: 1, duration: 200, useNativeDriver: true }),
-        Animated.timing(skeletonOpacity, { toValue: 0, duration: 200, useNativeDriver: true }),
+      Animated.parallel([
+        Animated.timing(contentOpacity, { toValue: 1, duration: 220, useNativeDriver: true }),
+        Animated.timing(skeletonOpacity, { toValue: 0, duration: 220, useNativeDriver: true }),
       ]).start(() => setShowSkeleton(false));
     }
-  }, [loading]);
+  }, [loading, showSkeleton, contentOpacity, skeletonOpacity]);
 
   const updateField = (key: keyof FormField, val: string) => {
     setForm(prev => ({ ...prev, [key]: val }));
@@ -350,12 +378,7 @@ export default function PatientEditScreen() {
       <Animated.View style={{ flex: 1, opacity: contentOpacity }}>
       <ScrollView ref={scrollRef} style={styles.scrollView} showsVerticalScrollIndicator={false}>
         <View style={styles.form}>
-          {/* Información Personal */}
-          <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <LucideIcons.UserCircle size={14} color="#4CB1B1" strokeWidth={2.5} />
-              <Text style={styles.sectionTitle}>Información Personal</Text>
-            </View>
+          <FormSection title="Información Personal" icon={LucideIcons.UserCircle}>
             <View style={styles.row}>
               <View style={{ flex: 1 }}>
                 {renderInput("firstName", "Nombre", <LucideIcons.User size={16} color="#94A3B8" strokeWidth={2} style={styles.fieldIcon} />, "Tu nombre", { autoCapitalize: "words", editable: false })}
@@ -408,24 +431,14 @@ export default function PatientEditScreen() {
             {renderInput("phone", "Teléfono", <LucideIcons.Phone size={16} color="#94A3B8" strokeWidth={2} style={styles.fieldIcon} />, "809-555-1234", { keyboardType: "phone-pad" })}
             {renderInput("email", "Correo electrónico", <LucideIcons.Mail size={16} color="#94A3B8" strokeWidth={2} style={styles.fieldIcon} />, "correo@ejemplo.com", { keyboardType: "email-address", autoCapitalize: "none", editable: false })}
             {renderInput("address", "Dirección", <LucideIcons.MapPin size={16} color="#94A3B8" strokeWidth={2} style={styles.fieldIcon} />, "Calle Principal #42", { multiline: true })}
-          </View>
+          </FormSection>
 
-          {/* Información Adicional */}
-          <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <LucideIcons.Briefcase size={14} color="#4CB1B1" strokeWidth={2.5} />
-              <Text style={styles.sectionTitle}>Información Adicional</Text>
-            </View>
+          <FormSection title="Información Adicional" icon={LucideIcons.Briefcase}>
             {renderInput("occupation", "Ocupación", <LucideIcons.Briefcase size={16} color="#94A3B8" strokeWidth={2} style={styles.fieldIcon} />, "Ingeniero", { autoCapitalize: "sentences" })}
             {renderPicker("Estado Civil", form.civilStatus, "Seleccionar", <LucideIcons.Heart size={16} color="#94A3B8" strokeWidth={2} style={styles.fieldIcon} />, () => setCivilPickerOpen(true))}
-          </View>
+          </FormSection>
 
-          {/* Información Médica */}
-          <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <LucideIcons.HeartPulse size={14} color="#4CB1B1" strokeWidth={2.5} />
-              <Text style={styles.sectionTitle}>Información Médica</Text>
-            </View>
+          <FormSection title="Información Médica" icon={LucideIcons.HeartPulse}>
             <View style={styles.inputWrapper}>
               <Text style={styles.fieldLabel}>Tipo de Sangre</Text>
               <TouchableOpacity
@@ -441,17 +454,12 @@ export default function PatientEditScreen() {
             {renderInput("allergies", "Alergias", <LucideIcons.ShieldAlert size={16} color="#94A3B8" strokeWidth={2} style={styles.fieldIcon} />, "Penicilina, Polen", { multiline: true })}
             {renderInput("currentMedications", "Medicamentos Actuales", <LucideIcons.Pill size={16} color="#94A3B8" strokeWidth={2} style={styles.fieldIcon} />, "Losartán 50mg", { multiline: true })}
             {renderInput("chronicDiseases", "Enfermedades Crónicas", <LucideIcons.Heart size={16} color="#94A3B8" strokeWidth={2} style={styles.fieldIcon} />, "Hipertensión, Asma", { multiline: true })}
-          </View>
+          </FormSection>
 
-          {/* Contacto de Emergencia */}
-          <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <LucideIcons.Shield size={14} color="#4CB1B1" strokeWidth={2.5} />
-              <Text style={styles.sectionTitle}>Contacto de Emergencia</Text>
-            </View>
+          <FormSection title="Contacto de Emergencia" icon={LucideIcons.Shield}>
             {renderInput("emergencyContact", "Nombre del Contacto", <LucideIcons.Contact size={16} color="#94A3B8" strokeWidth={2} style={styles.fieldIcon} />, "María García", { autoCapitalize: "words" })}
             {renderInput("emergencyPhone", "Teléfono", <LucideIcons.PhoneCall size={16} color="#94A3B8" strokeWidth={2} style={styles.fieldIcon} />, "809-555-5678", { keyboardType: "phone-pad" })}
-          </View>
+          </FormSection>
 
           <TouchableOpacity style={[styles.saveButton, saving && { opacity: 0.7 }]} onPress={handleSave} disabled={saving} activeOpacity={0.85}>
             {saving ? (
@@ -525,26 +533,46 @@ const styles = StyleSheet.create({
   },
 
   scrollView: { flex: 1 },
-  form: { paddingHorizontal: 16, paddingTop: 8, paddingBottom: 32 },
+  form: { paddingHorizontal: 16, paddingTop: 12, paddingBottom: 32, gap: 0 },
 
   centerLoader: { flex: 1, justifyContent: "center", alignItems: "center" },
 
-  section: { marginBottom: 32 },
+  sectionCard: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
+    shadowColor: "#0F172A",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
+    elevation: 2,
+  },
   sectionHeader: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
-    marginBottom: 14,
-    paddingBottom: 10,
+    gap: 10,
+    marginBottom: 16,
+    paddingBottom: 12,
     borderBottomWidth: 1,
-    borderBottomColor: "#E8EDF2",
+    borderBottomColor: "#F1F5F9",
+  },
+  sectionIconWrap: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    backgroundColor: "#F0FDFA",
+    alignItems: "center",
+    justifyContent: "center",
   },
   sectionTitle: {
-    fontSize: 14,
+    flex: 1,
+    fontSize: 15,
     fontWeight: "700",
-    color: "#64748B",
-    letterSpacing: -0.2,
-    textTransform: "uppercase",
+    color: "#0F172A",
+    letterSpacing: -0.3,
   },
 
   row: { flexDirection: "row" },
@@ -552,10 +580,10 @@ const styles = StyleSheet.create({
   cedulaRow: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#FFFFFF",
+    backgroundColor: "#F8FAFC",
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: "#E8EDF2",
+    borderColor: "#E2E8F0",
     minHeight: 44,
     paddingRight: 12,
   },
@@ -595,11 +623,11 @@ const styles = StyleSheet.create({
   fieldContainer: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#FFFFFF",
+    backgroundColor: "#F8FAFC",
     borderRadius: 12,
     paddingHorizontal: 12,
     borderWidth: 1,
-    borderColor: "#E8EDF2",
+    borderColor: "#E2E8F0",
     minHeight: 44,
   },
   fieldIcon: { marginRight: 8 },
