@@ -1,12 +1,12 @@
 import { getApiErrorMessage } from "@/shared/errors/apiError";
 import { RoleListItem, roleService } from "@/shared/services/role.service";
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 const PAGE_LIMIT = 20;
 
 export function useRolesList() {
   const [roles, setRoles] = useState<RoleListItem[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const [nextCursor, setNextCursor] = useState<string | null>(null);
@@ -20,36 +20,22 @@ export function useRolesList() {
         cursor,
         limit: PAGE_LIMIT,
       });
-
-      let roleItems: RoleListItem[];
-      let next: string | null = null;
-      let hasMore = false;
-
-      if (Array.isArray(response)) {
-        roleItems = response;
-      } else {
-        roleItems = response.roles ?? [];
-        next = response.nextCursor ?? null;
-        hasMore = response.hasNext ?? false;
-      }
-
-      const assignable = roleItems.filter((r) => !r.isSystem);
-      setRoles((prev) => (cursor ? [...prev, ...assignable] : assignable));
-      setNextCursor(next);
-      setHasNext(hasMore);
+      setRoles((prev) => (cursor ? [...prev, ...response.roles] : response.roles));
+      setNextCursor(response.nextCursor);
+      setHasNext(response.hasNext);
       setError(null);
     } catch (err) {
       setError(getApiErrorMessage(err));
     }
   }, []);
 
-  const load = useCallback(async () => {
-    if (loading) return;
+  useEffect(() => {
     setLoading(true);
-    await fetchRoles();
-    setLoading(false);
-    setInitialized(true);
-  }, [fetchRoles, loading]);
+    fetchRoles().then(() => {
+      setLoading(false);
+      setInitialized(true);
+    });
+  }, [fetchRoles]);
 
   const refresh = useCallback(async () => {
     setRefreshing(true);
@@ -64,12 +50,37 @@ export function useRolesList() {
     setLoadingMore(false);
   }, [hasNext, nextCursor, loadingMore, fetchRoles]);
 
+  const reload = useCallback(async () => {
+    setLoading(true);
+    await fetchRoles();
+    setLoading(false);
+  }, [fetchRoles]);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    await fetchRoles();
+    setLoading(false);
+    setInitialized(true);
+  }, [fetchRoles]);
+
   const reset = useCallback(() => {
     setRoles([]);
     setNextCursor(null);
     setHasNext(false);
     setInitialized(false);
     setError(null);
+  }, []);
+
+  const updateRoleInList = useCallback((updated: RoleListItem) => {
+    setRoles((prev) => prev.map((r) => (r.id === updated.id ? updated : r)));
+  }, []);
+
+  const removeRoleFromList = useCallback((id: string) => {
+    setRoles((prev) => prev.filter((r) => r.id !== id));
+  }, []);
+
+  const addRoleToList = useCallback((newRole: RoleListItem) => {
+    setRoles((prev) => [newRole, ...prev]);
   }, []);
 
   return {
@@ -80,9 +91,13 @@ export function useRolesList() {
     hasNext,
     error,
     initialized,
-    load,
     refresh,
     loadMore,
+    reload,
+    load,
     reset,
+    updateRoleInList,
+    removeRoleFromList,
+    addRoleToList,
   };
 }

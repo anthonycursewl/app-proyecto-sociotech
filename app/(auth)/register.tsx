@@ -1,39 +1,39 @@
+import { Text } from "@/components/common/SText";
 import { useAuthStore } from "@/shared/zustand/auth/useAuthStore";
+import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
+import {
+  Check,
+  ChevronLeft,
+  Eye,
+  EyeOff,
+  HeartPulse,
+  Lock,
+  Mail,
+  User,
+} from "lucide-react-native";
 import React, { useEffect, useState } from "react";
 import {
+  ActivityIndicator,
   Keyboard,
   KeyboardAvoidingView,
   Platform,
   StyleSheet,
+  TextInput,
   TouchableOpacity,
   TouchableWithoutFeedback,
   View,
-  TextInput,
-  ActivityIndicator,
 } from "react-native";
-import { Text } from "@/components/common/SText";
 import Animated, {
+  Easing,
   FadeInUp,
-  useSharedValue,
   useAnimatedStyle,
+  useSharedValue,
   withRepeat,
   withTiming,
-  Easing,
 } from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { LinearGradient } from "expo-linear-gradient";
-import {
-  Mail,
-  Lock,
-  Eye,
-  EyeOff,
-  User,
-  HeartPulse,
-  ChevronLeft,
-  Check,
-} from "lucide-react-native";
 
 const TOTAL_STEPS = 3;
 
@@ -624,9 +624,6 @@ const styles = StyleSheet.create({
     letterSpacing: 0.3,
   },
   form: {
-    borderTopWidth: 2,
-    borderTopColor: "#C8D8D8",
-    borderStyle: "dashed",
     paddingTop: 24,
     paddingHorizontal: 24,
   },

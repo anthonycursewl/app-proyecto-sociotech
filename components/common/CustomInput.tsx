@@ -1,7 +1,7 @@
+import { Text } from "@/components/common/SText";
+import { Eye, EyeOff } from "lucide-react-native";
 import React, { useState } from "react";
 import { StyleSheet, TextInput, TextInputProps, TouchableOpacity, View } from "react-native";
-import { Text } from "@/components/common/SText"
-import { Eye, EyeOff } from "lucide-react-native";
 
 interface CustomInputProps extends TextInputProps {
   label: string;

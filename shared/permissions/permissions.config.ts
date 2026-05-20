@@ -34,7 +34,7 @@ export const MODULE_PERMISSIONS: Record<string, string[]> = {
   doctors: ["doctors:read", "doctors:create", "doctors:create:own", "doctors:update", "doctors:delete"],
   myDoctorProfile: ["doctors:update:own"],
   schedules: ["schedules:manage", "schedules:create:own"],
-  roles: ["roles:read", "roles:create", "roles:update", "roles:delete"],
+  roles: ["roles:read", "roles:create", "roles:update", "roles:delete", "roles:restore", "roles:delete:permanent"],
   users: ["users:read", "users:create", "users:update", "users:assign-role", "users:delete"],
 };
 
