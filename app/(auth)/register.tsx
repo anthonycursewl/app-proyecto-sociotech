@@ -145,12 +145,7 @@ export default function RegisterScreen() {
   return (
     <View style={styles.container}>
       <StatusBar style="dark" />
-      <LinearGradient
-        colors={["#F0FDF9", "#FFFFFF"]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 0, y: 1 }}
-        style={StyleSheet.absoluteFill}
-      />
+      <View style={[StyleSheet.absoluteFill, { backgroundColor: "#F0F2F5" }]} />
 
       <SafeAreaView style={styles.safe}>
         <KeyboardAvoidingView

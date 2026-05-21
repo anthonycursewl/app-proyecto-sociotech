@@ -1,10 +1,5 @@
 import * as SecureStore from 'expo-secure-store';
 
-/**
- * PRO HTTP CLIENT - Custom Implementation (Axios-like robustness)
- * Features: Timeouts, Interceptors, Query Param Serialization, Atomic Auth Refresh
- */
-
 const BASE_URL = __DEV__
     ? process.env.EXPO_PUBLIC_API_URL_DEV
     : process.env.EXPO_PUBLIC_API_URL_PROD;
@@ -33,9 +28,6 @@ export class HttpClient {
     private static isRefreshing = false;
     private static refreshSubscribers: RefreshSubscriber[] = [];
 
-    /**
-     * Serializes query parameters into a string
-     */
     private static serializeParams(params?: Record<string, any>): string {
         if (!params || Object.keys(params).length === 0) return '';
         const searchParams = new URLSearchParams();
@@ -46,7 +38,6 @@ export class HttpClient {
         });
         return `?${searchParams.toString()}`;
     }
-
 
     public static async getAccessToken() { return await SecureStore.getItemAsync('accessToken'); }
     private static async getRefreshToken() { return await SecureStore.getItemAsync('refreshToken'); }
@@ -65,29 +56,29 @@ export class HttpClient {
     }
 
     private static async refreshTokens(): Promise<string> {
-        try {
-            const rt = await this.getRefreshToken();
-            if (!rt) throw new Error('No refresh token available');
+        const rt = await this.getRefreshToken();
+        if (!rt) throw new ApiError(401, 'No refresh token available');
 
-            const res = await fetch(`${BASE_URL}/auth/refresh`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ refreshToken: rt }),
-            });
+        const res = await fetch(`${BASE_URL}/auth/refresh`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ refreshToken: rt }),
+        });
 
-            if (!res.ok) throw new Error('Refresh session failed');
-            const data = await res.json();
-            await this.saveTokens(data.accessToken, data.refreshToken);
-            return data.accessToken;
-        } catch (e) {
-            await this.clearTokens();
-            throw e;
+        if (!res.ok) {
+            const errorData = await res.json().catch(() => ({}));
+            throw new ApiError(res.status, errorData.message || 'Refresh session failed', errorData);
         }
+
+        const data = await res.json();
+        if (!data.accessToken || !data.refreshToken) {
+            throw new ApiError(500, 'Invalid refresh response: missing tokens');
+        }
+
+        await this.saveTokens(data.accessToken, data.refreshToken);
+        return data.accessToken;
     }
 
-    /**
-     * Core Request Engine
-     */
     public static async request<T>(endpoint: string, options: RequestOptions = {}): Promise<T> {
         const {
             params,
@@ -127,7 +118,7 @@ export class HttpClient {
             const token = requireAuth ? await this.getAccessToken() : null;
             let response = await execute(token);
 
-            if (response.status === 401 && requireAuth) {
+            if (response.status === 401 && requireAuth && !endpoint.startsWith('/auth/refresh')) {
                 if (this.isRefreshing) {
                     return new Promise((resolve, reject) => {
                         this.refreshSubscribers.push((newToken, err) => {
@@ -140,14 +131,14 @@ export class HttpClient {
                 this.isRefreshing = true;
                 try {
                     const newToken = await this.refreshTokens();
-                    this.isRefreshing = false;
                     this.notifySubscribers(newToken);
+                    this.isRefreshing = false;
                     response = await execute(newToken);
                 } catch (err) {
+                    this.notifySubscribers(null, err instanceof Error ? err : new Error('Session refresh failed'));
                     this.isRefreshing = false;
-                    const authErr = new Error('Your session has expired. Please log in again.');
-                    this.notifySubscribers(null, authErr);
-                    throw authErr;
+                    await this.clearTokens();
+                    throw new ApiError(401, 'Su sesión ha expirado. Inicie sesión nuevamente.');
                 }
             }
 
@@ -170,6 +161,7 @@ export class HttpClient {
             if (error.name === 'AbortError') {
                 throw new Error(`Request timed out after ${timeout}ms`);
             }
+            if (error instanceof ApiError) throw error;
             console.error(`[HttpClient] Request to ${endpoint} failed:`, error.message);
             throw error;
         }
