@@ -16,11 +16,76 @@ import {
   ScrollView,
   StatusBar,
   StyleSheet,
+  TextStyle,
   TouchableOpacity,
   View,
 } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
+import MaskedView from "@react-native-masked-view/masked-view";
 
 const { height: SCREEN_HEIGHT } = Dimensions.get("window");
+const SHEET_HEIGHT = SCREEN_HEIGHT * 0.55;
+const DRAG_THRESHOLD = 60;
+
+const formatRoleLabel = (name: string) =>
+  name.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+
+const ShimmerText = ({ text, fontSize = 14, fontWeight = "500" }: { text: string; fontSize?: number; fontWeight?: string }) => {
+  const translateX = useRef(new Animated.Value(-300)).current;
+  const [textWidth, setTextWidth] = useState(0);
+
+  useEffect(() => {
+    if (textWidth > 0) {
+      const anim = Animated.loop(
+        Animated.timing(translateX, {
+          toValue: textWidth,
+          duration: 1500,
+          useNativeDriver: true,
+        }),
+      );
+      anim.start();
+      return () => anim.stop();
+    }
+  }, [textWidth]);
+
+  return (
+    <View style={{ flexDirection: "row" }}>
+      <MaskedView
+        style={{ flexDirection: "row" }}
+        maskElement={
+          <Text
+            style={{ fontSize, fontWeight: fontWeight as TextStyle["fontWeight"] }}
+            onLayout={(e) => setTextWidth(e.nativeEvent.layout.width)}
+          >
+            {text}
+          </Text>
+        }
+      >
+        <Text style={[{ fontSize, fontWeight: fontWeight as TextStyle["fontWeight"] }, { opacity: 0 }]}>
+          {text}
+        </Text>
+        <Animated.View
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            bottom: 0,
+            right: 0,
+            width: textWidth * 2,
+            transform: [{ translateX }],
+          }}
+        >
+          <LinearGradient
+            colors={["#94A3B8", "#F1F5F9", "#94A3B8"]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={{ flex: 1 }}
+          />
+        </Animated.View>
+      </MaskedView>
+    </View>
+  );
+};
 
 interface RolePickerModalProps {
   visible: boolean;
@@ -29,12 +94,6 @@ interface RolePickerModalProps {
   onSelectRole: (roleId: string, roleName: string) => void;
   selecting?: boolean;
 }
-
-const formatRoleLabel = (name: string) =>
-  name.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
-
-const SHEET_HEIGHT = SCREEN_HEIGHT * 0.7;
-const DRAG_THRESHOLD = 60;
 
 export const RolePickerModal = ({
   visible,
@@ -226,109 +285,115 @@ export const RolePickerModal = ({
             </Text>
           </View>
 
-          {!initialized || loading ? (
-            <View style={styles.skeletonList}>
-              {[1, 2, 3, 4].map((i) => (
-                <View key={i} style={styles.skeletonRoleRow}>
-                  <Skeleton width={32} height={32} borderRadius={8} />
-                  <View style={styles.skeletonRoleInfo}>
-                    <Skeleton width={100} height={14} borderRadius={6} />
-                    <Skeleton width={160} height={10} borderRadius={4} style={{ marginTop: 6 }} />
+          <View style={styles.contentWrapper}>
+            {!initialized || loading ? (
+              <View style={styles.skeletonList}>
+                {[1, 2, 3, 4].map((i) => (
+                  <View key={i} style={styles.skeletonRoleRow}>
+                    <Skeleton width={32} height={32} borderRadius={8} />
+                    <View style={styles.skeletonRoleInfo}>
+                      <Skeleton width={120} height={15} borderRadius={6} />
+                      <Skeleton width="80%" height={11} borderRadius={4} />
+                    </View>
+                    <Skeleton width={48} height={20} borderRadius={10} />
                   </View>
-                </View>
-              ))}
-            </View>
-          ) : error ? (
-            <View style={styles.errorContainer}>
-              <Text style={styles.errorText}>{error}</Text>
-              <TouchableOpacity style={styles.retryButton} onPress={refresh}>
-                <Text style={styles.retryText}>Reintentar</Text>
-              </TouchableOpacity>
-            </View>
-          ) : (
-            <ScrollView
-              style={styles.list}
-              showsVerticalScrollIndicator={false}
-              onScroll={({ nativeEvent }) => {
-                const { layoutMeasurement, contentOffset, contentSize } = nativeEvent;
-                const isCloseToBottom =
-                  layoutMeasurement.height + contentOffset.y >= contentSize.height - 100;
-                if (isCloseToBottom && hasNext && !loadingMore) {
-                  loadMore();
-                }
-              }}
-              scrollEventThrottle={400}
-            >
-              {roles.map((role) => {
-                const isCurrent = role.id === user.roleId;
-                const isSelected = role.id === selectedRole;
-                const isHighlight = isCurrent || isSelected;
+                ))}
+              </View>
+            ) : error ? (
+              <View style={styles.errorContainer}>
+                <Text style={styles.errorText}>{error}</Text>
+                <TouchableOpacity style={styles.retryButton} onPress={refresh}>
+                  <Text style={styles.retryText}>Reintentar</Text>
+                </TouchableOpacity>
+              </View>
+            ) : (
+              <View style={styles.listContainer}>
+                <ScrollView
+                  style={styles.list}
+                  contentContainerStyle={styles.listContent}
+                  showsVerticalScrollIndicator={false}
+                  onScroll={({ nativeEvent }) => {
+                    const { layoutMeasurement, contentOffset, contentSize } = nativeEvent;
+                    const isCloseToBottom =
+                      layoutMeasurement.height + contentOffset.y >= contentSize.height - 100;
+                    if (isCloseToBottom && hasNext && !loadingMore) {
+                      loadMore();
+                    }
+                  }}
+                  scrollEventThrottle={400}
+                >
+                  {roles.map((role) => {
+                    const isCurrent = role.id === user.roleId;
+                    const isSelected = role.id === selectedRole;
+                    const isHighlight = isCurrent || isSelected;
 
-                return (
-                  <TouchableOpacity
-                    key={role.id}
-                    style={[styles.roleOption, isHighlight && styles.roleOptionHighlight]}
-                    onPress={() => handleSelectRole(role)}
-                    disabled={isCurrent || selecting}
-                    activeOpacity={0.85}
-                  >
-                    <View style={styles.roleIconContainer}>
-                      <LucideIcons.Shield
-                        size={18}
-                        color={isHighlight ? "#0D9488" : "#94A3B8"}
-                        strokeWidth={2}
-                      />
-                    </View>
-                    <View style={styles.roleInfo}>
-                      <Text style={[styles.roleName, isHighlight && styles.roleNameHighlight]}>
-                        {formatRoleLabel(role.name)}
-                      </Text>
-                      {role.description ? (
-                        <Text style={styles.roleDescription} numberOfLines={2}>
-                          {role.description}
-                        </Text>
-                      ) : null}
-                    </View>
-                    {isCurrent ? (
-                      <View style={styles.currentBadge}>
-                        <Text style={styles.currentBadgeText}>Actual</Text>
-                      </View>
-                    ) : isSelected ? (
-                      <LucideIcons.Check size={18} color="#0D9488" strokeWidth={2.5} />
-                    ) : null}
-                  </TouchableOpacity>
-                );
-              })}
+                    return (
+                      <TouchableOpacity
+                        key={role.id}
+                        style={[styles.roleOption, isHighlight && styles.roleOptionHighlight]}
+                        onPress={() => handleSelectRole(role)}
+                        disabled={isCurrent || selecting}
+                        activeOpacity={0.85}
+                      >
+                        <View style={styles.roleIconContainer}>
+                          <LucideIcons.Shield
+                            size={18}
+                            color={isHighlight ? "#0D9488" : "#94A3B8"}
+                            strokeWidth={2}
+                          />
+                        </View>
+                        <View style={styles.roleInfo}>
+                          <Text style={[styles.roleName, isHighlight && styles.roleNameHighlight]}>
+                            {formatRoleLabel(role.name)}
+                          </Text>
+                          {role.description ? (
+                            <Text style={styles.roleDescription} numberOfLines={2}>
+                              {role.description}
+                            </Text>
+                          ) : null}
+                        </View>
+                        {isCurrent ? (
+                          <View style={styles.currentBadge}>
+                            <Text style={styles.currentBadgeText}>Actual</Text>
+                          </View>
+                        ) : isSelected ? (
+                          <LucideIcons.Check size={18} color="#0D9488" strokeWidth={2.5} />
+                        ) : null}
+                      </TouchableOpacity>
+                    );
+                  })}
 
-              {loadingMore && (
-                <View style={styles.loadMoreContainer}>
-                  <ActivityIndicator size="small" color="#94A3B8" />
+                  {loadingMore && (
+                    <View style={styles.loadMoreContainer}>
+                      <ActivityIndicator size="small" color="#94A3B8" />
+                    </View>
+                  )}
+
+                  {roles.length === 0 ? (
+                    <View style={styles.emptyContainer}>
+                      <LucideIcons.ShieldOff size={32} color="#CBD5E1" strokeWidth={1.5} />
+                      <Text style={styles.emptyText}>No hay roles disponibles para asignar</Text>
+                    </View>
+                  ) : null}
+                </ScrollView>
+              </View>
+            )}
+
+            <View style={styles.footer}>
+              {selecting && (
+                <View style={styles.loadingRow}>
+                  <ShimmerText text="Cambiando rol…" fontSize={14} fontWeight="500" />
                 </View>
               )}
-
-              {roles.length === 0 ? (
-                <View style={styles.emptyContainer}>
-                  <LucideIcons.ShieldOff size={32} color="#CBD5E1" strokeWidth={1.5} />
-                  <Text style={styles.emptyText}>No hay roles disponibles para asignar</Text>
-                </View>
-              ) : null}
-            </ScrollView>
-          )}
-
-          {selecting && (
-            <View style={styles.selectingRow}>
-              <ActivityIndicator size="small" color="#0D9488" />
-              <Text style={styles.selectingText}>Actualizando rol…</Text>
+              <TouchableOpacity
+                style={[styles.cancelButton, selecting && styles.cancelButtonDisabled]}
+                onPress={closeAnimation}
+                disabled={selecting || animating}
+              >
+                <Text style={styles.cancelText}>Cancelar</Text>
+              </TouchableOpacity>
             </View>
-          )}
-
-          <TouchableOpacity
-            style={styles.cancelButton}
-            onPress={closeAnimation}
-            disabled={selecting || animating}
-          >
-            <Text style={styles.cancelText}>Cancelar</Text>
-          </TouchableOpacity>
+          </View>
         </Animated.View>
       </Animated.View>
     </Modal>
@@ -348,6 +413,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingBottom: 28,
     height: SHEET_HEIGHT,
+    zIndex: 1,
   },
   dragArea: {
     paddingVertical: 8,
@@ -364,14 +430,14 @@ const styles = StyleSheet.create({
   },
   title: { fontSize: 18, fontWeight: "800", color: "#0F172A", marginBottom: 4 },
   subtitle: { fontSize: 13, color: "#64748B" },
-  skeletonList: { paddingVertical: 8 },
+  skeletonList: { paddingVertical: 8, flex: 1 },
   skeletonRoleRow: {
     flexDirection: "row",
     alignItems: "center",
     gap: 12,
     paddingVertical: 12,
   },
-  skeletonRoleInfo: { flex: 1 },
+  skeletonRoleInfo: { flex: 1, gap: 6 },
   errorContainer: { paddingVertical: 24, alignItems: "center" },
   errorText: { fontSize: 14, color: "#EF4444", textAlign: "center", marginBottom: 12 },
   retryButton: {
@@ -381,7 +447,10 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   retryText: { fontSize: 14, fontWeight: "600", color: "#64748B" },
-  list: { maxHeight: 320 },
+  contentWrapper: { flex: 1 },
+  listContainer: { flex: 1 },
+  list: { flex: 1 },
+  listContent: { paddingBottom: 8 },
   roleOption: {
     flexDirection: "row",
     alignItems: "center",
@@ -419,16 +488,10 @@ const styles = StyleSheet.create({
   emptyContainer: { paddingVertical: 32, alignItems: "center" },
   emptyText: { fontSize: 14, color: "#94A3B8", textAlign: "center", marginTop: 8 },
   loadMoreContainer: { paddingVertical: 12, alignItems: "center" },
-  selectingRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-    marginTop: 12,
-  },
-  selectingText: { fontSize: 13, color: "#0D9488", fontWeight: "500" },
+  footer: { paddingTop: 12, gap: 10 },
+  loadingRow: { alignItems: "center", paddingVertical: 4 },
+  cancelButtonDisabled: { opacity: 0.5 },
   cancelButton: {
-    marginTop: 16,
     paddingVertical: 14,
     alignItems: "center",
     borderRadius: 12,

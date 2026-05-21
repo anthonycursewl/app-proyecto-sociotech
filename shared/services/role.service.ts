@@ -65,6 +65,13 @@ export const roleService = {
       { requireAuth: true },
     ),
 
+  listAllPermissions: () =>
+    HttpClient.get<Permission[]>(
+      "/roles/permissions",
+      undefined,
+      { requireAuth: true },
+    ),
+
   create: (data: CreateRoleData) =>
     HttpClient.post<RoleListItem>(
       "/roles",
@@ -73,7 +80,7 @@ export const roleService = {
     ),
 
   update: (id: string, data: UpdateRoleData) =>
-    HttpClient.put<RoleListItem>(
+    HttpClient.put<RoleDetail>(
       `/roles/${id}`,
       data,
       { requireAuth: true },

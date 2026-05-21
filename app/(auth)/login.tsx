@@ -8,13 +8,12 @@ import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Keyboard,
-  Platform,
   ScrollView,
   StyleSheet,
   TextInput,
   TouchableOpacity,
   TouchableWithoutFeedback,
-  View,
+  View
 } from "react-native";
 import Animated, {
   Easing,
@@ -287,9 +286,6 @@ const styles = StyleSheet.create({
   form: {
     paddingTop: 28,
     paddingHorizontal: 24,
-    borderTopWidth: 2,
-    borderTopColor: "#C8D8D8",
-    borderStyle: "dashed",
   },
   formTitle: {
     fontSize: 20,

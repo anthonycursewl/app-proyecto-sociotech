@@ -32,7 +32,6 @@ export const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "flex-start",
-    marginBottom: 8,
     gap: 8,
   },
   nameSection: {
@@ -48,34 +47,5 @@ export const styles = StyleSheet.create({
     fontSize: 12,
     color: "#64748B",
     fontWeight: "500",
-  },
-  actionsRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    marginTop: 8,
-  },
-  actionButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 10,
-    backgroundColor: "#F8FAFC",
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
-  },
-  actionButtonText: {
-    fontSize: 12,
-    fontWeight: "600",
-    color: "#475569",
-  },
-  deleteButton: {
-    borderColor: "#FEE2E2",
-    backgroundColor: "#FEF2F2",
-  },
-  deleteButtonText: {
-    color: "#EF4444",
   },
 });

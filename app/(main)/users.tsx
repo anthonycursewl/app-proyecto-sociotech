@@ -18,10 +18,25 @@ function UserRowSkeleton() {
   return (
     <View style={styles.skeletonCard}>
       <Skeleton width={48} height={48} borderRadius={24} />
-      <View style={{ flex: 1, marginLeft: 12, gap: 8 }}>
-        <Skeleton width="55%" height={15} borderRadius={6} />
-        <Skeleton width="70%" height={12} borderRadius={6} />
-        <Skeleton width="40%" height={12} borderRadius={6} />
+      <View style={{ flex: 1, marginLeft: 12, gap: 6 }}>
+        <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start" }}>
+          <View style={{ flex: 1, gap: 4 }}>
+            <Skeleton width="55%" height={15} borderRadius={6} />
+            <Skeleton width="70%" height={12} borderRadius={6} />
+          </View>
+          <Skeleton width={52} height={20} borderRadius={10} />
+        </View>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginTop: 6 }}>
+          <Skeleton width={12} height={12} borderRadius={6} />
+          <Skeleton width="30%" height={12} borderRadius={6} />
+        </View>
+        <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: 6 }}>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+            <Skeleton width={44} height={12} borderRadius={6} />
+            <Skeleton width={40} height={24} borderRadius={12} />
+          </View>
+          <Skeleton width={90} height={32} borderRadius={10} />
+        </View>
       </View>
     </View>
   );

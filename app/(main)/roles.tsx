@@ -41,7 +41,6 @@ export default function RolesScreen() {
   const [trashModalVisible, setTrashModalVisible] = useState(false);
   const [selectedRoleId, setSelectedRoleId] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
-  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const {
     roles,
@@ -99,55 +98,16 @@ export default function RolesScreen() {
     }
   };
 
-  const handleDelete = (role: RoleListItem) => {
-    if (role.isSystem) return;
-    Alert.alert(
-      "Eliminar rol",
-      `¿Estás seguro de que quieres mover el rol "${role.name}" a la papelera?`,
-      [
-        { text: "Cancelar", style: "cancel" },
-        {
-          text: "Eliminar",
-          style: "destructive",
-          onPress: async () => {
-            setDeletingId(role.id);
-            try {
-              await roleService.delete(role.id);
-              removeRoleFromList(role.id);
-              Alert.alert("Rol eliminado", `El rol "${role.name}" ha sido movido a la papelera`);
-            } catch (err: any) {
-              const message = err?.data?.message || err?.message || "No se pudo eliminar el rol";
-              Alert.alert("Error", message);
-            } finally {
-              setDeletingId(null);
-            }
-          },
-        },
-      ],
-    );
-  };
-
   const handleViewDetail = (roleId: string) => {
     setSelectedRoleId(roleId);
     setDetailModalVisible(true);
   };
 
-  const handleEdit = (role: RoleListItem) => {
-    Alert.alert(
-      "Editar rol",
-      "La edición de roles solo permite cambiar la descripción. ¿Deseas continuar?",
-      [
-        { text: "Cancelar", style: "cancel" },
-        {
-          text: "Continuar",
-          onPress: () => handleViewDetail(role.id),
-        },
-      ],
-    );
-  };
-
-  const handleUpdateDetail = (updated: RoleDetail) => {
-    updateRoleInList(updated);
+  const handleDeleteFromDetail = (deletedRole: RoleDetail) => {
+    removeRoleFromList(deletedRole.id);
+    setDetailModalVisible(false);
+    setSelectedRoleId(null);
+    Alert.alert("Rol eliminado", `El rol "${deletedRole.name}" ha sido movido a la papelera`);
   };
 
   const handleRestoreFromTrash = (role: RoleListItem) => {
@@ -157,12 +117,7 @@ export default function RolesScreen() {
   const renderItem = ({ item }: { item: RoleListItem }) => (
     <RoleCard
       role={item}
-      canEdit={canUpdate}
-      canDelete={canDelete}
-      deleting={deletingId === item.id}
       onViewDetail={() => handleViewDetail(item.id)}
-      onEdit={() => handleEdit(item)}
-      onDelete={() => handleDelete(item)}
     />
   );
 
@@ -270,8 +225,10 @@ export default function RolesScreen() {
           setDetailModalVisible(false);
           setSelectedRoleId(null);
         }}
-        onUpdate={handleUpdateDetail}
+        onUpdate={updateRoleInList}
+        onDelete={handleDeleteFromDetail}
         canEdit={canUpdate}
+        canDelete={canDelete}
       />
 
       <TrashModal
