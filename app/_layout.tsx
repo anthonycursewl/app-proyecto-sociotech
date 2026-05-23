@@ -1,6 +1,7 @@
 import { useFonts } from "expo-font";
 import { Stack } from "expo-router";
 import { useEffect } from "react";
+import { AppErrorBoundary } from "@/shared/components/AppErrorBoundary";
 
 export default function RootLayout() {
   const [loaded] = useFonts({
@@ -20,8 +21,10 @@ export default function RootLayout() {
   if (!loaded) return null;
 
   return (
-    <Stack screenOptions={{ headerShown: false }}>
-      <Stack.Screen name="index" />
-    </Stack>
+    <AppErrorBoundary>
+      <Stack screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="index" />
+      </Stack>
+    </AppErrorBoundary>
   );
 }
