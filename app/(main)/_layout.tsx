@@ -12,6 +12,8 @@ export default function MainLayout() {
       <Stack.Screen name="services" />
       <Stack.Screen name="patients" />
       <Stack.Screen name="appointments" />
+      <Stack.Screen name="appointments/create" />
+      <Stack.Screen name="appointments/[id]" />
       <Stack.Screen name="records" />
       <Stack.Screen name="exams" />
       <Stack.Screen name="reports" />
@@ -22,6 +24,7 @@ export default function MainLayout() {
       <Stack.Screen name="admin/doctors" />
       <Stack.Screen name="doctors" />
       <Stack.Screen name="doctor/profile" />
+      <Stack.Screen name="doctor/[id]" />
       <Stack.Screen name="doctor/edit-profile" />
       <Stack.Screen name="patient/edit" />
       <Stack.Screen name="schedules" />

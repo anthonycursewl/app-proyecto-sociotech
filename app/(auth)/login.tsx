@@ -7,15 +7,13 @@ import { Eye, EyeOff, HeartPulse, Lock, Mail } from "lucide-react-native";
 import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
-  Keyboard,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
   StyleSheet,
   TextInput,
   TouchableOpacity,
-  TouchableWithoutFeedback,
-  View
+  View,
 } from "react-native";
 import Animated, {
   Easing,
@@ -34,13 +32,14 @@ export default function LoginScreen() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [focused, setFocused] = useState<"email" | "password" | null>(null);
+  const formRef = React.useRef<ScrollView>(null);
   const pulse = useSharedValue(1);
 
   useEffect(() => {
     pulse.value = withRepeat(
       withTiming(1.15, { duration: 1400, easing: Easing.inOut(Easing.sin) }),
       -1,
-      true
+      true,
     );
   }, []);
 
@@ -68,6 +67,12 @@ export default function LoginScreen() {
     if (error) clearError();
   };
 
+  const scrollToPassword = () => {
+    setTimeout(() => {
+      formRef.current?.scrollToEnd({ animated: true });
+    }, 100);
+  };
+
   return (
     <View style={styles.container}>
       <StatusBar style="dark" />
@@ -77,163 +82,166 @@ export default function LoginScreen() {
         <KeyboardAvoidingView
           style={{ flex: 1 }}
           behavior={Platform.OS === "ios" ? "padding" : undefined}
-          keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 0}
+          keyboardVerticalOffset={Platform.OS === "ios" ? 8 : 0}
         >
-          <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-            <ScrollView
-              contentContainerStyle={styles.scrollContent}
-              keyboardShouldPersistTaps="handled"
-              showsVerticalScrollIndicator={false}
-              keyboardDismissMode="on-drag"
+          <ScrollView
+            ScrollView
+            ref={formRef}
+            contentContainerStyle={styles.scrollContent}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+            keyboardDismissMode="interactive"
+          >
+            <Animated.View
+              entering={FadeInUp.duration(600).springify()}
+              style={styles.header}
             >
-              <Animated.View
-                entering={FadeInUp.duration(600).springify()}
-                style={styles.header}
-              >
-                <Animated.View style={[styles.logoGlow, glowStyle]}>
-                  <LinearGradient
-                    colors={["#3A9B9B", "#5DC9C9", "#FFF3D6", "#FFD6D6", "#FFFFFF"]}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 1 }}
-                    style={styles.logoCircle}
-                  >
-                    <HeartPulse size={28} color="#FFFFFF" strokeWidth={2.5} />
-                  </LinearGradient>
-                </Animated.View>
-                <Text style={styles.appName}>Sociotech</Text>
-                <Text style={styles.tagline}>
-                  Gestión inteligente para tu salud
-                </Text>
-              </Animated.View>
-
-              <Animated.View
-                entering={FadeInUp.delay(200).duration(600).springify()}
-                style={styles.form}
-              >
-                <Text style={styles.formTitle}>Acceder</Text>
-                <Text style={styles.formSubtitle}>
-                  Ingresa tus credenciales
-                </Text>
-
-                <View style={styles.inputGroup}>
-                  <Text
-                    style={[
-                      styles.inputLabel,
-                      focused === "email" && styles.inputLabelActive,
-                    ]}
-                  >
-                    Correo electrónico
-                  </Text>
-                  <View
-                    style={[
-                      styles.inputRow,
-                      focused === "email" && styles.inputRowActive,
-                    ]}
-                  >
-                    <Mail
-                      size={18}
-                      color={focused === "email" ? "#4CB1B1" : "#94A3B8"}
-                      strokeWidth={2}
-                    />
-                    <TextInput
-                      style={styles.inputField}
-                      value={email}
-                      onChangeText={handleEmailChange}
-                      placeholder="tu@correo.com"
-                      placeholderTextColor="#C5CDD8"
-                      keyboardType="email-address"
-                      autoCapitalize="none"
-                      autoComplete="email"
-                      onFocus={() => setFocused("email")}
-                      onBlur={() => setFocused(null)}
-                    />
-                  </View>
-                </View>
-
-                <View style={styles.inputGroup}>
-                  <Text
-                    style={[
-                      styles.inputLabel,
-                      focused === "password" && styles.inputLabelActive,
-                    ]}
-                  >
-                    Contraseña
-                  </Text>
-                  <View
-                    style={[
-                      styles.inputRow,
-                      focused === "password" && styles.inputRowActive,
-                    ]}
-                  >
-                    <Lock
-                      size={18}
-                      color={focused === "password" ? "#4CB1B1" : "#94A3B8"}
-                      strokeWidth={2}
-                    />
-                    <TextInput
-                      style={styles.inputField}
-                      value={password}
-                      onChangeText={handlePasswordChange}
-                      placeholder="••••••••"
-                      placeholderTextColor="#C5CDD8"
-                      secureTextEntry={!showPassword}
-                      autoCapitalize="none"
-                      autoComplete="password"
-                      onFocus={() => setFocused("password")}
-                      onBlur={() => setFocused(null)}
-                    />
-                    <TouchableOpacity
-                      onPress={() => setShowPassword(!showPassword)}
-                      activeOpacity={0.7}
-                    >
-                      {showPassword ? (
-                        <EyeOff size={18} color="#94A3B8" strokeWidth={2} />
-                      ) : (
-                        <Eye size={18} color="#94A3B8" strokeWidth={2} />
-                      )}
-                    </TouchableOpacity>
-                  </View>
-                </View>
-
-                <TouchableOpacity style={styles.forgotRow} activeOpacity={0.7}>
-                  <Text style={styles.forgotText}>
-                    ¿Olvidaste tu contraseña?
-                  </Text>
-                </TouchableOpacity>
-
-                {error && (
-                  <View style={styles.errorBox}>
-                    <Text style={styles.errorText}>{error}</Text>
-                  </View>
-                )}
-
-                <TouchableOpacity
-                  style={[styles.button, loading && styles.buttonDisabled]}
-                  onPress={handleLogin}
-                  disabled={loading}
-                  activeOpacity={0.85}
+              <Animated.View style={[styles.logoGlow, glowStyle]}>
+                <LinearGradient
+                  colors={[
+                    "#3A9B9B",
+                    "#5DC9C9",
+                    "#FFF3D6",
+                    "#FFD6D6",
+                    "#FFFFFF",
+                  ]}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={styles.logoCircle}
                 >
-                  {loading ? (
-                    <ActivityIndicator size="small" color="#FFFFFF" />
-                  ) : (
-                    <Text style={styles.buttonText}>Iniciar Sesión</Text>
-                  )}
-                </TouchableOpacity>
+                  <HeartPulse size={28} color="#FFFFFF" strokeWidth={2.5} />
+                </LinearGradient>
+              </Animated.View>
+              <Text style={styles.appName}>Sociotech</Text>
+              <Text style={styles.tagline}>
+                Gestión inteligente para tu salud
+              </Text>
+            </Animated.View>
 
-                <View style={styles.footer}>
-                  <Text style={styles.footerText}>
-                    ¿No tienes cuenta?{" "}
-                  </Text>
+            <Animated.View
+              entering={FadeInUp.delay(200).duration(600).springify()}
+              style={styles.form}
+            >
+              <Text style={styles.formTitle}>Acceder</Text>
+              <Text style={styles.formSubtitle}>Ingresa tus credenciales</Text>
+
+              <View style={styles.inputGroup}>
+                <Text
+                  style={[
+                    styles.inputLabel,
+                    focused === "email" && styles.inputLabelActive,
+                  ]}
+                >
+                  Correo electrónico
+                </Text>
+                <View
+                  style={[
+                    styles.inputRow,
+                    focused === "email" && styles.inputRowActive,
+                  ]}
+                >
+                  <Mail
+                    size={18}
+                    color={focused === "email" ? "#4CB1B1" : "#94A3B8"}
+                    strokeWidth={2}
+                  />
+                  <TextInput
+                    style={styles.inputField}
+                    value={email}
+                    onChangeText={handleEmailChange}
+                    placeholder="tu@correo.com"
+                    placeholderTextColor="#C5CDD8"
+                    keyboardType="email-address"
+                    autoCapitalize="none"
+                    autoComplete="email"
+                    onFocus={() => setFocused("email")}
+                    onBlur={() => setFocused(null)}
+                  />
+                </View>
+              </View>
+
+              <View style={styles.inputGroup}>
+                <Text
+                  style={[
+                    styles.inputLabel,
+                    focused === "password" && styles.inputLabelActive,
+                  ]}
+                >
+                  Contraseña
+                </Text>
+                <View
+                  style={[
+                    styles.inputRow,
+                    focused === "password" && styles.inputRowActive,
+                  ]}
+                >
+                  <Lock
+                    size={18}
+                    color={focused === "password" ? "#4CB1B1" : "#94A3B8"}
+                    strokeWidth={2}
+                  />
+                  <TextInput
+                    style={styles.inputField}
+                    value={password}
+                    onChangeText={handlePasswordChange}
+                    placeholder="••••••••"
+                    placeholderTextColor="#C5CDD8"
+                    secureTextEntry={!showPassword}
+                    autoCapitalize="none"
+                    autoComplete="password"
+                    onFocus={() => {
+                      setFocused("password");
+                      scrollToPassword();
+                    }}
+                    onBlur={() => setFocused(null)}
+                  />
                   <TouchableOpacity
-                    onPress={() => router.push("/(auth)/register")}
+                    onPress={() => setShowPassword(!showPassword)}
                     activeOpacity={0.7}
                   >
-                    <Text style={styles.registerText}>Crear cuenta</Text>
+                    {showPassword ? (
+                      <EyeOff size={18} color="#94A3B8" strokeWidth={2} />
+                    ) : (
+                      <Eye size={18} color="#94A3B8" strokeWidth={2} />
+                    )}
                   </TouchableOpacity>
                 </View>
-              </Animated.View>
-            </ScrollView>
-          </TouchableWithoutFeedback>
+              </View>
+
+              <TouchableOpacity style={styles.forgotRow} activeOpacity={0.7}>
+                <Text style={styles.forgotText}>¿Olvidaste tu contraseña?</Text>
+              </TouchableOpacity>
+
+              {error && (
+                <View style={styles.errorBox}>
+                  <Text style={styles.errorText}>{error}</Text>
+                </View>
+              )}
+
+              <TouchableOpacity
+                style={[styles.button, loading && styles.buttonDisabled]}
+                onPress={handleLogin}
+                disabled={loading}
+                activeOpacity={0.85}
+              >
+                {loading ? (
+                  <ActivityIndicator size="small" color="#FFFFFF" />
+                ) : (
+                  <Text style={styles.buttonText}>Iniciar Sesión</Text>
+                )}
+              </TouchableOpacity>
+
+              <View style={styles.footer}>
+                <Text style={styles.footerText}>¿No tienes cuenta? </Text>
+                <TouchableOpacity
+                  onPress={() => router.push("/(auth)/register")}
+                  activeOpacity={0.7}
+                >
+                  <Text style={styles.registerText}>Crear cuenta</Text>
+                </TouchableOpacity>
+              </View>
+            </Animated.View>
+          </ScrollView>
         </KeyboardAvoidingView>
       </SafeAreaView>
     </View>
