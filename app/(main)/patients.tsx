@@ -3,9 +3,11 @@ import { Skeleton } from "@/components/common/Skeleton";
 import { PatientCard, PatientData } from "@/components/patients/PatientCard";
 import { ManagePatientsHeader } from "@/components/patients/ManagePatientsHeader";
 import { usePatientsList } from "@/shared/hooks/usePatientsList";
+import { patientService, PatientMetrics } from "@/shared/services/patient.service";
 import { colors } from "@/shared/theme/colors";
 import { StatusBar } from "expo-status-bar";
-import React, { useMemo, useState } from "react";
+import { useRouter } from "expo-router";
+import React, { useEffect, useMemo, useState } from "react";
 import { ActivityIndicator, FlatList, StyleSheet, View } from "react-native";
 import { Text } from "@/components/common/SText";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -24,8 +26,14 @@ function PatientRowSkeleton() {
 }
 
 export default function PatientsScreen() {
-  const { patients, loading, refreshing, loadingMore, error, refresh, loadMore, reload } =
+  const router = useRouter();
+  const { patients, loading, refreshing, loadingMore, error, activeFilter, changeFilter, refresh, loadMore, reload } =
     usePatientsList();
+  const [metrics, setMetrics] = useState<PatientMetrics | undefined>(undefined);
+
+  useEffect(() => {
+    patientService.getMetrics().then(setMetrics).catch(() => {});
+  }, []);
 
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -40,13 +48,18 @@ export default function PatientsScreen() {
     );
   }, [patients, searchQuery]);
 
-  const renderItem = ({ item }: { item: PatientData }) => <PatientCard patient={item} />;
+  const renderItem = ({ item }: { item: PatientData }) => (
+    <PatientCard
+      patient={item}
+      onPress={() => router.push(`/patient/${item.id}` as any)}
+    />
+  );
 
   if (loading) {
     return (
       <SafeAreaView style={styles.container} edges={["bottom", "left", "right"]}>
         <StatusBar style="dark" />
-        <ManagePatientsHeader onSearch={setSearchQuery} />
+        <ManagePatientsHeader onSearch={setSearchQuery} metrics={metrics} activeFilter={activeFilter} onFilterChange={changeFilter} />
         <View style={styles.list}>
           {Array.from({ length: 6 }).map((_, i) => (
             <PatientRowSkeleton key={i} />
@@ -60,7 +73,7 @@ export default function PatientsScreen() {
     return (
       <SafeAreaView style={styles.container} edges={["bottom", "left", "right"]}>
         <StatusBar style="dark" />
-        <ManagePatientsHeader onSearch={setSearchQuery} />
+        <ManagePatientsHeader onSearch={setSearchQuery} metrics={metrics} activeFilter={activeFilter} onFilterChange={changeFilter} />
         <ListErrorState message={error} onRetry={reload} />
       </SafeAreaView>
     );
@@ -69,7 +82,7 @@ export default function PatientsScreen() {
   return (
     <SafeAreaView style={styles.container} edges={["bottom", "left", "right"]}>
       <StatusBar style="dark" />
-      <ManagePatientsHeader onSearch={setSearchQuery} />
+      <ManagePatientsHeader onSearch={setSearchQuery} metrics={metrics} activeFilter={activeFilter} onFilterChange={changeFilter} />
       <FlatList
         data={filteredPatients}
         renderItem={renderItem}

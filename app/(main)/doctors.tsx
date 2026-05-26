@@ -1,58 +1,90 @@
+import { ListErrorState } from "@/components/common/ListErrorState";
+import { Skeleton } from "@/components/common/Skeleton";
+import { DoctorCard, DoctorData } from "@/components/doctors/DoctorCard";
+import { ManageDoctorsHeader } from "@/components/doctors/ManageDoctorsHeader";
+import { useDoctorsList } from "@/shared/hooks/useDoctorsList";
+import { doctorService, DoctorMetrics } from "@/shared/services/doctor.service";
+import { colors } from "@/shared/theme/colors";
 import { StatusBar } from "expo-status-bar";
-import React, { useState } from "react";
-import { FlatList, StyleSheet, View } from "react-native";
-import { Text } from "@/components/common/SText"
+import { useRouter } from "expo-router";
+import React, { useEffect, useState } from "react";
+import { ActivityIndicator, FlatList, StyleSheet, View } from "react-native";
+import { Text } from "@/components/common/SText";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { ManageDoctorsHeader } from "../../components/doctors/ManageDoctorsHeader";
-import { DoctorCard, DoctorData } from "../../components/doctors/DoctorCard";
 
-const MOCK_DOCTORS: DoctorData[] = [
-  { id: "1", name: "Dr. Carlos Rodríguez", specialty: "Medicina General", email: "carlos.rodriguez@sociotech.com", phone: "0414-1234567", status: "active", patientsCount: 48, todayAppointments: 12 },
-  { id: "2", name: "Dra. Ana Martínez", specialty: "Cardiología", email: "ana.martinez@sociotech.com", phone: "0412-9876543", status: "active", patientsCount: 35, todayAppointments: 8 },
-  { id: "3", name: "Dr. Roberto Sánchez", specialty: "Pediatría", email: "roberto.sanchez@sociotech.com", phone: "0414-5551234", status: "active", patientsCount: 62, todayAppointments: 15 },
-  { id: "4", name: "Dra. Patricia Rojas", specialty: "Odontología", email: "patricia.rojas@sociotech.com", phone: "0424-2223333", status: "active", patientsCount: 28, todayAppointments: 6 },
-  { id: "5", name: "Dr. Miguel Torres", specialty: "Cirugía General", email: "miguel.torres@sociotech.com", phone: "0416-6667777", status: "inactive", patientsCount: 41, todayAppointments: 0 },
-  { id: "6", name: "Dra. Lucía Fernández", specialty: "Oftalmología", email: "lucia.fernandez@sociotech.com", phone: "0426-8889999", status: "active", patientsCount: 22, todayAppointments: 4 },
-];
+function DoctorRowSkeleton() {
+  return (
+    <View style={styles.skeletonCard}>
+      <Skeleton width={44} height={44} borderRadius={22} />
+      <View style={{ flex: 1, marginLeft: 12, gap: 6 }}>
+        <Skeleton width="60%" height={15} borderRadius={6} />
+        <Skeleton width="40%" height={12} borderRadius={6} />
+        <Skeleton width="75%" height={12} borderRadius={6} />
+      </View>
+    </View>
+  );
+}
 
 export default function DoctorsScreen() {
-  const [searchQuery, setSearchQuery] = useState("");
-  const [filteredDoctors, setFilteredDoctors] = useState(MOCK_DOCTORS);
+  const router = useRouter();
+  const { doctors, loading, refreshing, loadingMore, error, searchQuery, activeFilter, changeSearch, changeFilter, refresh, loadMore, reload } = useDoctorsList();
+  const [metrics, setMetrics] = useState<DoctorMetrics | undefined>(undefined);
 
-  const handleSearch = (query: string) => {
-    setSearchQuery(query);
-    if (!query.trim()) {
-      setFilteredDoctors(MOCK_DOCTORS);
-    } else {
-      const lowerQuery = query.toLowerCase();
-      setFilteredDoctors(
-        MOCK_DOCTORS.filter(
-          (d) =>
-            d.name.toLowerCase().includes(lowerQuery) ||
-            d.specialty.toLowerCase().includes(lowerQuery)
-        )
-      );
-    }
-  };
+  useEffect(() => {
+    doctorService.getMetrics().then(setMetrics).catch(() => {});
+  }, []);
 
   const renderItem = ({ item }: { item: DoctorData }) => (
-    <DoctorCard doctor={item} />
+    <DoctorCard doctor={item} onPress={() => router.push({ pathname: "/doctor/[id]", params: { id: item.id } })} />
   );
+
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.container} edges={["bottom", "left", "right"]}>
+        <StatusBar style="dark" />
+        <ManageDoctorsHeader onSearch={changeSearch} metrics={metrics} activeFilter={activeFilter} onFilterChange={changeFilter} />
+        <View style={styles.list}>
+          {Array.from({ length: 6 }).map((_, i) => (
+            <DoctorRowSkeleton key={i} />
+          ))}
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  if (error && doctors.length === 0) {
+    return (
+      <SafeAreaView style={styles.container} edges={["bottom", "left", "right"]}>
+        <StatusBar style="dark" />
+        <ManageDoctorsHeader onSearch={changeSearch} metrics={metrics} activeFilter={activeFilter} onFilterChange={changeFilter} />
+        <ListErrorState message={error} onRetry={reload} />
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container} edges={["bottom", "left", "right"]}>
       <StatusBar style="dark" />
-      <ManageDoctorsHeader onSearch={handleSearch} />
+      <ManageDoctorsHeader onSearch={changeSearch} metrics={metrics} activeFilter={activeFilter} onFilterChange={changeFilter} />
       <FlatList
-        data={filteredDoctors}
+        data={doctors}
         renderItem={renderItem}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.list}
         showsVerticalScrollIndicator={false}
+        refreshing={refreshing}
+        onRefresh={refresh}
+        onEndReached={loadMore}
+        onEndReachedThreshold={0.3}
         ListHeaderComponent={
           <Text style={styles.countText}>
-            {filteredDoctors.length} doctores encontrados
+            {doctors.length} doctor{doctors.length !== 1 ? "es" : ""} encontrado{doctors.length !== 1 ? "s" : ""}
           </Text>
+        }
+        ListFooterComponent={
+          loadingMore ? (
+            <ActivityIndicator style={{ paddingVertical: 16 }} color={colors.accent} />
+          ) : null
         }
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
@@ -65,9 +97,17 @@ export default function DoctorsScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#F8FAFC" },
+  container: { flex: 1, backgroundColor: colors.background },
   list: { padding: 16 },
-  countText: { fontSize: 13, color: "#64748B", marginBottom: 12, fontWeight: "500" },
+  countText: { fontSize: 13, color: colors.textSecondary, marginBottom: 12, fontWeight: "500" },
+  skeletonCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: colors.surface,
+    borderRadius: 16,
+    padding: 14,
+    marginBottom: 10,
+  },
   emptyContainer: { paddingVertical: 40, alignItems: "center" },
-  emptyText: { fontSize: 15, color: "#94A3B8", fontWeight: "500" },
+  emptyText: { fontSize: 15, color: colors.textMuted, fontWeight: "500" },
 });

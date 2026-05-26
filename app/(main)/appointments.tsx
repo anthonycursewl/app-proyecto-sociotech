@@ -1,15 +1,25 @@
 import { AppointmentCard, AppointmentData } from "@/components/appointments/AppointmentCard";
 import { AppointmentsHeader } from "@/components/appointments/AppointmentsHeader";
+import { FilterChips } from "@/components/common/FilterChips";
 import { ListErrorState } from "@/components/common/ListErrorState";
 import { Skeleton } from "@/components/common/Skeleton";
 import { useAppointmentsList } from "@/shared/hooks/useAppointmentsList";
+import { AppointmentFilter } from "@/shared/services/appointment.service";
 import { colors } from "@/shared/theme/colors";
 import { useAuthStore } from "@/shared/zustand/auth/useAuthStore";
 import { StatusBar } from "expo-status-bar";
-import React, { useMemo, useState } from "react";
-import { ActivityIndicator, FlatList, StyleSheet, View } from "react-native";
+import { useRouter } from "expo-router";
+import React, { useCallback, useMemo, useState } from "react";
+import { FlatList, StyleSheet, View } from "react-native";
 import { Text } from "@/components/common/SText";
 import { SafeAreaView } from "react-native-safe-area-context";
+
+const FILTER_OPTIONS: { value: AppointmentFilter; label: string }[] = [
+  { value: "upcoming", label: "Próximas" },
+  { value: "pending", label: "Pendientes" },
+  { value: "all", label: "Todas" },
+  { value: "history", label: "Historial" },
+];
 
 function AppointmentRowSkeleton() {
   return (
@@ -22,11 +32,19 @@ function AppointmentRowSkeleton() {
 }
 
 export default function PatientAppointmentsScreen() {
+  const router = useRouter();
   const user = useAuthStore((state) => state.user);
-  const { appointments, loading, refreshing, loadingMore, error, refresh, loadMore, reload } =
-    useAppointmentsList("own");
+  const { appointments, loading, refreshing, error, filter, setFilter, refresh, reload } =
+    useAppointmentsList("own", "upcoming");
 
   const [searchQuery, setSearchQuery] = useState("");
+
+  const handleAppointmentPress = useCallback(
+    (id: string) => {
+      router.push({ pathname: "/appointments/[id]", params: { id } });
+    },
+    [router],
+  );
 
   const filteredAppointments = useMemo(() => {
     if (!searchQuery.trim()) return appointments as AppointmentData[];
@@ -37,10 +55,6 @@ export default function PatientAppointmentsScreen() {
         apt.doctorName.toLowerCase().includes(q),
     );
   }, [appointments, searchQuery]);
-
-  const upcomingAppointments = filteredAppointments.filter(
-    (apt) => apt.status === "confirmed" || apt.status === "pending",
-  );
 
   const userName = user ? `${user.firstName} ${user.lastName}` : "Paciente";
 
@@ -71,32 +85,38 @@ export default function PatientAppointmentsScreen() {
   return (
     <SafeAreaView style={styles.container} edges={["bottom", "left", "right"]}>
       <StatusBar style="dark" />
-      <AppointmentsHeader title="Mis Citas" onSearch={setSearchQuery} />
+      <AppointmentsHeader
+        title="Mis Citas"
+        onSearch={setSearchQuery}
+        count={`${appointments.length} citas`}
+      >
+        <FilterChips options={FILTER_OPTIONS} value={filter} onChange={setFilter} />
+      </AppointmentsHeader>
       <FlatList
         data={filteredAppointments}
-        renderItem={({ item }) => <AppointmentCard appointment={item} />}
+        renderItem={({ item }) => (
+          <AppointmentCard
+            appointment={item}
+            onPress={() => handleAppointmentPress(item.id)}
+          />
+        )}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.list}
         showsVerticalScrollIndicator={false}
         refreshing={refreshing}
         onRefresh={refresh}
-        onEndReached={loadMore}
-        onEndReachedThreshold={0.3}
         ListHeaderComponent={
-          <View style={styles.headerSection}>
-            <Text style={styles.greetingText}>Hola, {userName.split(" ")[0]}</Text>
-            <Text style={styles.countText}>{upcomingAppointments.length} próximas citas</Text>
-          </View>
-        }
-        ListFooterComponent={
-          loadingMore ? (
-            <ActivityIndicator style={{ paddingVertical: 16 }} color={colors.accent} />
-          ) : null
+          <Text style={styles.greetingText}>Hola, {userName.split(" ")[0]}</Text>
         }
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
-            <Text style={styles.emptyText}>No tienes citas programadas</Text>
-            <Text style={styles.emptySubtext}>Contacta a tu médico para agendar una cita</Text>
+            <Text style={styles.emptyText}>No tienes citas</Text>
+            <Text style={styles.emptySubtext}>
+              {filter === "upcoming" && "No tienes citas próximas en los siguientes 7 días"}
+              {filter === "pending" && "No tienes citas pendientes de confirmar"}
+              {filter === "history" && "No tienes citas pasadas en tu historial"}
+              {filter === "all" && "Contacta a tu médico para agendar una cita"}
+            </Text>
           </View>
         }
       />
@@ -107,9 +127,7 @@ export default function PatientAppointmentsScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
   list: { padding: 16 },
-  headerSection: { marginBottom: 16 },
-  greetingText: { fontSize: 18, fontWeight: "600", color: colors.textPrimary, marginBottom: 4 },
-  countText: { fontSize: 13, color: colors.textSecondary, fontWeight: "500" },
+  greetingText: { fontSize: 18, fontWeight: "600", color: colors.textPrimary, marginBottom: 12 },
   skeletonCard: {
     backgroundColor: colors.surface,
     borderRadius: 16,

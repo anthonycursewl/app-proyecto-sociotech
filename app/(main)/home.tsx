@@ -6,10 +6,11 @@ import { Alert, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Header } from "../../components/dashboard/Header/Header";
 import { ModuleGrid } from "../../components/dashboard/ModuleGrid/ModuleGrid";
+import { FloatingActionButton } from "../../components/common/FloatingActionButton";
 
 export default function HomeScreen() {
   const router = useRouter();
-  const { verifyToken, user, logout } = useAuthStore()
+  const { verifyToken, user, logout, permissions } = useAuthStore();
 
   useEffect(() => {
     const verify = async () => {
@@ -21,6 +22,10 @@ export default function HomeScreen() {
 
     verify();
   }, []);
+
+  const canCreateAppointment = permissions.some(
+    (p) => p === "appointments:create:own" || p === "appointments:create",
+  );
 
   const handleLogout = () => {
     Alert.alert('¿Seguro que quieres cerrar sesión?', '', [
@@ -42,7 +47,7 @@ export default function HomeScreen() {
   const userName = user
     ? `${user.firstName ?? ""} ${user.lastName ?? ""}`.trim() || "Usuario"
     : "Cargando...";
-  const role = user?.role
+  const role = user?.role;
 
   return (
     <SafeAreaView style={styles.container} edges={["bottom", "left", "right"]}>
@@ -56,6 +61,9 @@ export default function HomeScreen() {
       <View style={styles.content}>
         <ModuleGrid />
       </View>
+      {canCreateAppointment && (
+        <FloatingActionButton onPress={() => router.push({ pathname: "/appointments/create" })} />
+      )}
     </SafeAreaView>
   );
 }
