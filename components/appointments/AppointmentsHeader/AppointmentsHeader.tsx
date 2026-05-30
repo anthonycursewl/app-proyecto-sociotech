@@ -10,9 +10,11 @@ interface AppointmentsHeaderProps {
   title?: string;
   onSearch?: (query: string) => void;
   onFilterPress?: () => void;
+  count?: string;
+  children?: React.ReactNode;
 }
 
-export const AppointmentsHeader = ({ title = "Citas", onSearch, onFilterPress }: AppointmentsHeaderProps) => {
+export const AppointmentsHeader = ({ title = "Citas", onSearch, onFilterPress, count, children }: AppointmentsHeaderProps) => {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const [searchQuery, setSearchQuery] = useState("");
@@ -54,20 +56,10 @@ export const AppointmentsHeader = ({ title = "Citas", onSearch, onFilterPress }:
 
         <View style={styles.bottomRow}>
           <Text style={styles.title}>{title}</Text>
-          <Text style={styles.count}>3 próximas</Text>
+          {count && <Text style={styles.count}>{count}</Text>}
         </View>
 
-        <View style={styles.filterRow}>
-          <TouchableOpacity style={styles.filterChipActive}>
-            <Text style={styles.filterChipTextActive}>Próximas</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.filterChip}>
-            <Text style={styles.filterChipText}>Pendientes</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.filterChip}>
-            <Text style={styles.filterChipText}>Historial</Text>
-          </TouchableOpacity>
-        </View>
+        {children && <View style={styles.childrenContainer}>{children}</View>}
       </View>
     </View>
   );
@@ -82,12 +74,12 @@ const styles = StyleSheet.create({
     top: 0,
     left: 0,
     right: 0,
-    height: 200,
+    bottom: 0,
   },
   container: {
     position: "relative",
-    paddingHorizontal: 16,
-    paddingBottom: 16,
+    paddingHorizontal: 0,
+    paddingBottom: 12,
   },
   topRow: {
     flexDirection: "row",
@@ -146,7 +138,11 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     marginTop: 14,
-    paddingHorizontal: 4,
+    paddingHorizontal: 20,
+    marginBottom: 12,
+  },
+  childrenContainer: {
+    paddingHorizontal: 0,
   },
   title: {
     fontSize: 22,
@@ -158,38 +154,5 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: "#64748B",
     fontWeight: "500",
-  },
-  filterRow: {
-    flexDirection: "row",
-    gap: 8,
-    marginTop: 14,
-    paddingHorizontal: 4,
-  },
-  filterChip: {
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-    borderRadius: 20,
-    backgroundColor: "#FFFFFF",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 1,
-  },
-  filterChipActive: {
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-    borderRadius: 20,
-    backgroundColor: "#4CB1B1",
-  },
-  filterChipText: {
-    fontSize: 13,
-    color: "#64748B",
-    fontWeight: "500",
-  },
-  filterChipTextActive: {
-    fontSize: 13,
-    color: "#FFFFFF",
-    fontWeight: "600",
   },
 });

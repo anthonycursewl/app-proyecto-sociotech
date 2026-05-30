@@ -1,20 +1,23 @@
-import * as LucideIcons from "lucide-react-native";
 import React from "react";
 import { TouchableOpacity, View } from "react-native";
-import { Text } from "@/components/common/SText"
-import { Tag } from "../../common/Tag";
+import { Text } from "@/components/common/SText";
 import { styles } from "./AppointmentCard.styles";
 
 export interface AppointmentData {
   id: string;
   patientName: string;
-  serviceName: string;
   doctorName: string;
+  doctorSpecialty: string | null;
+  doctorPhone: string | null;
+  serviceName: string;
+  serviceDescription: string | null;
+  servicePrice: number | null;
   date: string;
   time: string;
   durationMin: number;
+  reason: string;
+  notes: string | null;
   status: "pending" | "confirmed" | "completed" | "cancelled";
-  location?: string;
 }
 
 interface AppointmentCardProps {
@@ -22,61 +25,96 @@ interface AppointmentCardProps {
   onPress?: () => void;
 }
 
+const STATUS_LABEL: Record<AppointmentData["status"], string> = {
+  pending: "Pendiente",
+  confirmed: "Confirmada",
+  completed: "Completada",
+  cancelled: "Cancelada",
+};
+
+const formatLongDate = (dateStr: string) => {
+  if (!dateStr || dateStr === "—") return { day: "—", month: "", weekday: "" };
+  const date = new Date(`${dateStr}T00:00:00`);
+  if (Number.isNaN(date.getTime())) {
+    return { day: dateStr, month: "", weekday: "" };
+  }
+  return {
+    day: date.toLocaleDateString("es-ES", { day: "numeric" }),
+    month: date.toLocaleDateString("es-ES", { month: "short" }).replace(".", ""),
+    weekday: date.toLocaleDateString("es-ES", { weekday: "short" }).replace(".", ""),
+  };
+};
+
+const formatPrice = (price: number | null) => {
+  if (price === null || price === undefined) return null;
+  return `$${price.toLocaleString("es-ES")}`;
+};
+
 export const AppointmentCard = ({ appointment, onPress }: AppointmentCardProps) => {
-  const statusConfig = {
-    pending: { variant: "warning" as const, label: "Pendiente" },
-    confirmed: { variant: "primary" as const, label: "Confirmada" },
-    completed: { variant: "success" as const, label: "Completada" },
-    cancelled: { variant: "default" as const, label: "Cancelada" },
-  };
-
-  const { variant, label } = statusConfig[appointment.status];
-
-  const formatDate = (dateStr: string) => {
-    const date = new Date(dateStr);
-    return date.toLocaleDateString("es-ES", {
-      weekday: "short",
-      day: "numeric",
-      month: "short",
-    });
-  };
+  const date = formatLongDate(appointment.date);
+  const priceLabel = formatPrice(appointment.servicePrice);
+  const isCancelled = appointment.status === "cancelled";
 
   return (
     <TouchableOpacity
-      activeOpacity={0.85}
-      style={styles.container}
+      activeOpacity={0.7}
+      style={[styles.container, isCancelled && styles.containerCancelled]}
       onPress={onPress}
     >
-      <View style={styles.header}>
-        <View style={styles.timeContainer}>
-          <Text style={styles.time}>{appointment.time}</Text>
-          <Text style={styles.duration}>{appointment.durationMin}min</Text>
+      <View style={styles.headerRow}>
+        <View style={styles.dateBlock}>
+          <Text style={styles.dateWeekday}>{date.weekday}</Text>
+          <Text style={styles.dateDay}>{date.day}</Text>
+          <Text style={styles.dateMonth}>{date.month}</Text>
         </View>
-        <View style={[styles.statusBadge, { backgroundColor: variant === "warning" ? "#FEF3C7" : variant === "primary" ? "#E0F2F1" : variant === "success" ? "#DCFCE7" : "#F1F5F9" }]}>
-          <Text style={[styles.statusText, { color: variant === "warning" ? "#D97706" : variant === "primary" ? "#0D9488" : variant === "success" ? "#22C55E" : "#64748B" }]}>{label}</Text>
-        </View>
-      </View>
 
-      <View style={styles.content}>
-        <Text style={styles.serviceName} numberOfLines={1}>{appointment.serviceName}</Text>
-        <View style={styles.detailRow}>
-          <LucideIcons.User size={14} color="#64748B" strokeWidth={2} />
-          <Text style={styles.detailText}>{appointment.doctorName}</Text>
+        <View style={styles.headerMain}>
+          <View style={styles.timeRow}>
+            <Text style={styles.time}>{appointment.time}</Text>
+            <Text style={styles.duration}>{appointment.durationMin} min</Text>
+          </View>
+          <Text style={styles.statusLabel}>{STATUS_LABEL[appointment.status]}</Text>
         </View>
-        <View style={styles.detailRow}>
-          <LucideIcons.Calendar size={14} color="#64748B" strokeWidth={2} />
-          <Text style={styles.detailText}>{formatDate(appointment.date)}</Text>
-        </View>
-        {appointment.location && (
-          <View style={styles.detailRow}>
-            <LucideIcons.MapPin size={14} color="#64748B" strokeWidth={2} />
-            <Text style={styles.detailText}>{appointment.location}</Text>
+
+        {priceLabel && (
+          <View style={styles.priceBlock}>
+            <Text style={styles.priceLabel}>Total</Text>
+            <Text style={styles.price}>{priceLabel}</Text>
           </View>
         )}
       </View>
 
-      <View style={styles.footer}>
-        <Tag label={appointment.serviceName} variant="default" />
+      <View style={styles.divider} />
+
+      <View style={styles.section}>
+        <Text style={styles.sectionLabel}>Servicio</Text>
+        <Text style={styles.serviceName} numberOfLines={2}>
+          {appointment.serviceName}
+        </Text>
+      </View>
+
+      <View style={styles.section}>
+        <Text style={styles.sectionLabel}>Profesional</Text>
+        <Text style={styles.metaName} numberOfLines={1}>
+          {appointment.doctorName}
+        </Text>
+        {appointment.doctorSpecialty && (
+          <Text style={styles.metaSubtext} numberOfLines={1}>
+            {appointment.doctorSpecialty}
+          </Text>
+        )}
+      </View>
+
+      <View style={styles.section}>
+        <Text style={styles.sectionLabel}>Motivo de consulta</Text>
+        <Text style={styles.reasonText} numberOfLines={3}>
+          {appointment.reason}
+        </Text>
+        {appointment.notes && (
+          <Text style={styles.notesText} numberOfLines={3}>
+            {appointment.notes}
+          </Text>
+        )}
       </View>
     </TouchableOpacity>
   );
