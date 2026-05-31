@@ -1,11 +1,13 @@
-import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import * as LucideIcons from "lucide-react-native";
 import React from "react";
 import { TouchableOpacity, View } from "react-native";
 import { Text } from "@/components/common/SText"
+import { NoiseGradient } from "@/components/common/NoiseGradient";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { styles } from "./Header.styles";
+
+const noiseTexture = require("../../../assets/images/noise.png");
 
 interface HeaderProps {
   userName: string;
@@ -40,11 +42,15 @@ export const Header = ({ userName, onLogout, onNotifications, role }: HeaderProp
   };
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top + 20 }]}>
-      <LinearGradient
-        colors={["rgba(76, 177, 177, 0.15)", "transparent"]}
-        style={[styles.gradient, { height: 120 + insets.top }]}
-      />
+    <NoiseGradient
+      colors={["#0D9488", "#14B8A6", "rgba(20, 184, 166, 0.6)", "transparent"]}
+      locations={[0, 0.35, 0.65, 1]}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 0, y: 1 }}
+      noiseSource={noiseTexture}
+      noiseOpacity={0.18}
+      style={[styles.container, { paddingTop: insets.top + 20 }]}
+    >
       <View style={styles.userInfo}>
         <TouchableOpacity onPress={handleProfilePress}>
           <Text style={styles.userName}>{userName}</Text>
@@ -66,6 +72,6 @@ export const Header = ({ userName, onLogout, onNotifications, role }: HeaderProp
           <LucideIcons.LogOut size={18} color="#EF4444" strokeWidth={2.5} />
         </TouchableOpacity>
       </View>
-    </View>
+    </NoiseGradient>
   );
 };

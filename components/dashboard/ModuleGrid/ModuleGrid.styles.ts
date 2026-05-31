@@ -5,42 +5,59 @@ export const styles = StyleSheet.create({
     flex: 1,
   },
   content: {
-    padding: 20,
+    paddingHorizontal: 20,
+    paddingTop: 8,
     paddingBottom: 40,
   },
-  sectionHeader: {
+
+  categorySection: {
+    marginBottom: 8,
+  },
+  categoryHeader: {
     flexDirection: "row",
-    justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 20,
-    marginTop: 10,
+    marginTop: 18,
+    marginBottom: 12,
+    gap: 8,
   },
-  sectionTitle: {
-    fontSize: 22,
+  categoryIconWrap: {
+    width: 26,
+    height: 26,
+    borderRadius: 8,
+    backgroundColor: "#F0FDFA",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  categoryTitle: {
+    fontSize: 12,
     fontWeight: "800",
-    color: "#0F172A",
-    letterSpacing: -0.5,
+    color: "#475569",
+    letterSpacing: 0.8,
+    textTransform: "uppercase",
   },
-  searchActions: {
-    flexDirection: "row",
-    gap: 12,
+  categoryDivider: {
+    flex: 1,
+    height: 1,
+    backgroundColor: "#E2E8F0",
+    marginLeft: 4,
   },
-  actionCircle: {
-      width: 40,
-      height: 40,
-      borderRadius: 20,
-      backgroundColor: "#FFFFFF",
-      justifyContent: "center",
-      alignItems: "center",
-      shadowColor: "#000",
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.05,
-      shadowRadius: 5,
-      elevation: 2,
-  },
+
   grid: {
     flexDirection: "row",
     flexWrap: "wrap",
     justifyContent: "space-between",
+    rowGap: 12,
+  },
+
+  emptyContainer: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 40,
+  },
+  emptyText: {
+    fontSize: 14,
+    color: "#94A3B8",
+    fontWeight: "500",
   },
 });

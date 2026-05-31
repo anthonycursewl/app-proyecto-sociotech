@@ -98,11 +98,13 @@ export const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 4,
+    flexShrink: 1,
   },
   contactText: {
     fontSize: 11,
     color: "#94A3B8",
     fontWeight: "500",
+    flexShrink: 1,
   },
   chevron: {
     marginLeft: 8,

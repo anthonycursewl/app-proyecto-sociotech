@@ -5,13 +5,17 @@ import { Text } from "@/components/common/SText"
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { DoctorMetrics } from "@/shared/services/doctor.service";
 
 interface ManageDoctorsHeaderProps {
   title?: string;
   onSearch?: (query: string) => void;
+  metrics?: DoctorMetrics;
+  activeFilter?: boolean | undefined;
+  onFilterChange?: (filter: boolean | undefined) => void;
 }
 
-export const ManageDoctorsHeader = ({ title = "Doctores", onSearch }: ManageDoctorsHeaderProps) => {
+export const ManageDoctorsHeader = ({ title = "Doctores", onSearch, metrics, activeFilter, onFilterChange }: ManageDoctorsHeaderProps) => {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const [searchQuery, setSearchQuery] = useState("");
@@ -47,43 +51,43 @@ export const ManageDoctorsHeader = ({ title = "Doctores", onSearch }: ManageDoct
           </View>
 
           <TouchableOpacity style={styles.actionButton}>
-            <LucideIcons.UserPlus size={20} color="#64748B" strokeWidth={2} />
+            <LucideIcons.UserPlus size={20} color="#FFFFFF" strokeWidth={2} />
           </TouchableOpacity>
         </View>
 
         <View style={styles.bottomRow}>
           <Text style={styles.title}>{title}</Text>
-          <Text style={styles.count}>8 doctores</Text>
+          <Text style={styles.count}>{metrics ? `${metrics.totalActive + metrics.totalInactive} doctores` : ""}</Text>
         </View>
 
         <View style={styles.filterRow}>
-          <TouchableOpacity style={styles.filterChipActive}>
-            <LucideIcons.List size={14} color="#FFFFFF" strokeWidth={2} />
-            <Text style={styles.filterChipTextActive}>Todos</Text>
+          <TouchableOpacity style={activeFilter === undefined ? styles.filterChipActive : styles.filterChip} onPress={() => onFilterChange?.(undefined)} activeOpacity={0.7}>
+            <LucideIcons.List size={14} color={activeFilter === undefined ? "#FFFFFF" : "#64748B"} strokeWidth={2} />
+            <Text style={activeFilter === undefined ? styles.filterChipTextActive : styles.filterChipText}>Todos</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.filterChip}>
-            <LucideIcons.UserCheck size={14} color="#64748B" strokeWidth={2} />
-            <Text style={styles.filterChipText}>Activos</Text>
+          <TouchableOpacity style={activeFilter === true ? styles.filterChipActive : styles.filterChip} onPress={() => onFilterChange?.(true)} activeOpacity={0.7}>
+            <LucideIcons.UserCheck size={14} color={activeFilter === true ? "#FFFFFF" : "#64748B"} strokeWidth={2} />
+            <Text style={activeFilter === true ? styles.filterChipTextActive : styles.filterChipText}>Activos</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.filterChip}>
-            <LucideIcons.UserX size={14} color="#64748B" strokeWidth={2} />
-            <Text style={styles.filterChipText}>Inactivos</Text>
+          <TouchableOpacity style={activeFilter === false ? styles.filterChipActive : styles.filterChip} onPress={() => onFilterChange?.(false)} activeOpacity={0.7}>
+            <LucideIcons.UserX size={14} color={activeFilter === false ? "#FFFFFF" : "#64748B"} strokeWidth={2} />
+            <Text style={activeFilter === false ? styles.filterChipTextActive : styles.filterChipText}>Inactivos</Text>
           </TouchableOpacity>
         </View>
 
         <View style={styles.statsRow}>
           <View style={styles.statItem}>
-            <Text style={styles.statValue}>6</Text>
+            <Text style={styles.statValue}>{metrics?.totalActive ?? 0}</Text>
             <Text style={styles.statLabel}>Activos</Text>
           </View>
           <View style={styles.statDivider} />
           <View style={styles.statItem}>
-            <Text style={styles.statValue}>2</Text>
+            <Text style={styles.statValue}>{metrics?.totalInactive ?? 0}</Text>
             <Text style={styles.statLabel}>Inactivos</Text>
           </View>
           <View style={styles.statDivider} />
           <View style={styles.statItem}>
-            <Text style={styles.statValue}>156</Text>
+            <Text style={styles.statValue}>{metrics?.totalPatients ?? 0}</Text>
             <Text style={styles.statLabel}>Pacientes</Text>
           </View>
         </View>

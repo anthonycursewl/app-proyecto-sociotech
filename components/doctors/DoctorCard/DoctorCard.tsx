@@ -64,11 +64,11 @@ export const DoctorCard = ({ doctor, onPress }: DoctorCardProps) => {
         <View style={styles.contactRow}>
           <View style={styles.contactItem}>
             <LucideIcons.Mail size={12} color="#94A3B8" strokeWidth={2} />
-            <Text style={styles.contactText}>{doctor.email}</Text>
+            <Text style={styles.contactText} numberOfLines={1}>{doctor.email}</Text>
           </View>
           <View style={styles.contactItem}>
             <LucideIcons.Phone size={12} color="#94A3B8" strokeWidth={2} />
-            <Text style={styles.contactText}>{doctor.phone}</Text>
+            <Text style={styles.contactText} numberOfLines={1}>{doctor.phone}</Text>
           </View>
         </View>
       </View>

@@ -6,12 +6,18 @@ import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { styles } from "./ScreenHeader.styles";
 
+type LucideIconComponent = React.ComponentType<{
+  size?: number;
+  color?: string;
+  strokeWidth?: number;
+}>;
+
 interface ScreenHeaderProps {
   title: string;
   subtitle?: string;
   showBackButton?: boolean;
   rightAction?: {
-    icon: React.ComponentProps<typeof LucideIcons.Bell>["name"];
+    icon: LucideIconComponent;
     onPress: () => void;
   };
 }
@@ -20,7 +26,7 @@ export const ScreenHeader = ({ title, subtitle, showBackButton = true, rightActi
   const router = useRouter();
   const insets = useSafeAreaInsets();
 
-  const IconComponent = rightAction?.icon as any;
+  const IconComponent = rightAction?.icon;
 
   return (
     <View style={[styles.container, { paddingTop: insets.top + 12 }]}>

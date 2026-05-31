@@ -6,10 +6,11 @@ export const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: 24,
-    paddingBottom: 24,
+    paddingBottom: 28,
     backgroundColor: "transparent",
     position: "relative",
     overflow: "hidden",
+    minHeight: 140,
   },
   gradient: {
     position: "absolute",

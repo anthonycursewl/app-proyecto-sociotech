@@ -1,13 +1,36 @@
 import * as LucideIcons from "lucide-react-native";
 import React from "react";
-import { ScrollView, TouchableOpacity, View } from "react-native";
+import { ScrollView, View } from "react-native";
 import { Text } from "@/components/common/SText"
 import { ModuleCard } from "../ModuleCard/ModuleCard";
 import { styles } from './ModuleGrid.styles';
-import { useModuleGrid } from './useModuleGrid';
+import { useModuleGrid, CategorySection } from './useModuleGrid';
+
+const CategoryHeader = ({ section }: { section: CategorySection }) => {
+  const IconComponent = (LucideIcons as any)[section.icon];
+  return (
+    <View style={styles.categoryHeader}>
+      <View style={styles.categoryIconWrap}>
+        {IconComponent && (
+          <IconComponent size={15} color="#0D9488" strokeWidth={2.5} />
+        )}
+      </View>
+      <Text style={styles.categoryTitle}>{section.title}</Text>
+      <View style={styles.categoryDivider} />
+    </View>
+  );
+};
 
 export const ModuleGrid = () => {
-  const { modules, handleModulePress } = useModuleGrid();
+  const { sections, handleModulePress } = useModuleGrid();
+
+  if (sections.length === 0) {
+    return (
+      <View style={styles.emptyContainer}>
+        <Text style={styles.emptyText}>No tienes módulos disponibles</Text>
+      </View>
+    );
+  }
 
   return (
     <ScrollView
@@ -15,30 +38,23 @@ export const ModuleGrid = () => {
       contentContainerStyle={styles.content}
       showsVerticalScrollIndicator={false}
     >
-      <View style={styles.sectionHeader}>
-        <Text style={styles.sectionTitle}>Servicios</Text>
-        <View style={styles.searchActions}>
-          <TouchableOpacity style={styles.actionCircle}>
-            <LucideIcons.Search size={20} color="#64748B" />
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.actionCircle}>
-            <LucideIcons.SlidersHorizontal size={20} color="#64748B" />
-          </TouchableOpacity>
+      {sections.map((section) => (
+        <View key={section.id} style={styles.categorySection}>
+          <CategoryHeader section={section} />
+          <View style={styles.grid}>
+            {section.modules.map((module) => (
+              <ModuleCard
+                key={module.id}
+                title={module.title}
+                icon={module.icon}
+                color={module.color}
+                description={module.description}
+                onPress={() => handleModulePress(module.id)}
+              />
+            ))}
+          </View>
         </View>
-      </View>
-
-      <View style={styles.grid}>
-        {modules.map((module) => (
-          <ModuleCard
-            key={module.id}
-            title={module.title}
-            icon={module.icon}
-            color={module.color}
-            description={module.description}
-            onPress={() => handleModulePress(module.id)}
-          />
-        ))}
-      </View>
+      ))}
     </ScrollView>
   );
 };
