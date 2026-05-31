@@ -10,9 +10,11 @@ interface ManageAppointmentsHeaderProps {
   title?: string;
   onSearch?: (query: string) => void;
   onFilterPress?: () => void;
+  count?: string;
+  children?: React.ReactNode;
 }
 
-export const ManageAppointmentsHeader = ({ title = "Administrar Citas", onSearch, onFilterPress }: ManageAppointmentsHeaderProps) => {
+export const ManageAppointmentsHeader = ({ title = "Administrar Citas", onSearch, onFilterPress, count, children }: ManageAppointmentsHeaderProps) => {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const [searchQuery, setSearchQuery] = useState("");
@@ -54,40 +56,10 @@ export const ManageAppointmentsHeader = ({ title = "Administrar Citas", onSearch
 
         <View style={styles.bottomRow}>
           <Text style={styles.title}>{title}</Text>
-          <Text style={styles.count}>24 citas hoy</Text>
+          {count && <Text style={styles.count}>{count}</Text>}
         </View>
 
-        <View style={styles.filterRow}>
-          <TouchableOpacity style={styles.filterChipActive}>
-            <Text style={styles.filterChipTextActive}>Todas</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.filterChip}>
-            <Text style={styles.filterChipText}>Confirmadas</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.filterChip}>
-            <Text style={styles.filterChipText}>Pendientes</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.filterChip}>
-            <Text style={styles.filterChipText}>Hoy</Text>
-          </TouchableOpacity>
-        </View>
-
-        <View style={styles.statsRow}>
-          <View style={styles.statItem}>
-            <Text style={styles.statValue}>8</Text>
-            <Text style={styles.statLabel}>Pendientes</Text>
-          </View>
-          <View style={styles.statDivider} />
-          <View style={styles.statItem}>
-            <Text style={styles.statValue}>12</Text>
-            <Text style={styles.statLabel}>Confirmadas</Text>
-          </View>
-          <View style={styles.statDivider} />
-          <View style={styles.statItem}>
-            <Text style={styles.statValue}>4</Text>
-            <Text style={styles.statLabel}>Completadas</Text>
-          </View>
-        </View>
+        {children && <View style={styles.childrenContainer}>{children}</View>}
       </View>
     </View>
   );
@@ -102,12 +74,12 @@ const styles = StyleSheet.create({
     top: 0,
     left: 0,
     right: 0,
-    height: 220,
+    bottom: 0,
   },
   container: {
     position: "relative",
-    paddingHorizontal: 16,
-    paddingBottom: 16,
+    paddingHorizontal: 0,
+    paddingBottom: 12,
   },
   topRow: {
     flexDirection: "row",
@@ -166,7 +138,11 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     marginTop: 14,
-    paddingHorizontal: 4,
+    paddingHorizontal: 20,
+    marginBottom: 12,
+  },
+  childrenContainer: {
+    paddingHorizontal: 0,
   },
   title: {
     fontSize: 22,
@@ -178,71 +154,5 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: "#64748B",
     fontWeight: "500",
-  },
-  filterRow: {
-    flexDirection: "row",
-    gap: 8,
-    marginTop: 14,
-    paddingHorizontal: 4,
-  },
-  filterChip: {
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-    borderRadius: 20,
-    backgroundColor: "#FFFFFF",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 1,
-  },
-  filterChipActive: {
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-    borderRadius: 20,
-    backgroundColor: "#4CB1B1",
-  },
-  filterChipText: {
-    fontSize: 13,
-    color: "#64748B",
-    fontWeight: "500",
-  },
-  filterChipTextActive: {
-    fontSize: 13,
-    color: "#FFFFFF",
-    fontWeight: "600",
-  },
-  statsRow: {
-    flexDirection: "row",
-    backgroundColor: "#FFFFFF",
-    borderRadius: 12,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    marginTop: 14,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 1,
-  },
-  statItem: {
-    flex: 1,
-    alignItems: "center",
-  },
-  statValue: {
-    fontSize: 20,
-    fontWeight: "800",
-    color: "#0F172A",
-  },
-  statLabel: {
-    fontSize: 11,
-    color: "#94A3B8",
-    fontWeight: "500",
-    marginTop: 2,
-  },
-  statDivider: {
-    width: 1,
-    backgroundColor: "#F1F5F9",
-    marginHorizontal: 8,
   },
 });
