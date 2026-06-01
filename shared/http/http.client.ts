@@ -25,6 +25,7 @@ export class ApiError extends Error {
 type RefreshSubscriber = (token: string | null, error?: Error) => void;
 
 export class HttpClient {
+    public static onSessionExpired: (() => void) | null = null;
     private static isRefreshing = false;
     private static refreshSubscribers: RefreshSubscriber[] = [];
 
@@ -138,6 +139,7 @@ export class HttpClient {
                     this.notifySubscribers(null, err instanceof Error ? err : new Error('Session refresh failed'));
                     this.isRefreshing = false;
                     await this.clearTokens();
+                    this.onSessionExpired?.();
                     throw new ApiError(401, 'Su sesión ha expirado. Inicie sesión nuevamente.');
                 }
             }

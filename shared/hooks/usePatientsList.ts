@@ -2,7 +2,7 @@ import { PatientData } from "@/components/patients/PatientCard";
 import { getApiErrorMessage } from "@/shared/errors/apiError";
 import { mapToPatientData } from "@/shared/mappers/patient.mapper";
 import { patientService } from "@/shared/services/patient.service";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 const PAGE_LIMIT = 20;
 
@@ -13,14 +13,17 @@ export function usePatientsList() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [activeFilter, setActiveFilter] = useState<boolean | undefined>(undefined);
+  const filterRef = useRef<boolean | undefined>(undefined);
 
   const fetchPatients = useCallback(async (cursor?: string) => {
     try {
       const response = await patientService.getAll({
         cursor,
         limit: PAGE_LIMIT,
+        isActive: filterRef.current,
       });
-      const mapped = response.data.map(mapToPatientData);
+      const mapped = response.patients.map(mapToPatientData);
       setPatients((prev) => (cursor ? [...prev, ...mapped] : mapped));
       setNextCursor(response.nextCursor);
       setError(null);
@@ -32,13 +35,22 @@ export function usePatientsList() {
   useEffect(() => {
     (async () => {
       setLoading(true);
+      setPatients([]);
+      setNextCursor(null);
       await fetchPatients();
       setLoading(false);
     })();
-  }, [fetchPatients]);
+  }, [fetchPatients, activeFilter]);
+
+  const changeFilter = useCallback((filter: boolean | undefined) => {
+    filterRef.current = filter;
+    setActiveFilter(filter);
+  }, []);
 
   const refresh = useCallback(async () => {
     setRefreshing(true);
+    setPatients([]);
+    setNextCursor(null);
     await fetchPatients();
     setRefreshing(false);
   }, [fetchPatients]);
@@ -52,6 +64,8 @@ export function usePatientsList() {
 
   const reload = useCallback(async () => {
     setLoading(true);
+    setPatients([]);
+    setNextCursor(null);
     await fetchPatients();
     setLoading(false);
   }, [fetchPatients]);
@@ -62,6 +76,8 @@ export function usePatientsList() {
     refreshing,
     loadingMore,
     error,
+    activeFilter,
+    changeFilter,
     refresh,
     loadMore,
     reload,
