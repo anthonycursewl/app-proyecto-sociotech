@@ -27,6 +27,23 @@ export const serviceService = {
   getAll: (params?: ServiceQuery) =>
     HttpClient.get<PaginatedServiceResponse>("/services", params as any, { requireAuth: true }),
 
+  getByDoctorId: (doctorId: string) =>
+    HttpClient.get<ServiceResponse[]>(`/services/doctor/${doctorId}`, {}, { requireAuth: true }),
+
+  getAllPublic: (params?: { cursor?: string; limit?: number }) =>
+    HttpClient.get<PaginatedServiceResponse>(
+      "/public/services",
+      params as Record<string, unknown>,
+      { requireAuth: true },
+    ),
+
+  getByDoctorPublic: (doctorId: string) =>
+    HttpClient.get<ServiceResponse[]>(
+      "/public/services",
+      { doctorId },
+      { requireAuth: true },
+    ),
+
   getById: (id: string) =>
     HttpClient.get<ServiceResponse>(`/services/${id}`, {}, { requireAuth: true }),
 
