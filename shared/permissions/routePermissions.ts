@@ -1,10 +1,11 @@
 import {
   MODULE_PERMISSIONS,
   PUBLIC_MAIN_ROUTES,
+  ROLE_BLOCKLIST,
   ROUTE_PERMISSIONS,
 } from "./permissions.config";
 
-export { MODULE_PERMISSIONS, PUBLIC_MAIN_ROUTES, ROUTE_PERMISSIONS };
+export { MODULE_PERMISSIONS, PUBLIC_MAIN_ROUTES, ROLE_BLOCKLIST, ROUTE_PERMISSIONS };
 
 /** Normaliza pathname de Expo Router → segmento relativo a (main) */
 export function normalizeMainRoutePath(pathname: string): string {
@@ -39,7 +40,16 @@ export function getRoutePermissionRequirements(
 export function canAccessRoute(
   userPermissions: string[],
   pathname: string,
+  userRole?: string,
 ): boolean {
+  const key = normalizeMainRoutePath(pathname);
+  const normalizedKey = key.startsWith("/") ? key.slice(1) : key;
+
+  if (userRole) {
+    const blockedRoles = ROLE_BLOCKLIST[normalizedKey];
+    if (blockedRoles?.includes(userRole)) return false;
+  }
+
   const required = getRoutePermissionRequirements(pathname);
   if (required === null) return true;
   if (required === undefined) return true;

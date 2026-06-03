@@ -21,7 +21,7 @@ export function useRouteGuard() {
       return;
     }
 
-    if (canAccessRoute(permissions, pathname)) {
+    if (canAccessRoute(permissions, pathname, user.role)) {
       lastDeniedPath.current = null;
       return;
     }
