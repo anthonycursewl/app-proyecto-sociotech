@@ -1,8 +1,7 @@
+import { AlertTriangle, RefreshCw } from "lucide-react-native";
 import React from "react";
 import { View, StyleSheet } from "react-native";
 import { Text } from "@/components/common/SText";
-import * as LucideIcons from "lucide-react-native";
-
 interface Props {
   children: React.ReactNode;
 }
@@ -32,7 +31,7 @@ export class AppErrorBoundary extends React.Component<Props, State> {
       return (
         <View style={styles.container}>
           <View style={styles.iconWrap}>
-            <LucideIcons.AlertTriangle size={48} color="#EF4444" strokeWidth={1.5} />
+            <AlertTriangle size={48} color="#EF4444" strokeWidth={1.5} />
           </View>
           <Text style={styles.title}>Algo salió mal</Text>
           <Text style={styles.message}>
@@ -42,7 +41,7 @@ export class AppErrorBoundary extends React.Component<Props, State> {
             <Text style={styles.debug}>{this.state.error.message}</Text>
           )}
           <View style={styles.button} onTouchEnd={this.handleRestart}>
-            <LucideIcons.RefreshCw size={18} color="#FFFFFF" strokeWidth={2.5} />
+            <RefreshCw size={18} color="#FFFFFF" strokeWidth={2.5} />
             <Text style={styles.buttonText}>Reiniciar</Text>
           </View>
         </View>

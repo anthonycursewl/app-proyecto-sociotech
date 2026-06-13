@@ -1,8 +1,7 @@
-import * as LucideIcons from "lucide-react-native";
+import { FileText, Pill, Scissors, Stethoscope, TestTube, User } from "lucide-react-native";
 import React from "react";
 import { TouchableOpacity, View } from "react-native";
 import { Text } from "@/components/common/SText"
-import { Tag } from "../../common/Tag";
 import { styles } from "./MedicalRecordCard.styles";
 
 export interface MedicalRecordData {
@@ -26,25 +25,25 @@ interface MedicalRecordCardProps {
 export const MedicalRecordCard = ({ record, onPress }: MedicalRecordCardProps) => {
   const typeConfig = {
     consultation: {
-      icon: LucideIcons.FileText,
+      icon: FileText,
       color: "#4CB1B1",
       bgColor: "#E0F2F1",
       label: "Consulta",
     },
     prescription: {
-      icon: LucideIcons.Pill,
+      icon: Pill,
       color: "#8B5CF6",
       bgColor: "#F3E8FF",
       label: "Receta",
     },
     exam: {
-      icon: LucideIcons.TestTube,
+      icon: TestTube,
       color: "#F59E0B",
       bgColor: "#FEF3C7",
       label: "Examen",
     },
     procedure: {
-      icon: LucideIcons.Scissors,
+      icon: Scissors,
       color: "#EF4444",
       bgColor: "#FEE2E2",
       label: "Procedimiento",
@@ -84,7 +83,7 @@ export const MedicalRecordCard = ({ record, onPress }: MedicalRecordCardProps) =
 
       <View style={styles.content}>
         <View style={styles.patientRow}>
-          <LucideIcons.User size={14} color="#64748B" strokeWidth={2} />
+          <User size={14} color="#64748B" strokeWidth={2} />
           <Text style={styles.patientName}>{record.patientName}</Text>
           <Text style={styles.patientId}>{record.patientId}</Text>
         </View>
@@ -93,7 +92,7 @@ export const MedicalRecordCard = ({ record, onPress }: MedicalRecordCardProps) =
 
       <View style={styles.footer}>
         <View style={styles.doctorInfo}>
-          <LucideIcons.Stethoscope size={12} color="#94A3B8" strokeWidth={2} />
+          <Stethoscope size={12} color="#94A3B8" strokeWidth={2} />
           <Text style={styles.doctorText}>{record.doctorName}</Text>
           <Text style={styles.specialtyText}>• {record.specialty}</Text>
         </View>

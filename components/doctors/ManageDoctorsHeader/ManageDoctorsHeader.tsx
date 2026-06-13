@@ -1,8 +1,7 @@
-import * as LucideIcons from "lucide-react-native";
-import React, { useState } from "react";
-import { StyleSheet, TextInput, TouchableOpacity, View } from "react-native";
+import { ChevronLeft, List, Search, UserCheck, UserX } from "lucide-react-native";
+import React, { useEffect, useState } from "react";
+import { InteractionManager, StyleSheet, TextInput, TouchableOpacity, View } from "react-native";
 import { Text } from "@/components/common/SText"
-import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { DoctorMetrics } from "@/shared/services/doctor.service";
@@ -20,27 +19,27 @@ export const ManageDoctorsHeader = ({ title = "Doctores", onSearch, metrics, act
   const insets = useSafeAreaInsets();
   const [searchQuery, setSearchQuery] = useState("");
 
+  useEffect(() => {
+    InteractionManager.runAfterInteractions(() => {
+      router.prefetch("/(main)/doctor/profile");
+    });
+  }, [router]);
+
   const handleSearch = (text: string) => {
     setSearchQuery(text);
     onSearch?.(text);
   };
 
   return (
-    <View style={styles.wrapper}>
-      <LinearGradient
-        colors={['#FFFFFF', '#F8FAFC']}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 0, y: 1 }}
-        style={styles.gradient}
-      />
+    <View>
       <View style={[styles.container, { paddingTop: insets.top + 12 }]}>
         <View style={styles.topRow}>
           <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-            <LucideIcons.ChevronLeft size={22} color="#0F172A" strokeWidth={2.5} />
+            <ChevronLeft size={22} color="#0F172A" strokeWidth={2.5} />
           </TouchableOpacity>
 
           <View style={styles.searchContainer}>
-            <LucideIcons.Search size={16} color="#94A3B8" strokeWidth={2.5} />
+            <Search size={16} color="#94A3B8" strokeWidth={2.5} />
             <TextInput
               style={styles.searchInput}
               placeholder="Buscar doctor..."
@@ -50,9 +49,6 @@ export const ManageDoctorsHeader = ({ title = "Doctores", onSearch, metrics, act
             />
           </View>
 
-          <TouchableOpacity style={styles.actionButton}>
-            <LucideIcons.UserPlus size={20} color="#FFFFFF" strokeWidth={2} />
-          </TouchableOpacity>
         </View>
 
         <View style={styles.bottomRow}>
@@ -62,15 +58,15 @@ export const ManageDoctorsHeader = ({ title = "Doctores", onSearch, metrics, act
 
         <View style={styles.filterRow}>
           <TouchableOpacity style={activeFilter === undefined ? styles.filterChipActive : styles.filterChip} onPress={() => onFilterChange?.(undefined)} activeOpacity={0.7}>
-            <LucideIcons.List size={14} color={activeFilter === undefined ? "#FFFFFF" : "#64748B"} strokeWidth={2} />
+            <List size={14} color={activeFilter === undefined ? "#FFFFFF" : "#64748B"} strokeWidth={2} />
             <Text style={activeFilter === undefined ? styles.filterChipTextActive : styles.filterChipText}>Todos</Text>
           </TouchableOpacity>
           <TouchableOpacity style={activeFilter === true ? styles.filterChipActive : styles.filterChip} onPress={() => onFilterChange?.(true)} activeOpacity={0.7}>
-            <LucideIcons.UserCheck size={14} color={activeFilter === true ? "#FFFFFF" : "#64748B"} strokeWidth={2} />
+            <UserCheck size={14} color={activeFilter === true ? "#FFFFFF" : "#64748B"} strokeWidth={2} />
             <Text style={activeFilter === true ? styles.filterChipTextActive : styles.filterChipText}>Activos</Text>
           </TouchableOpacity>
           <TouchableOpacity style={activeFilter === false ? styles.filterChipActive : styles.filterChip} onPress={() => onFilterChange?.(false)} activeOpacity={0.7}>
-            <LucideIcons.UserX size={14} color={activeFilter === false ? "#FFFFFF" : "#64748B"} strokeWidth={2} />
+            <UserX size={14} color={activeFilter === false ? "#FFFFFF" : "#64748B"} strokeWidth={2} />
             <Text style={activeFilter === false ? styles.filterChipTextActive : styles.filterChipText}>Inactivos</Text>
           </TouchableOpacity>
         </View>
@@ -97,16 +93,6 @@ export const ManageDoctorsHeader = ({ title = "Doctores", onSearch, metrics, act
 };
 
 const styles = StyleSheet.create({
-  wrapper: {
-    position: "relative",
-  },
-  gradient: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    height: 220,
-  },
   container: {
     position: "relative",
     paddingHorizontal: 16,
@@ -150,19 +136,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: "#0F172A",
     fontWeight: "500",
-  },
-  actionButton: {
-    width: 38,
-    height: 38,
-    borderRadius: 10,
-    backgroundColor: "#4CB1B1",
-    justifyContent: "center",
-    alignItems: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
   },
   bottomRow: {
     flexDirection: "row",

@@ -1,9 +1,11 @@
 import { ServiceData } from "@/components/services/ServiceCard";
 import { getApiErrorMessage } from "@/shared/errors/apiError";
+import type { ServiceStatusFilter } from "@/shared/entities/Service";
 import { ServiceResponse, serviceService } from "@/shared/services/service.service";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 const PAGE_LIMIT = 20;
+const DEFAULT_STATUS: ServiceStatusFilter = "active";
 
 const mapService = (s: ServiceResponse): ServiceData => ({
   id: s.id,
@@ -14,21 +16,27 @@ const mapService = (s: ServiceResponse): ServiceData => ({
   isActive: s.isActive,
 });
 
-export function useServicesList() {
+export function useServicesList(initialStatus: ServiceStatusFilter = DEFAULT_STATUS) {
   const [services, setServices] = useState<ServiceData[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [status, setStatus] = useState<ServiceStatusFilter>(initialStatus);
+
+  const statusRef = useRef(status);
+  statusRef.current = status;
 
   const fetchServices = useCallback(async (cursor?: string) => {
     try {
-      const response = await serviceService.getAll({
-        cursor,
+      const params: { cursor?: string; limit: number; status: ServiceStatusFilter } = {
         limit: PAGE_LIMIT,
-        includeInactive: true,
-      });
+        status: statusRef.current,
+      };
+      if (cursor) params.cursor = cursor;
+
+      const response = await serviceService.getAll(params);
       const mapped = response.data.map(mapService);
       if (cursor) {
         setServices((prev) => [...prev, ...mapped]);
@@ -51,6 +59,17 @@ export function useServicesList() {
   useEffect(() => {
     loadInitial();
   }, [loadInitial]);
+
+  useEffect(() => {
+    setServices([]);
+    setNextCursor(null);
+    setError(null);
+    loadInitial();
+  }, [status, loadInitial]);
+
+  const changeStatus = useCallback((next: ServiceStatusFilter) => {
+    setStatus(next);
+  }, []);
 
   const refresh = useCallback(async () => {
     setRefreshing(true);
@@ -77,6 +96,8 @@ export function useServicesList() {
     refreshing,
     loadingMore,
     error,
+    status,
+    changeStatus,
     refresh,
     loadMore,
     reload,

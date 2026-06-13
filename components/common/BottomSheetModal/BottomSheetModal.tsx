@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
+import { useLatest } from "@/shared/hooks/useLatest";
 import {
   Animated,
   Dimensions,
@@ -35,6 +36,7 @@ export const BottomSheetModal = ({
 }: BottomSheetModalProps) => {
   const [isVisible, setIsVisible] = useState(false);
   const [animating, setAnimating] = useState(false);
+  const onCloseRef = useLatest(onClose);
 
   const sheetHeight = resolveSheetHeight(height);
 
@@ -61,9 +63,9 @@ export const BottomSheetModal = ({
     ]).start(() => {
       setIsVisible(false);
       setAnimating(false);
-      onClose();
+      onCloseRef.current();
     });
-  }, [overlayOpacity, slideY, sheetScale, onClose]);
+  }, [overlayOpacity, slideY, sheetScale, onCloseRef]);
 
   useEffect(() => {
     if (visible && !isVisible) {
@@ -92,7 +94,7 @@ export const BottomSheetModal = ({
           ]).start(() => {
             setIsVisible(false);
             setAnimating(false);
-            onClose();
+            onCloseRef.current();
           });
         } else {
           Animated.spring(slideY, { toValue: 0, tension: 65, friction: 11, useNativeDriver: true }).start();
@@ -118,7 +120,6 @@ export const BottomSheetModal = ({
             styles.sheet,
             { height: sheetHeight, transform: [{ translateY: slideY }, { scale: sheetScale }] },
           ]}
-          {...panResponder.panHandlers}
         >
           <View style={styles.dragArea} {...panResponder.panHandlers}>
             <View style={styles.handle} />

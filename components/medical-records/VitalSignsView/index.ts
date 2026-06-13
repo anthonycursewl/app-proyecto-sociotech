@@ -1,0 +1,1 @@
+export { VitalSignsView } from "./VitalSignsView";

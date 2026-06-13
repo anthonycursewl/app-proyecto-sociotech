@@ -33,6 +33,29 @@ export interface MeResponse {
   user: User;
 }
 
+export interface SendVerificationCodeRequest {
+  email: string;
+}
+
+export interface VerifyCodeRequest {
+  email: string;
+  code: string;
+}
+
+export interface ApiMessageResponse {
+  message: string;
+}
+
+export interface ForgotPasswordRequest {
+  email: string;
+}
+
+export interface ResetPasswordRequest {
+  email: string;
+  code: string;
+  password: string;
+}
+
 export const authService = {
   login: (data: LoginRequest) =>
     HttpClient.post<AuthResponse>("/auth/login", data),
@@ -45,4 +68,16 @@ export const authService = {
 
   updateUser: (user: User) =>
     HttpClient.put<User>("/auth/user", user, { requireAuth: true }),
+
+  sendVerificationCode: (data: SendVerificationCodeRequest) =>
+    HttpClient.post<ApiMessageResponse>("/auth/send-verification-code", data),
+
+  verifyCode: (data: VerifyCodeRequest) =>
+    HttpClient.post<ApiMessageResponse>("/auth/verify-code", data),
+
+  forgotPassword: (data: ForgotPasswordRequest) =>
+    HttpClient.post<ApiMessageResponse>("/auth/forgot-password", data),
+
+  resetPassword: (data: ResetPasswordRequest) =>
+    HttpClient.post<ApiMessageResponse>("/auth/reset-password", data),
 };

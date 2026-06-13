@@ -1,35 +1,44 @@
+import { CalendarClock, ChevronRight, ClipboardList, Settings, UserPen, Users } from "lucide-react-native";
 import { StatusBar } from "expo-status-bar";
-import React from "react";
-import { FlatList, StyleSheet, TouchableOpacity, View } from "react-native";
+import React, { useCallback } from "react";
+import { StyleSheet, TouchableOpacity, View } from "react-native";
+import { FlashList } from "@shopify/flash-list";
 import { Text } from "@/components/common/SText"
 import { SafeAreaView } from "react-native-safe-area-context";
-import * as LucideIcons from "lucide-react-native";
+import { useRouter } from "expo-router";
 import { DoctorProfileHeader } from "../../../components/doctors/DoctorProfileHeader";
 
 const QUICK_ACTIONS = [
-  { id: "schedule", title: "Mi Agenda", icon: LucideIcons.CalendarClock, color: "#4CB1B1", route: "/admin/appointments" },
-  { id: "patients", title: "Mis Pacientes", icon: LucideIcons.Users, color: "#8B5CF6", route: "/patients" },
-  { id: "records", title: "Historias Clínicas", icon: LucideIcons.ClipboardList, color: "#F59E0B", route: "/admin/records" },
-  { id: "editProfile", title: "Editar Perfil", icon: LucideIcons.UserPen, color: "#3B82F6", route: "/doctor/edit-profile" },
-  { id: "settings", title: "Configuración", icon: LucideIcons.Settings, color: "#64748B", route: "/settings" },
+  { id: "schedule", title: "Mi Agenda", icon: CalendarClock, color: "#4CB1B1", route: "/admin/appointments" },
+  { id: "patients", title: "Mis Pacientes", icon: Users, color: "#8B5CF6", route: "/patients" },
+  { id: "records", title: "Historias Clínicas", icon: ClipboardList, color: "#F59E0B", route: "/admin/records" },
+  { id: "editProfile", title: "Editar Perfil", icon: UserPen, color: "#3B82F6", route: "/doctor/edit-profile" },
+  { id: "settings", title: "Configuración", icon: Settings, color: "#64748B", route: "/settings" },
 ];
 
 export default function DoctorProfileScreen() {
-  const renderAction = ({ item }: { item: typeof QUICK_ACTIONS[0] }) => (
-    <TouchableOpacity style={styles.actionCard}>
-      <View style={[styles.actionIcon, { backgroundColor: item.color + "15" }]}>
-        <item.icon size={22} color={item.color} strokeWidth={2.5} />
-      </View>
-      <Text style={styles.actionText}>{item.title}</Text>
-      <LucideIcons.ChevronRight size={16} color="#CBD5E1" strokeWidth={2} />
-    </TouchableOpacity>
+  const router = useRouter();
+  const renderAction = useCallback(
+    ({ item }: { item: typeof QUICK_ACTIONS[0] }) => (
+      <TouchableOpacity
+        style={styles.actionCard}
+        onPress={() => router.navigate({ pathname: item.route as any })}
+      >
+        <View style={[styles.actionIcon, { backgroundColor: item.color + "15" }]}>
+          <item.icon size={22} color={item.color} strokeWidth={2.5} />
+        </View>
+        <Text style={styles.actionText}>{item.title}</Text>
+        <ChevronRight size={16} color="#CBD5E1" strokeWidth={2} />
+      </TouchableOpacity>
+    ),
+    [router],
   );
 
   return (
     <SafeAreaView style={styles.container} edges={["top", "bottom", "left", "right"]}>
-      <StatusBar style="light" />
+      <StatusBar style="dark" />
       <DoctorProfileHeader />
-      <FlatList
+      <FlashList
         data={QUICK_ACTIONS}
         renderItem={renderAction}
         keyExtractor={(item) => item.id}

@@ -1,6 +1,6 @@
+import { Shield, UserCog } from "lucide-react-native";
 import { Tag } from "@/components/common/Tag";
 import { AdminUserListItem } from "@/shared/services/user.service";
-import * as LucideIcons from "lucide-react-native";
 import React from "react";
 import { ActivityIndicator, Switch, TouchableOpacity, View } from "react-native";
 import { Text } from "@/components/common/SText";
@@ -56,7 +56,7 @@ export const UserCard = ({
         </View>
 
         <View style={styles.metaRow}>
-          <LucideIcons.Shield size={12} color="#64748B" strokeWidth={2} />
+          <Shield size={12} color="#64748B" strokeWidth={2} />
           <Text style={styles.roleText}>{formatRoleLabel(user.roleName)}</Text>
           {isSelf ? (
             <View style={styles.selfBadge}>
@@ -94,7 +94,7 @@ export const UserCard = ({
                 <ActivityIndicator size="small" color="#64748B" />
               ) : (
                 <>
-                  <LucideIcons.UserCog size={14} color="#64748B" strokeWidth={2.5} />
+                  <UserCog size={14} color="#64748B" strokeWidth={2.5} />
                   <Text style={styles.roleButtonText}>Cambiar rol</Text>
                 </>
               )}

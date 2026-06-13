@@ -1,8 +1,9 @@
+import { colors } from "@/shared/theme/colors";
 import { StyleSheet } from "react-native";
 
 export const styles = StyleSheet.create({
   container: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surface,
     borderRadius: 16,
     padding: 14,
     marginBottom: 10,
@@ -20,7 +21,7 @@ export const styles = StyleSheet.create({
     width: 52,
     height: 52,
     borderRadius: 26,
-    backgroundColor: "#F3E8FF",
+    backgroundColor: "#E6F5F5",
     justifyContent: "center",
     alignItems: "center",
     marginRight: 12,
@@ -28,7 +29,7 @@ export const styles = StyleSheet.create({
   avatarText: {
     fontSize: 18,
     fontWeight: "700",
-    color: "#8B5CF6",
+    color: colors.accent,
   },
   content: {
     flex: 1,
@@ -46,12 +47,12 @@ export const styles = StyleSheet.create({
   name: {
     fontSize: 15,
     fontWeight: "700",
-    color: "#0F172A",
+    color: colors.textPrimary,
     marginBottom: 2,
   },
   medicalId: {
     fontSize: 12,
-    color: "#94A3B8",
+    color: colors.textMuted,
     fontWeight: "500",
   },
   statusBadge: {
@@ -63,7 +64,7 @@ export const styles = StyleSheet.create({
     backgroundColor: "#DCFCE7",
   },
   inactiveStatus: {
-    backgroundColor: "#F1F5F9",
+    backgroundColor: colors.skeleton,
   },
   statusText: {
     fontSize: 10,
@@ -73,7 +74,7 @@ export const styles = StyleSheet.create({
     color: "#22C55E",
   },
   inactiveText: {
-    color: "#94A3B8",
+    color: colors.textMuted,
   },
   statsRow: {
     flexDirection: "row",
@@ -87,7 +88,7 @@ export const styles = StyleSheet.create({
   },
   statText: {
     fontSize: 12,
-    color: "#64748B",
+    color: colors.textSecondary,
     fontWeight: "500",
   },
   contactRow: {
@@ -101,7 +102,7 @@ export const styles = StyleSheet.create({
   },
   contactText: {
     fontSize: 11,
-    color: "#94A3B8",
+    color: colors.textMuted,
     fontWeight: "500",
   },
   chevron: {

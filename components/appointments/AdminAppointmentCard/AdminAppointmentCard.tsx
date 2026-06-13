@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { TouchableOpacity, View } from "react-native";
 import { Text } from "@/components/common/SText";
 import { styles } from "./AdminAppointmentCard.styles";
@@ -13,7 +13,6 @@ export interface AdminAppointmentData {
   doctorPhone: string | null;
   serviceName: string;
   serviceDescription: string | null;
-  servicePrice: number | null;
   date: string;
   time: string;
   durationMin: number;
@@ -33,18 +32,22 @@ interface AdminAppointmentCardProps {
   onStatusChange?: (status: string) => void;
 }
 
-const STATUS_LABEL: Record<AdminAppointmentData["status"], string> = {
-  pending: "Pendiente",
-  confirmed: "Confirmada",
-  completed: "Completada",
-  cancelled: "Cancelada",
+const STATUS_META: Record<AdminAppointmentData["status"], { label: string; color: string }> = {
+  pending: { label: "Pendiente", color: "#B45309" },
+  confirmed: { label: "Confirmada", color: "#0D9488" },
+  completed: { label: "Completada", color: "#15803D" },
+  cancelled: { label: "Cancelada", color: "#B91C1C" },
 };
 
-const STATUS_DOT: Record<AdminAppointmentData["status"], string> = {
-  pending: "#F59E0B",
-  confirmed: "#0D9488",
-  completed: "#10B981",
-  cancelled: "#EF4444",
+const EXPIRED_META = { label: "Vencida", color: "#9CA3AF" };
+
+const isDatePast = (dateStr: string): boolean => {
+  if (!dateStr || dateStr === "—") return false;
+  const date = new Date(`${dateStr}T00:00:00`);
+  if (Number.isNaN(date.getTime())) return false;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return date < today;
 };
 
 const formatLongDate = (dateStr: string) => {
@@ -71,50 +74,51 @@ const formatDateTime = (iso: string) => {
   });
 };
 
-const formatPrice = (price: number | null) => {
-  if (price === null || price === undefined) return null;
-  return `$${price.toLocaleString("es-ES")}`;
-};
-
-export const AdminAppointmentCard = ({
+export const AdminAppointmentCard = React.memo(function AdminAppointmentCard({
   appointment,
   onPress,
   onStatusChange,
-}: AdminAppointmentCardProps) => {
-  const date = formatLongDate(appointment.date);
-  const priceLabel = formatPrice(appointment.servicePrice);
-  const isCancelled = appointment.status === "cancelled";
+}: AdminAppointmentCardProps) {
+  const date = useMemo(() => formatLongDate(appointment.date), [appointment.date]);
+  const cancellationDate = useMemo(
+    () => appointment.cancellation ? formatDateTime(appointment.cancellation.cancelledAt) : null,
+    [appointment.cancellation],
+  );
+  const { isCancelled, isExpired, statusMeta } = useMemo(() => {
+    const cancelled = appointment.status === "cancelled";
+    const expired = !cancelled && appointment.status !== "completed" && isDatePast(appointment.date);
+    const meta = expired ? EXPIRED_META : STATUS_META[appointment.status];
+    return { isCancelled: cancelled, isExpired: expired, statusMeta: meta };
+  }, [appointment.status, appointment.date]);
+  const dotStyle = useMemo(() => ({ backgroundColor: statusMeta.color }), [statusMeta.color]);
+  const labelStyle = useMemo(() => ({ color: statusMeta.color }), [statusMeta.color]);
 
   return (
     <TouchableOpacity
       activeOpacity={0.7}
-      style={[styles.container, isCancelled && styles.containerCancelled]}
+      style={[styles.container, (isCancelled || isExpired) && styles.containerMuted]}
       onPress={onPress}
     >
       <View style={styles.headerRow}>
         <View style={styles.dateBlock}>
           <Text style={styles.dateWeekday}>{date.weekday}</Text>
-          <Text style={styles.dateDay}>{date.day}</Text>
+          <Text style={[styles.dateDay, isExpired && styles.dateDayMuted]}>{date.day}</Text>
           <Text style={styles.dateMonth}>{date.month}</Text>
         </View>
 
         <View style={styles.headerMain}>
           <View style={styles.timeRow}>
-            <Text style={styles.time}>{appointment.time}</Text>
+            <Text style={[styles.time, isExpired && styles.timeMuted]}>{appointment.time}</Text>
             <Text style={styles.duration}>{appointment.durationMin} min</Text>
           </View>
           <View style={styles.statusRow}>
-            <View style={[styles.statusDot, { backgroundColor: STATUS_DOT[appointment.status] }]} />
-            <Text style={styles.statusLabel}>{STATUS_LABEL[appointment.status]}</Text>
+            <View style={[styles.statusDot, dotStyle]} />
+            <Text style={[styles.statusLabel, labelStyle]}>
+              {statusMeta.label}
+            </Text>
           </View>
         </View>
 
-        {priceLabel && (
-          <View style={styles.priceBlock}>
-            <Text style={styles.priceLabel}>Total</Text>
-            <Text style={styles.price}>{priceLabel}</Text>
-          </View>
-        )}
       </View>
 
       <View style={styles.divider} />
@@ -179,7 +183,7 @@ export const AdminAppointmentCard = ({
       {appointment.cancellation && (
         <View style={styles.cancellationBlock}>
           <Text style={styles.cancellationLabel}>
-            Cancelada el {formatDateTime(appointment.cancellation.cancelledAt)}
+            Cancelada el {cancellationDate}
           </Text>
           {appointment.cancellation.cancellationReason && (
             <Text style={styles.cancellationReason} numberOfLines={2}>
@@ -211,4 +215,4 @@ export const AdminAppointmentCard = ({
       )}
     </TouchableOpacity>
   );
-};
+});

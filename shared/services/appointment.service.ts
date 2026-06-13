@@ -1,72 +1,31 @@
 import { HttpClient } from "@/shared/http/http.client";
+import type {
+  AppointmentStatus,
+  AppointmentCancellation,
+  DoctorSummary,
+  ServiceSummary,
+  PatientSummaryDto,
+  Appointment,
+  AvailableSlotsResponse,
+  MonthlyAvailabilityResponse,
+  CreateAppointmentData,
+  CancelAppointmentData,
+  AppointmentFilter,
+} from "@/shared/entities/Appointment";
 
-export type AppointmentStatus = "SCHEDULED" | "CONFIRMED" | "COMPLETED" | "CANCELLED" | "NO_SHOW";
-
-export interface AppointmentCancellation {
-  cancelledAt: string;
-  cancelledBy: string;
-  cancellationReason: string | null;
-}
-
-export interface DoctorSummary {
-  id: string;
-  firstName: string;
-  lastName: string;
-  fullName: string;
-  specialty: string;
-  phoneNumber: string | null;
-}
-
-export interface ServiceSummary {
-  id: string;
-  name: string;
-  description: string | null;
-  durationMin: number;
-  price: number | null;
-}
-
-export interface Appointment {
-  id: string;
-  patientId: string;
-  doctorId: string;
-  serviceId: string;
-  scheduledAt: string;
-  timeSlot: string;
-  durationMinutes: number;
-  status: AppointmentStatus;
-  reason: string;
-  notes: string | null;
-  cancellation: AppointmentCancellation | null;
-  doctor: DoctorSummary | null;
-  service: ServiceSummary | null;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface AvailableSlotsResponse {
-  slots: string[];
-}
-
-export interface MonthlyAvailabilityResponse {
-  days: Array<{
-    date: string;
-    availableSlots: number;
-  }>;
-}
-
-export interface CreateAppointmentData {
-  doctorId: string;
-  serviceId: string;
-  scheduledAt: string;
-  reason: string;
-  notes?: string;
-}
-
-export interface CancelAppointmentData {
-  reason?: string;
-}
-
-export type AppointmentFilter = "all" | "pending" | "upcoming" | "history";
+export type {
+  AppointmentStatus,
+  AppointmentCancellation,
+  DoctorSummary,
+  ServiceSummary,
+  PatientSummaryDto,
+  Appointment,
+  AvailableSlotsResponse,
+  MonthlyAvailabilityResponse,
+  CreateAppointmentData,
+  CancelAppointmentData,
+  AppointmentFilter,
+};
 
 export const appointmentService = {
   getAvailableSlots: (doctorId: string, serviceId: string, date: string) =>
@@ -93,10 +52,10 @@ export const appointmentService = {
       { requireAuth: true },
     ),
 
-  getAll: (filter: AppointmentFilter = "upcoming") =>
+  getAll: (filter: AppointmentFilter = "upcoming", doctorId?: string) =>
     HttpClient.get<Appointment[]>(
       "/appointments",
-      { filter },
+      { filter, ...(doctorId ? { doctorId } : {}) },
       { requireAuth: true },
     ),
 
@@ -105,4 +64,19 @@ export const appointmentService = {
 
   cancel: (id: string, data?: CancelAppointmentData) =>
     HttpClient.put<Appointment>(`/appointments/${id}/cancel`, data, { requireAuth: true }),
+
+  doctorCancel: (id: string, data?: CancelAppointmentData) =>
+    HttpClient.put<Appointment>(`/appointments/${id}/doctor-cancel`, data, { requireAuth: true }),
+
+  confirm: (id: string) =>
+    HttpClient.put<Appointment>(`/appointments/${id}/confirm`, undefined, { requireAuth: true }),
+
+  complete: (id: string) =>
+    HttpClient.put<Appointment>(`/appointments/${id}/complete`, undefined, { requireAuth: true }),
+
+  markNoShow: (id: string) =>
+    HttpClient.put<Appointment>(`/appointments/${id}/no-show`, undefined, { requireAuth: true }),
+
+  reschedule: (id: string, scheduledAt: string) =>
+    HttpClient.put<Appointment>(`/appointments/${id}/reschedule`, { scheduledAt }, { requireAuth: true }),
 };

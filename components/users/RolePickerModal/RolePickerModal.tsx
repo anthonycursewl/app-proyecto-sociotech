@@ -1,9 +1,9 @@
+import { Check, Shield, ShieldOff } from "lucide-react-native";
 import { Text } from "@/components/common/SText";
 import { Skeleton } from "@/components/common/Skeleton";
 import { useRolesList } from "@/shared/hooks/useRolesList";
 import { AdminUserListItem } from "@/shared/services/user.service";
 import { RoleListItem } from "@/shared/services/role.service";
-import * as LucideIcons from "lucide-react-native";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
@@ -46,7 +46,7 @@ const ShimmerText = ({ text, fontSize = 14, fontWeight = "500" }: { text: string
       anim.start();
       return () => anim.stop();
     }
-  }, [textWidth]);
+  }, [textWidth, translateX]);
 
   return (
     <View style={{ flexDirection: "row" }}>
@@ -145,7 +145,7 @@ export const RolePickerModal = ({
         useNativeDriver: true,
       }),
     ]).start(() => setAnimating(false));
-  }, []);
+  }, [overlayOpacity, slideY, sheetScale]);
 
   const closeAnimation = useCallback(() => {
     setAnimating(true);
@@ -171,7 +171,7 @@ export const RolePickerModal = ({
       reset();
       onClose();
     });
-  }, []);
+  }, [onClose, overlayOpacity, reset, slideY, sheetScale]);
 
   useEffect(() => {
     if (visible && !isVisible) {
@@ -336,7 +336,7 @@ export const RolePickerModal = ({
                         activeOpacity={0.85}
                       >
                         <View style={styles.roleIconContainer}>
-                          <LucideIcons.Shield
+                          <Shield
                             size={18}
                             color={isHighlight ? "#0D9488" : "#94A3B8"}
                             strokeWidth={2}
@@ -357,7 +357,7 @@ export const RolePickerModal = ({
                             <Text style={styles.currentBadgeText}>Actual</Text>
                           </View>
                         ) : isSelected ? (
-                          <LucideIcons.Check size={18} color="#0D9488" strokeWidth={2.5} />
+                          <Check size={18} color="#0D9488" strokeWidth={2.5} />
                         ) : null}
                       </TouchableOpacity>
                     );
@@ -371,7 +371,7 @@ export const RolePickerModal = ({
 
                   {roles.length === 0 ? (
                     <View style={styles.emptyContainer}>
-                      <LucideIcons.ShieldOff size={32} color="#CBD5E1" strokeWidth={1.5} />
+                      <ShieldOff size={32} color="#CBD5E1" strokeWidth={1.5} />
                       <Text style={styles.emptyText}>No hay roles disponibles para asignar</Text>
                     </View>
                   ) : null}

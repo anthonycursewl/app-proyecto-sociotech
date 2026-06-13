@@ -1,1 +1,0 @@
-export { ExamsHeader } from "./ExamsHeader";

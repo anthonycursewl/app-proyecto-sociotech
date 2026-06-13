@@ -9,8 +9,9 @@ import { AdminUserListItem, userService } from "@/shared/services/user.service";
 import { colors } from "@/shared/theme/colors";
 import { useAuthStore } from "@/shared/zustand/auth/useAuthStore";
 import { StatusBar } from "expo-status-bar";
-import React, { useMemo, useState } from "react";
-import { ActivityIndicator, Alert, FlatList, StyleSheet, View } from "react-native";
+import React, { useCallback, useMemo, useState } from "react";
+import { ActivityIndicator, Alert, StyleSheet, View } from "react-native";
+import { FlashList } from "@shopify/flash-list";
 import { Text } from "@/components/common/SText";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -105,7 +106,7 @@ export default function UsersScreen() {
   const inactiveCount = users.length - activeCount;
   const totalCount = statusFilter === "active" ? activeCount : statusFilter === "inactive" ? inactiveCount : users.length;
 
-  const handleToggleActive = async (target: AdminUserListItem) => {
+  const handleToggleActive = useCallback(async (target: AdminUserListItem) => {
     if (!canToggle || target.id === currentUser?.id) return;
 
     setTogglingId(target.id);
@@ -118,7 +119,7 @@ export default function UsersScreen() {
     } finally {
       setTogglingId(null);
     }
-  };
+  }, [canToggle, currentUser, updateUserInList]);
 
   const handleAssignRole = async (roleId: string, roleName: string) => {
     if (!roleModalUser || !canAssignRole) return;
@@ -137,7 +138,7 @@ export default function UsersScreen() {
     }
   };
 
-  const renderItem = ({ item }: { item: AdminUserListItem }) => (
+  const renderItem = useCallback(({ item }: { item: AdminUserListItem }) => (
     <UserCard
       user={item}
       isSelf={item.id === currentUser?.id}
@@ -148,7 +149,7 @@ export default function UsersScreen() {
       onToggleActive={() => handleToggleActive(item)}
       onChangeRole={() => setRoleModalUser(item)}
     />
-  );
+  ), [handleToggleActive, roleModalUser, assigningRole, togglingId, canToggle, canAssignRole, currentUser]);
 
   if (loading) {
     return (
@@ -199,7 +200,7 @@ export default function UsersScreen() {
         onSearch={setSearchQuery}
         onFilterChange={setStatusFilter}
       />
-      <FlatList
+      <FlashList
         data={filteredUsers}
         renderItem={renderItem}
         keyExtractor={(item) => item.id}

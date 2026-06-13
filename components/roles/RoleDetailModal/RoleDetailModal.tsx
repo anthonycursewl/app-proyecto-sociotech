@@ -1,9 +1,9 @@
+import { BarChart3, Briefcase, Calendar, Check, CircleDot, Eye, FileText, Heart, Key, Lock, Pencil, Shield, Stethoscope, Tag as TagIcon, Trash2, Users } from "lucide-react-native";
 import { Skeleton } from "@/components/common/Skeleton";
 import { Text } from "@/components/common/SText";
 import { Tag } from "@/components/common/Tag";
 import { Permission, RoleDetail, roleService } from "@/shared/services/role.service";
 import { useAvailablePermissions } from "@/shared/hooks/useAvailablePermissions";
-import * as LucideIcons from "lucide-react-native";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
@@ -37,16 +37,15 @@ const SHEET_HEIGHT = SCREEN_HEIGHT * 0.85;
 const DRAG_THRESHOLD = 60;
 
 const RESOURCE_CONFIG: Record<string, { label: string; icon: any; color: string; bg: string }> = {
-  users: { label: "Usuarios", icon: LucideIcons.Users, color: "#6B6B6B", bg: "rgb(240 240 240)" },
-  roles: { label: "Roles", icon: LucideIcons.Shield, color: "#6B6B6B", bg: "rgb(240 240 240)" },
-  patients: { label: "Pacientes", icon: LucideIcons.Heart, color: "#6B6B6B", bg: "rgb(240 240 240)" },
-  services: { label: "Servicios", icon: LucideIcons.Briefcase, color: "#6B6B6B", bg: "rgb(240 240 240)" },
-  "medical-records": { label: "Historias Clínicas", icon: LucideIcons.FileText, color: '#6B6B6B', bg: "rgb(240 240 240)" },
-  appointments: { label: "Citas", icon: LucideIcons.Calendar, color: "#6B6B6B", bg: "rgb(240 240 240)" },
-  doctors: { label: "Doctores", icon: LucideIcons.Stethoscope, color: "#6B6B6B", bg: "rgb(240 240 240)" },
-  reports: { label: "Reportes", icon: LucideIcons.BarChart3, color: "#6B6B6B", bg: "rgb(240 240 240)F" },
-  audit: { label: "Auditoría", icon: LucideIcons.Eye, color: "#6B6B6B", bg: "rgb(240 240 240)" },
-  schedules: { label: "Horarios", icon: LucideIcons.Clock, color: "#6B6B6B", bg: "rgb(240 240 240)" },
+  users: { label: "Usuarios", icon: Users, color: "#6B6B6B", bg: "rgb(240 240 240)" },
+  roles: { label: "Roles", icon: Shield, color: "#6B6B6B", bg: "rgb(240 240 240)" },
+  patients: { label: "Pacientes", icon: Heart, color: "#6B6B6B", bg: "rgb(240 240 240)" },
+  services: { label: "Servicios", icon: Briefcase, color: "#6B6B6B", bg: "rgb(240 240 240)" },
+  "medical-records": { label: "Historias Clínicas", icon: FileText, color: '#6B6B6B', bg: "rgb(240 240 240)" },
+  appointments: { label: "Citas", icon: Calendar, color: "#6B6B6B", bg: "rgb(240 240 240)" },
+  doctors: { label: "Doctores", icon: Stethoscope, color: "#6B6B6B", bg: "rgb(240 240 240)" },
+  reports: { label: "Reportes", icon: BarChart3, color: "#6B6B6B", bg: "rgb(240 240 240)F" },
+  audit: { label: "Auditoría", icon: Eye, color: "#6B6B6B", bg: "rgb(240 240 240)" },
 };
 
 const ACTION_CONFIG: Record<string, { label: string; color: string; bg: string }> = {
@@ -168,7 +167,7 @@ export const RoleDetailModal = ({
         useNativeDriver: true,
       }),
     ]).start(() => setAnimating(false));
-  }, [fetchRole]);
+  }, [fetchRole, overlayOpacity, slideY, sheetScale]);
 
   const closeAnimation = useCallback(() => {
     setAnimating(true);
@@ -195,7 +194,7 @@ export const RoleDetailModal = ({
       setEditing(false);
       onClose();
     });
-  }, [onClose]);
+  }, [onClose, overlayOpacity, slideY, sheetScale]);
 
   useEffect(() => {
     if (visible && !isVisible) {
@@ -396,7 +395,7 @@ export const RoleDetailModal = ({
                           setEditing(true);
                         }}
                       >
-                        <LucideIcons.Pencil size={16} color="#4F46E5" strokeWidth={2} />
+                        <Pencil size={16} color="#4F46E5" strokeWidth={2} />
                       </TouchableOpacity>
                     )}
                     {canDelete && (
@@ -408,7 +407,7 @@ export const RoleDetailModal = ({
                         {deleting ? (
                           <ActivityIndicator size="small" color="#EF4444" />
                         ) : (
-                          <LucideIcons.Trash2 size={16} color="#EF4444" strokeWidth={2} />
+                          <Trash2 size={16} color="#EF4444" strokeWidth={2} />
                         )}
                       </TouchableOpacity>
                     )}
@@ -501,7 +500,7 @@ export const RoleDetailModal = ({
               <View style={styles.infoSection}>
                 <View style={styles.nameRow}>
                   <View style={styles.avatar}>
-                    <LucideIcons.Shield size={24} color="#4F46E5" strokeWidth={2} />
+                    <Shield size={24} color="#4F46E5" strokeWidth={2} />
                   </View>
                   <View style={styles.nameInfo}>
                     <Text style={styles.roleName}>{formatRoleName(role.name)}</Text>
@@ -525,6 +524,7 @@ export const RoleDetailModal = ({
                       numberOfLines={3}
                       textAlignVertical="top"
                     />
+                    <Text style={styles.editHelper}>Texto que verán los administradores para entender las responsabilidades de este rol. Opcional pero recomendado.</Text>
                   </View>
                 ) : role.description ? (
                   <Text style={styles.description}>{role.description}</Text>
@@ -544,7 +544,7 @@ export const RoleDetailModal = ({
 
                 {hasChanges && (
                   <View style={styles.changesIndicator}>
-                    <LucideIcons.CircleDot size={10} color="#F59E0B" strokeWidth={2} />
+                    <CircleDot size={10} color="#F59E0B" strokeWidth={2} />
                     <Text style={styles.changesText}>Cambios sin guardar</Text>
                   </View>
                 )}
@@ -552,11 +552,14 @@ export const RoleDetailModal = ({
 
               <View style={styles.permissionsSection}>
                 <View style={styles.permissionsHeader}>
-                  <LucideIcons.Key size={18} color="#64748B" strokeWidth={2} />
+                  <Key size={18} color="#64748B" strokeWidth={2} />
                   <Text style={styles.permissionsTitle}>
                     {editing ? "Gestionar permisos" : `Permisos (${role.permissions.length})`}
                   </Text>
                 </View>
+                {editing && (
+                  <Text style={styles.permissionsHelper}>Activa o desactiva los permisos que tendrá este rol. Toca el encabezado de cada recurso para seleccionar/deseleccionar todos a la vez.</Text>
+                )}
 
                 {editing ? (
                   loadingPerms ? (
@@ -569,7 +572,7 @@ export const RoleDetailModal = ({
                     Object.entries(allPermGroups).map(([resource, perms]) => {
                       const config = RESOURCE_CONFIG[resource] || {
                         label: resource,
-                        icon: LucideIcons.Tag,
+                        icon: TagIcon,
                         color: "#64748B",
                         bg: "#F8FAFC",
                       };
@@ -595,7 +598,7 @@ export const RoleDetailModal = ({
                             </View>
                             <View style={[styles.checkbox, allSelected && styles.checkboxChecked]}>
                               {allSelected && (
-                                <LucideIcons.Check size={12} color="#FFFFFF" strokeWidth={3} />
+                                <Check size={12} color="#FFFFFF" strokeWidth={3} />
                               )}
                             </View>
                           </TouchableOpacity>
@@ -621,7 +624,7 @@ export const RoleDetailModal = ({
                                 >
                                   <View style={[styles.checkbox, isSelected && styles.checkboxChecked]}>
                                     {isSelected && (
-                                      <LucideIcons.Check size={12} color="#FFFFFF" strokeWidth={3} />
+                                      <Check size={12} color="#FFFFFF" strokeWidth={3} />
                                     )}
                                   </View>
                                   <View style={styles.permissionInfo}>
@@ -660,14 +663,14 @@ export const RoleDetailModal = ({
                   )
                 ) : role.permissions.length === 0 ? (
                   <View style={styles.emptyPermissions}>
-                    <LucideIcons.Lock size={32} color="#CBD5E1" strokeWidth={1.5} />
+                    <Lock size={32} color="#CBD5E1" strokeWidth={1.5} />
                     <Text style={styles.emptyPermissionsText}>Sin permisos asignados</Text>
                   </View>
                 ) : (
                   Object.entries(permissionGroups).map(([resource, perms]) => {
                     const config = RESOURCE_CONFIG[resource] || {
                       label: resource,
-                      icon: LucideIcons.Tag,
+                      icon: Tag,
                       color: "#64748B",
                       bg: "#F8FAFC",
                     };
@@ -917,6 +920,12 @@ const styles = StyleSheet.create({
     color: "#4F46E5",
     marginBottom: 6,
   },
+  editHelper: {
+    fontSize: 11,
+    color: "#94A3B8",
+    marginTop: 6,
+    lineHeight: 15,
+  },
   editInput: {
     backgroundColor: "#F8FAFC",
     borderRadius: 10,
@@ -988,6 +997,12 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: "700",
     color: "#0F172A",
+  },
+  permissionsHelper: {
+    fontSize: 11,
+    color: "#94A3B8",
+    marginBottom: 12,
+    lineHeight: 15,
   },
   emptyPermissions: {
     paddingVertical: 24,

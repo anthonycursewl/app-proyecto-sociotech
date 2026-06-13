@@ -25,7 +25,7 @@ export default function AccessDeniedScreen() {
         </Text>
         <TouchableOpacity
           style={styles.button}
-          onPress={() => router.replace("/(main)/home")}
+          onPress={() => { try { router.back(); } catch { router.replace("/(main)/home"); } }}
           accessibilityRole="button"
         >
           <Text style={styles.buttonText}>Volver al inicio</Text>

@@ -1,6 +1,6 @@
 import { useFonts } from "expo-font";
 import { Stack } from "expo-router";
-import { useEffect } from "react";
+import { StatusBar } from "expo-status-bar";
 import { AppErrorBoundary } from "@/shared/components/AppErrorBoundary";
 
 export default function RootLayout() {
@@ -12,19 +12,16 @@ export default function RootLayout() {
     "SpaceGrotesk-Bold": require("../assets/fonts/SpaceGrotesk-Bold.ttf"),
   });
 
-  useEffect(() => {
-    if (loaded) {
-      // Fonts ready
-    }
-  }, [loaded]);
-
-  if (!loaded) return null;
-
   return (
-    <AppErrorBoundary>
-      <Stack screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="index" />
-      </Stack>
-    </AppErrorBoundary>
+    <>
+      <StatusBar style="dark" />
+      {loaded && (
+        <AppErrorBoundary>
+          <Stack screenOptions={{ headerShown: false }}>
+            <Stack.Screen name="index" />
+          </Stack>
+        </AppErrorBoundary>
+      )}
+    </>
   );
 }

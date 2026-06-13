@@ -1,10 +1,10 @@
+import { Briefcase, Cake, CheckCheck, ChevronDown, ChevronLeft, Contact, Droplets, Heart, HeartPulse, Mail, MapPin, Minus, Phone, PhoneCall, Pill, Shield, ShieldAlert, User, UserCheck, UserCircle } from "lucide-react-native";
 import { StatusBar } from "expo-status-bar";
 import React, { useEffect, useRef, useState } from "react";
-import { ActivityIndicator, StyleSheet, TextInput, TouchableOpacity, View, Alert, ScrollView, Modal, Pressable, Animated } from "react-native";
+import { ActivityIndicator, StyleSheet, TextInput, TouchableOpacity, View, Alert, ScrollView, Animated } from "react-native";
 import { Text } from "@/components/common/SText"
 import { SafeAreaView } from "react-native-safe-area-context";
-import { LinearGradient } from "expo-linear-gradient";
-import * as LucideIcons from "lucide-react-native";
+import { BottomSheetModal } from "@/components/common/BottomSheetModal";
 import { useRouter } from "expo-router";
 import { useAuthStore } from "@/shared/zustand/auth/useAuthStore";
 import { patientService, CreatePatientData } from "@/shared/services/patient.service";
@@ -181,7 +181,7 @@ export default function PatientEditScreen() {
         setLoading(false);
       }
     })();
-  }, []);
+  }, [user?.firstName, user?.lastName, user?.email]);
 
   const handleSave = async () => {
     if (!form.cedulaNumber.trim()) {
@@ -233,13 +233,13 @@ export default function PatientEditScreen() {
         { text: "OK", onPress: () => router.back() }
       ]);
     } catch (err: any) {
-      Alert.alert("Error", getApiErrorMessage(err));
+      Alert.alert("Error", getApiErrorMessage(err) ?? "Error al guardar los datos");
     } finally {
       setSaving(false);
     }
   };
 
-  const renderInput = (key: keyof FormField, label: string, icon: React.ReactNode, placeholder: string, opts?: { multiline?: boolean; keyboardType?: "default" | "email-address" | "phone-pad"; autoCapitalize?: "none" | "sentences" | "words" | "characters"; editable?: boolean }) => (
+  const renderInput = (key: keyof FormField, label: string, icon: React.ReactNode, placeholder: string, opts?: { multiline?: boolean; keyboardType?: "default" | "email-address" | "phone-pad"; autoCapitalize?: "none" | "sentences" | "words" | "characters"; editable?: boolean; helper?: string }) => (
     <View key={key} style={styles.inputWrapper}>
       <Text style={[styles.fieldLabel, opts?.editable === false && { color: "#94A3B8" }]}>{label}</Text>
       <View style={[styles.fieldContainer, opts?.editable === false && { backgroundColor: "#F1F5F9" }]}>
@@ -257,55 +257,65 @@ export default function PatientEditScreen() {
           editable={opts?.editable}
         />
       </View>
+      {opts?.helper && <Text style={styles.fieldHelper}>{opts.helper}</Text>}
     </View>
   );
 
-  const renderPicker = (label: string, value: string, placeholder: string, icon: React.ReactNode, onPress: () => void) => (
+  const renderPicker = (label: string, value: string, placeholder: string, icon: React.ReactNode, onPress: () => void, helper?: string) => (
     <View style={styles.inputWrapper}>
       <Text style={styles.fieldLabel}>{label}</Text>
       <TouchableOpacity style={[styles.fieldContainer, styles.bloodSelector]} onPress={onPress} activeOpacity={0.7}>
         {icon}
         <Text style={[styles.bloodValue, !value && { color: "#C5CDD8" }]}>{value || placeholder}</Text>
-        <LucideIcons.ChevronDown size={16} color="#94A3B8" strokeWidth={2} />
+        <ChevronDown size={16} color="#94A3B8" strokeWidth={2} />
       </TouchableOpacity>
+      {helper && <Text style={styles.fieldHelper}>{helper}</Text>}
     </View>
   );
 
-  const renderPickerModal = (visible: boolean, onClose: () => void, title: string, options: string[], onSelect: (v: string) => void) => (
-    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
-      <Pressable style={styles.modalOverlay} onPress={onClose}>
-        <Pressable style={styles.bloodPickerSheet} onPress={() => {}}>
-          <View style={styles.bloodPickerHandle} />
+  const renderPickerModal = (
+    visible: boolean,
+    onClose: () => void,
+    title: string,
+    subtitle: string,
+    icon: React.ReactNode,
+    options: string[],
+    onSelect: (v: string) => void,
+  ) => (
+    <BottomSheetModal visible={visible} onClose={onClose} height={0.45}>
+      <View style={styles.bloodPickerHeader}>
+        <View style={styles.bloodPickerIcon}>{icon}</View>
+        <View style={{ flex: 1 }}>
           <Text style={styles.bloodPickerTitle}>{title}</Text>
-          <View style={styles.bloodGrid}>
-            {options.map((opt) => {
-              const selected = form.gender === opt || form.civilStatus === opt;
-              return (
-                <TouchableOpacity
-                  key={opt}
-                  style={[styles.bloodOption, selected && styles.bloodOptionSelected]}
-                  onPress={() => { onSelect(opt); onClose(); }}
-                  activeOpacity={0.7}
-                >
-                  <Text style={[styles.bloodOptionText, selected && styles.bloodOptionTextSelected]}>{opt}</Text>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
-        </Pressable>
-      </Pressable>
-    </Modal>
+          <Text style={styles.bloodPickerSubtitle}>{subtitle}</Text>
+        </View>
+      </View>
+      <View style={styles.bloodGrid}>
+        {options.map((opt) => {
+          const selected = form.gender === opt || form.civilStatus === opt;
+          return (
+            <TouchableOpacity
+              key={opt}
+              style={[styles.bloodOption, selected && styles.bloodOptionSelected]}
+              onPress={() => { onSelect(opt); onClose(); }}
+              activeOpacity={0.7}
+            >
+              <Text style={[styles.bloodOptionText, selected && styles.bloodOptionTextSelected]}>{opt}</Text>
+            </TouchableOpacity>
+          );
+        })}
+      </View>
+    </BottomSheetModal>
   );
 
   if (showSkeleton) {
     return (
       <SafeAreaView style={styles.container} edges={["bottom", "left", "right"]}>
-        <StatusBar style="light" />
-        <LinearGradient colors={['#4CB1B1', 'transparent']} start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }} style={styles.headerGradient} />
+        <StatusBar style="dark" />
         <SkeletonLayout>
         <View style={styles.header}>
           <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-            <LucideIcons.ChevronLeft size={20} color="#FFFFFF" strokeWidth={2.5} />
+            <ChevronLeft size={20} color="#0F172A" strokeWidth={2.5} />
           </TouchableOpacity>
           <View style={styles.headerTextWrap}>
             <SkeletonLayout.Block width={140} height={18} borderRadius={9} />
@@ -358,16 +368,10 @@ export default function PatientEditScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={["bottom", "left", "right"]}>
-      <StatusBar style="light" />
-      <LinearGradient
-        colors={['#4CB1B1', 'transparent']}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 0, y: 1 }}
-        style={styles.headerGradient}
-      />
+      <StatusBar style="dark" />
       <View style={styles.header}>
         <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-          <LucideIcons.ChevronLeft size={20} color="#FFFFFF" strokeWidth={2.5} />
+          <ChevronLeft size={20} color="#0F172A" strokeWidth={2.5} />
         </TouchableOpacity>
         <View style={styles.headerTextWrap}>
           <Text style={styles.headerTitle}>Mis Datos</Text>
@@ -378,14 +382,14 @@ export default function PatientEditScreen() {
       <Animated.View style={{ flex: 1, opacity: contentOpacity }}>
       <ScrollView ref={scrollRef} style={styles.scrollView} showsVerticalScrollIndicator={false}>
         <View style={styles.form}>
-          <FormSection title="Información Personal" icon={LucideIcons.UserCircle}>
+          <FormSection title="Información Personal" icon={UserCircle}>
             <View style={styles.row}>
               <View style={{ flex: 1 }}>
-                {renderInput("firstName", "Nombre", <LucideIcons.User size={16} color="#94A3B8" strokeWidth={2} style={styles.fieldIcon} />, "Tu nombre", { autoCapitalize: "words", editable: false })}
+                {renderInput("firstName", "Nombre", <User size={16} color="#94A3B8" strokeWidth={2} style={styles.fieldIcon} />, "Tu nombre", { autoCapitalize: "words", editable: false, helper: "Tu nombre tal como aparece en tu documento de identidad. Se toma de tu cuenta y no puede modificarse aquí." })}
               </View>
               <View style={{ width: 12 }} />
               <View style={{ flex: 1 }}>
-                {renderInput("lastName", "Apellido", <LucideIcons.User size={16} color="#94A3B8" strokeWidth={2} style={styles.fieldIcon} />, "Tu apellido", { autoCapitalize: "words", editable: false })}
+                {renderInput("lastName", "Apellido", <User size={16} color="#94A3B8" strokeWidth={2} style={styles.fieldIcon} />, "Tu apellido", { autoCapitalize: "words", editable: false, helper: "Tu apellido legal. Viene de tu cuenta registrada." })}
               </View>
             </View>
             <View style={styles.inputWrapper}>
@@ -400,9 +404,9 @@ export default function PatientEditScreen() {
                   activeOpacity={0.7}
                 >
                   <Text style={styles.cedulaLetterText}>{form.cedulaLetter}</Text>
-                  <LucideIcons.ChevronDown size={12} color="#4CB1B1" strokeWidth={3} />
+                  <ChevronDown size={12} color="#4CB1B1" strokeWidth={3} />
                 </TouchableOpacity>
-                <LucideIcons.Minus size={14} color="#94A3B8" strokeWidth={2} style={{ marginHorizontal: 4 }} />
+                <Minus size={14} color="#94A3B8" strokeWidth={2} style={{ marginHorizontal: 4 }} />
                 <TextInput
                   style={styles.cedulaNumberInput}
                   value={form.cedulaNumber}
@@ -412,11 +416,12 @@ export default function PatientEditScreen() {
                   keyboardType="number-pad"
                 />
               </View>
+              <Text style={styles.fieldHelper}>Documento nacional de identidad. Toca la letra (V/J/E) para cambiarla. Ingresa solo los 9 dígitos, sin guiones.</Text>
             </View>
             <View style={styles.inputWrapper}>
               <Text style={styles.fieldLabel}>Fecha de Nacimiento</Text>
               <View style={styles.fieldContainer}>
-                <LucideIcons.Cake size={16} color="#94A3B8" strokeWidth={2} style={styles.fieldIcon} />
+                <Cake size={16} color="#94A3B8" strokeWidth={2} style={styles.fieldIcon} />
                 <TextInput
                   style={styles.fieldInput}
                   value={form.birthDate}
@@ -426,19 +431,20 @@ export default function PatientEditScreen() {
                   keyboardType="number-pad"
                 />
               </View>
+              <Text style={styles.fieldHelper}>Día, mes y año con 2 dígitos cada uno. Ejemplo: 15/03/1990.</Text>
             </View>
-            {renderPicker("Género", form.gender, "Seleccionar", <LucideIcons.UserCheck size={16} color="#94A3B8" strokeWidth={2} style={styles.fieldIcon} />, () => setGenderPickerOpen(true))}
-            {renderInput("phone", "Teléfono", <LucideIcons.Phone size={16} color="#94A3B8" strokeWidth={2} style={styles.fieldIcon} />, "809-555-1234", { keyboardType: "phone-pad" })}
-            {renderInput("email", "Correo electrónico", <LucideIcons.Mail size={16} color="#94A3B8" strokeWidth={2} style={styles.fieldIcon} />, "correo@ejemplo.com", { keyboardType: "email-address", autoCapitalize: "none", editable: false })}
-            {renderInput("address", "Dirección", <LucideIcons.MapPin size={16} color="#94A3B8" strokeWidth={2} style={styles.fieldIcon} />, "Calle Principal #42", { multiline: true })}
+            {renderPicker("Género", form.gender, "Seleccionar", <UserCheck size={16} color="#94A3B8" strokeWidth={2} style={styles.fieldIcon} />, () => setGenderPickerOpen(true), "Opcional. Se usa para personalizar tu atención médica.")}
+            {renderInput("phone", "Teléfono", <Phone size={16} color="#94A3B8" strokeWidth={2} style={styles.fieldIcon} />, "809-555-1234", { keyboardType: "phone-pad", helper: "Número principal donde el consultorio puede contactarte para confirmar tus citas." })}
+            {renderInput("email", "Correo electrónico", <Mail size={16} color="#94A3B8" strokeWidth={2} style={styles.fieldIcon} />, "correo@ejemplo.com", { keyboardType: "email-address", autoCapitalize: "none", editable: false, helper: "Correo asociado a tu cuenta. Se utiliza para notificaciones y recuperación de contraseña." })}
+            {renderInput("address", "Dirección", <MapPin size={16} color="#94A3B8" strokeWidth={2} style={styles.fieldIcon} />, "Calle Principal #42", { multiline: true, helper: "Dirección completa de tu residencia: calle, número, ciudad, sector. Necesaria para visitas y referencias." })}
           </FormSection>
 
-          <FormSection title="Información Adicional" icon={LucideIcons.Briefcase}>
-            {renderInput("occupation", "Ocupación", <LucideIcons.Briefcase size={16} color="#94A3B8" strokeWidth={2} style={styles.fieldIcon} />, "Ingeniero", { autoCapitalize: "sentences" })}
-            {renderPicker("Estado Civil", form.civilStatus, "Seleccionar", <LucideIcons.Heart size={16} color="#94A3B8" strokeWidth={2} style={styles.fieldIcon} />, () => setCivilPickerOpen(true))}
+          <FormSection title="Información Adicional" icon={Briefcase}>
+            {renderInput("occupation", "Ocupación", <Briefcase size={16} color="#94A3B8" strokeWidth={2} style={styles.fieldIcon} />, "Ingeniero", { autoCapitalize: "sentences", helper: "Opcional. Tu profesión o actividad principal. Puede ayudar al doctor a entender tu estilo de vida." })}
+            {renderPicker("Estado Civil", form.civilStatus, "Seleccionar", <Heart size={16} color="#94A3B8" strokeWidth={2} style={styles.fieldIcon} />, () => setCivilPickerOpen(true), "Opcional. Se usa únicamente con fines médicos y administrativos.")}
           </FormSection>
 
-          <FormSection title="Información Médica" icon={LucideIcons.HeartPulse}>
+          <FormSection title="Información Médica" icon={HeartPulse}>
             <View style={styles.inputWrapper}>
               <Text style={styles.fieldLabel}>Tipo de Sangre</Text>
               <TouchableOpacity
@@ -446,26 +452,27 @@ export default function PatientEditScreen() {
                 onPress={() => setBloodPickerOpen(true)}
                 activeOpacity={0.7}
               >
-                <LucideIcons.Droplets size={16} color="#EF4444" strokeWidth={2} style={styles.fieldIcon} />
+                <Droplets size={16} color="#EF4444" strokeWidth={2} style={styles.fieldIcon} />
                 <Text style={[styles.bloodValue, !form.bloodType && { color: "#C5CDD8" }]}>{form.bloodType || "Seleccionar"}</Text>
-                <LucideIcons.ChevronDown size={16} color="#94A3B8" strokeWidth={2} />
+                <ChevronDown size={16} color="#94A3B8" strokeWidth={2} />
               </TouchableOpacity>
+              <Text style={styles.fieldHelper}>Opcional pero importante en emergencias. Busca esta información en tu documento o análisis previos.</Text>
             </View>
-            {renderInput("allergies", "Alergias", <LucideIcons.ShieldAlert size={16} color="#94A3B8" strokeWidth={2} style={styles.fieldIcon} />, "Penicilina, Polen", { multiline: true })}
-            {renderInput("currentMedications", "Medicamentos Actuales", <LucideIcons.Pill size={16} color="#94A3B8" strokeWidth={2} style={styles.fieldIcon} />, "Losartán 50mg", { multiline: true })}
-            {renderInput("chronicDiseases", "Enfermedades Crónicas", <LucideIcons.Heart size={16} color="#94A3B8" strokeWidth={2} style={styles.fieldIcon} />, "Hipertensión, Asma", { multiline: true })}
+            {renderInput("allergies", "Alergias", <ShieldAlert size={16} color="#94A3B8" strokeWidth={2} style={styles.fieldIcon} />, "Penicilina, Polen", { multiline: true, helper: "Lista alergias conocidas separadas por comas. Incluye medicamentos, alimentos, látex, etc. Déjalo vacío si no tienes." })}
+            {renderInput("currentMedications", "Medicamentos Actuales", <Pill size={16} color="#94A3B8" strokeWidth={2} style={styles.fieldIcon} />, "Losartán 50mg", { multiline: true, helper: "Medicamentos que tomas actualmente, separados por comas. Incluye nombre y dosis (ej. Losartán 50mg). Déjalo vacío si no tomas ninguno." })}
+            {renderInput("chronicDiseases", "Enfermedades Crónicas", <Heart size={16} color="#94A3B8" strokeWidth={2} style={styles.fieldIcon} />, "Hipertensión, Asma", { multiline: true, helper: "Condiciones médicas crónicas diagnosticadas, separadas por comas (ej. Hipertensión, Diabetes). Déjalo vacío si no aplica." })}
           </FormSection>
 
-          <FormSection title="Contacto de Emergencia" icon={LucideIcons.Shield}>
-            {renderInput("emergencyContact", "Nombre del Contacto", <LucideIcons.Contact size={16} color="#94A3B8" strokeWidth={2} style={styles.fieldIcon} />, "María García", { autoCapitalize: "words" })}
-            {renderInput("emergencyPhone", "Teléfono", <LucideIcons.PhoneCall size={16} color="#94A3B8" strokeWidth={2} style={styles.fieldIcon} />, "809-555-5678", { keyboardType: "phone-pad" })}
+          <FormSection title="Contacto de Emergencia" icon={Shield}>
+            {renderInput("emergencyContact", "Nombre del Contacto", <Contact size={16} color="#94A3B8" strokeWidth={2} style={styles.fieldIcon} />, "María García", { autoCapitalize: "words", helper: "Nombre completo de un familiar o amigo cercano a quien llamar en caso de emergencia." })}
+            {renderInput("emergencyPhone", "Teléfono", <PhoneCall size={16} color="#94A3B8" strokeWidth={2} style={styles.fieldIcon} />, "809-555-5678", { keyboardType: "phone-pad", helper: "Número de teléfono del contacto de emergencia. Debe ser diferente al tuyo." })}
           </FormSection>
 
           <TouchableOpacity style={[styles.saveButton, saving && { opacity: 0.7 }]} onPress={handleSave} disabled={saving} activeOpacity={0.85}>
             {saving ? (
               <ActivityIndicator size="small" color="#FFFFFF" />
             ) : (
-              <LucideIcons.CheckCheck size={18} color="#FFFFFF" strokeWidth={2.5} />
+              <CheckCheck size={18} color="#FFFFFF" strokeWidth={2.5} />
             )}
             <Text style={styles.saveButtonText}>{saving ? "Guardando..." : mode === "create" ? "Crear Perfil" : "Guardar Cambios"}</Text>
           </TouchableOpacity>
@@ -473,37 +480,54 @@ export default function PatientEditScreen() {
       </ScrollView>
       </Animated.View>
 
-      <Modal visible={bloodPickerOpen} transparent animationType="fade" onRequestClose={() => setBloodPickerOpen(false)}>
-        <Pressable style={styles.modalOverlay} onPress={() => setBloodPickerOpen(false)}>
-          <Pressable style={styles.bloodPickerSheet} onPress={() => {}}>
-            <View style={styles.bloodPickerHandle} />
+      <BottomSheetModal visible={bloodPickerOpen} onClose={() => setBloodPickerOpen(false)} height={0.45}>
+        <View style={styles.bloodPickerHeader}>
+          <View style={styles.bloodPickerIcon}>
+            <Droplets size={18} color="#EF4444" strokeWidth={2.5} />
+          </View>
+          <View style={{ flex: 1 }}>
             <Text style={styles.bloodPickerTitle}>Tipo de Sangre</Text>
-            <View style={styles.bloodGrid}>
-              {BLOOD_TYPES.map((bt) => {
-                const selected = form.bloodType === bt;
-                return (
-                  <TouchableOpacity key={bt} style={[styles.bloodOption, selected && styles.bloodOptionSelected]} onPress={() => { updateField("bloodType", bt); setBloodPickerOpen(false); }} activeOpacity={0.7}>
-                    <Text style={[styles.bloodOptionText, selected && styles.bloodOptionTextSelected]}>{bt}</Text>
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
-          </Pressable>
-        </Pressable>
-      </Modal>
+            <Text style={styles.bloodPickerSubtitle}>Información importante para emergencias</Text>
+          </View>
+        </View>
+        <View style={styles.bloodGrid}>
+          {BLOOD_TYPES.map((bt) => {
+            const selected = form.bloodType === bt;
+            return (
+              <TouchableOpacity key={bt} style={[styles.bloodOption, selected && styles.bloodOptionSelected]} onPress={() => { updateField("bloodType", bt); setBloodPickerOpen(false); }} activeOpacity={0.7}>
+                <Text style={[styles.bloodOptionText, selected && styles.bloodOptionTextSelected]}>{bt}</Text>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+      </BottomSheetModal>
 
-      {renderPickerModal(genderPickerOpen, () => setGenderPickerOpen(false), "Género", GENDER_OPTIONS, (v) => updateField("gender", v))}
-      {renderPickerModal(civilPickerOpen, () => setCivilPickerOpen(false), "Estado Civil", CIVIL_STATUS_OPTIONS, (v) => updateField("civilStatus", v))}
+      {renderPickerModal(
+        genderPickerOpen,
+        () => setGenderPickerOpen(false),
+        "Género",
+        "Selecciona cómo prefieres identificarte",
+        <UserCheck size={18} color="#0D9488" strokeWidth={2.5} />,
+        GENDER_OPTIONS,
+        (v) => updateField("gender", v),
+      )}
+      {renderPickerModal(
+        civilPickerOpen,
+        () => setCivilPickerOpen(false),
+        "Estado Civil",
+        "Información opcional con fines administrativos",
+        <Heart size={18} color="#0D9488" strokeWidth={2.5} />,
+        CIVIL_STATUS_OPTIONS,
+        (v) => updateField("civilStatus", v),
+      )}
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#F8FAFC" },
-  headerGradient: { position: "absolute", top: 0, left: 0, right: 0, height: 140 },
 
   header: {
-    position: "relative",
     paddingTop: 48,
     paddingHorizontal: 20,
     paddingBottom: 16,
@@ -514,21 +538,22 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 10,
-    backgroundColor: "rgba(255,255,255,0.2)",
+    backgroundColor: "#FFFFFF",
     justifyContent: "center",
     alignItems: "center",
     marginRight: 12,
+    shadowColor: "#000", shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 1,
   },
   headerTextWrap: { flex: 1 },
   headerTitle: {
     fontSize: 20,
     fontWeight: "800",
-    color: "#FFFFFF",
+    color: "#0F172A",
     letterSpacing: -0.5,
   },
   headerSubtitle: {
     fontSize: 12,
-    color: "rgba(255,255,255,0.85)",
+    color: "#64748B",
     marginTop: 1,
   },
 
@@ -620,6 +645,13 @@ const styles = StyleSheet.create({
     marginBottom: 5,
     letterSpacing: 0.2,
   },
+  fieldHelper: {
+    fontSize: 11,
+    color: "#94A3B8",
+    marginTop: 4,
+    lineHeight: 15,
+    paddingHorizontal: 2,
+  },
   fieldContainer: {
     flexDirection: "row",
     alignItems: "center",
@@ -675,60 +707,65 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
   },
 
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.4)",
-    justifyContent: "flex-end",
+  bloodPickerHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    marginBottom: 16,
   },
-  bloodPickerSheet: {
-    backgroundColor: "#FFFFFF",
-    borderTopLeftRadius: 28,
-    borderTopRightRadius: 28,
-    paddingHorizontal: 24,
-    paddingTop: 12,
-    paddingBottom: 40,
-  },
-  bloodPickerHandle: {
+  bloodPickerIcon: {
     width: 36,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: "#E2E8F0",
-    alignSelf: "center",
-    marginBottom: 20,
+    height: 36,
+    borderRadius: 10,
+    backgroundColor: "#F0FDF9",
+    justifyContent: "center",
+    alignItems: "center",
   },
   bloodPickerTitle: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: "700",
     color: "#0F172A",
-    textAlign: "center",
-    marginBottom: 20,
+    letterSpacing: -0.2,
+  },
+  bloodPickerSubtitle: {
+    fontSize: 12,
+    color: "#64748B",
+    marginTop: 2,
+    fontWeight: "500",
   },
   bloodGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 10,
+    gap: 8,
     justifyContent: "center",
   },
   bloodOption: {
-    width: "46%",
-    paddingVertical: 14,
-    borderRadius: 14,
+    flexBasis: "47%",
+    flexGrow: 1,
+    minWidth: 90,
+    paddingVertical: 12,
+    paddingHorizontal: 10,
+    borderRadius: 12,
     backgroundColor: "#F8FAFC",
     borderWidth: 1,
-    borderColor: "#F1F5F9",
+    borderColor: "#EEF2F6",
     alignItems: "center",
+    flexDirection: "row",
+    justifyContent: "center",
+    gap: 6,
   },
   bloodOptionSelected: {
     backgroundColor: "#F0FDF9",
     borderColor: "#4CB1B1",
+    borderWidth: 1.5,
   },
   bloodOptionText: {
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: "700",
-    color: "#64748B",
-    letterSpacing: 0.5,
+    color: "#475569",
+    letterSpacing: 0.3,
   },
   bloodOptionTextSelected: {
-    color: "#4CB1B1",
+    color: "#0F766E",
   },
 });

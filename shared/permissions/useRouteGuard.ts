@@ -10,12 +10,32 @@ import { canAccessRoute, isPublicMainRoute } from "./routePermissions";
 export function useRouteGuard() {
   const pathname = usePathname();
   const router = useRouter();
+  const routerRef = useRef(router);
+  routerRef.current = router;
   const user = useAuthStore((s) => s.user);
   const permissions = useAuthStore((s) => s.permissions);
   const lastDeniedPath = useRef<string | null>(null);
+  const wasAuthenticated = useRef<boolean>(false);
 
   useEffect(() => {
-    if (!user || !pathname) return;
+    if (user) {
+      wasAuthenticated.current = true;
+    }
+  }, [user]);
+
+  useEffect(() => {
+    if (!pathname) return;
+
+    const r = routerRef.current;
+
+    if (!user) {
+      if (wasAuthenticated.current && !isPublicMainRoute(pathname)) {
+        wasAuthenticated.current = false;
+        r.replace("/(auth)/login");
+      }
+      return;
+    }
+
     if (isPublicMainRoute(pathname)) {
       lastDeniedPath.current = null;
       return;
@@ -29,9 +49,9 @@ export function useRouteGuard() {
     if (lastDeniedPath.current === pathname) return;
     lastDeniedPath.current = pathname;
 
-    router.replace({
+    r.replace({
       pathname: "/(main)/access-denied",
       params: { from: pathname },
     });
-  }, [pathname, permissions, user, router]);
+  }, [pathname, permissions, user]);
 }

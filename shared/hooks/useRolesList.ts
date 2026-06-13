@@ -1,6 +1,6 @@
 import { getApiErrorMessage } from "@/shared/errors/apiError";
 import { RoleListItem, roleService } from "@/shared/services/role.service";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 const PAGE_LIMIT = 20;
 

@@ -1,37 +1,31 @@
+import { Ban, Briefcase, CalendarSync, ChevronLeft, FileDown, FileText, Phone, RefreshCw, Stethoscope, X } from "lucide-react-native";
 import { StatusBar } from "expo-status-bar";
-import React, { useCallback, useMemo } from "react";
-import { ScrollView, StyleSheet, TouchableOpacity, View, Alert } from "react-native";
+import React, { useCallback, useMemo, useState } from "react";
+import { AppointmentSection } from "@/components/appointments/AppointmentSection";
+import { ActivityIndicator, ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
 import { Text } from "@/components/common/SText";
 import { SafeAreaView } from "react-native-safe-area-context";
-import * as LucideIcons from "lucide-react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { AppointmentDetailSkeleton } from "@/components/appointments/AppointmentDetailSkeleton";
-import { DetailHeader } from "@/components/appointments/DetailHeader";
+import { BottomSheetModal } from "@/components/common/BottomSheetModal";
+import { CancelAppointmentModal } from "@/components/appointments/CancelAppointmentModal";
 import { ListErrorState } from "@/components/common/ListErrorState";
 import { useAppointmentDetail } from "@/shared/hooks/useAppointmentDetail";
-import { appointmentService, Appointment, AppointmentStatus } from "@/shared/services/appointment.service";
+import { appointmentService } from "@/shared/services/appointment.service";
+import { pdfService } from "@/shared/services/pdf.service";
 import { setCached } from "@/shared/cache/appointmentCache";
-import { useAuthStore } from "@/shared/zustand/auth/useAuthStore";
-import { useCanManageAppointments, useCanCancelAnyAppointment } from "@/shared/permissions/capabilities";
+import { useCanCancelOwnAppointment, useCanUpdateOwnAppointment } from "@/shared/permissions/capabilities";
 import { mapToAdminAppointmentData } from "@/shared/mappers/appointment.mapper";
 import { colors } from "@/shared/theme/colors";
 
 const STATUS_META: Record<
   "pending" | "confirmed" | "completed" | "cancelled",
-  { label: string; dot: string; bg: string; text: string }
+  { label: string; dot: string }
 > = {
-  pending: { label: "Pendiente", dot: "#F59E0B", bg: "#FEF3C7", text: "#B45309" },
-  confirmed: { label: "Confirmada", dot: "#0D9488", bg: "#E0F2F1", text: "#0D9488" },
-  completed: { label: "Completada", dot: "#10B981", bg: "#DCFCE7", text: "#15803D" },
-  cancelled: { label: "Cancelada", dot: "#EF4444", bg: "#FEE2E2", text: "#B91C1C" },
-};
-
-const STATUS_FROM_API: Record<AppointmentStatus, keyof typeof STATUS_META> = {
-  SCHEDULED: "pending",
-  CONFIRMED: "confirmed",
-  COMPLETED: "completed",
-  CANCELLED: "cancelled",
-  NO_SHOW: "cancelled",
+  pending: { label: "Pendiente", dot: "#F59E0B" },
+  confirmed: { label: "Confirmada", dot: "#0D9488" },
+  completed: { label: "Completada", dot: "#10B981" },
+  cancelled: { label: "Cancelada", dot: "#EF4444" },
 };
 
 const formatLongDate = (dateStr: string) => {
@@ -56,45 +50,19 @@ const formatDateTime = (iso: string) => {
   });
 };
 
-const formatPrice = (price: number | null) => {
-  if (price === null || price === undefined) return null;
-  return `$${price.toLocaleString("es-ES")}`;
-};
-
-function Section({
-  title,
-  icon: Icon,
-  children,
-}: {
-  title: string;
-  icon: React.ComponentType<{ size?: number; color?: string; strokeWidth?: number }>;
-  children: React.ReactNode;
-}) {
-  return (
-    <View style={styles.sectionCard}>
-      <View style={styles.sectionHeader}>
-        <View style={styles.sectionIconWrap}>
-          <Icon size={17} color="#0D9488" strokeWidth={2.5} />
-        </View>
-        <Text style={styles.sectionTitle}>{title}</Text>
-      </View>
-      {children}
-    </View>
-  );
-}
-
-export default function AppointmentDetailScreen() {
+export default function PatientAppointmentDetailScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
-  const user = useAuthStore((s) => s.user);
 
   const { appointment, loading, error, notFound, refetch, updateLocal } =
     useAppointmentDetail(id);
 
-  const canManage = useCanManageAppointments();
-  const canCancelAny = useCanCancelAnyAppointment();
+  const canCancelOwn = useCanCancelOwnAppointment();
+  const canUpdateOwn = useCanUpdateOwnAppointment();
 
-  const [mutating, setMutating] = React.useState(false);
+  const [cancelModalVisible, setCancelModalVisible] = useState(false);
+  const [downloadModalVisible, setDownloadModalVisible] = useState(false);
+  const [downloading, setDownloading] = useState(false);
 
   const viewModel = useMemo(
     () => (appointment ? mapToAdminAppointmentData(appointment) : null),
@@ -107,66 +75,25 @@ export default function AppointmentDetailScreen() {
   );
   const statusKey = viewModel?.status ?? null;
   const status = statusKey ? STATUS_META[statusKey] : null;
-  const priceLabel = viewModel ? formatPrice(viewModel.servicePrice) : null;
-  const isOwnAppointment =
-    appointment && user && appointment.patientId === user.id;
   const canCancel =
     !!appointment &&
-    !mutating &&
     (appointment.status === "SCHEDULED" || appointment.status === "CONFIRMED") &&
-    (canCancelAny || isOwnAppointment);
+    canCancelOwn;
 
-  const handleCancel = useCallback(() => {
-    if (!appointment) return;
-    Alert.alert(
-      "Cancelar cita",
-      "¿Estás seguro de que deseas cancelar esta cita? Esta acción no se puede deshacer.",
-      [
-        { text: "No, mantener", style: "cancel" },
-        {
-          text: "Sí, cancelar",
-          style: "destructive",
-          onPress: async () => {
-            setMutating(true);
-            try {
-              const updated = await appointmentService.cancel(appointment.id, {
-                reason: "Cancelada por el usuario",
-              });
-              setCached(updated);
-              updateLocal(updated);
-            } catch (err) {
-              Alert.alert(
-                "Error",
-                err instanceof Error ? err.message : "No se pudo cancelar la cita",
-              );
-            } finally {
-              setMutating(false);
-            }
-          },
-        },
-      ],
-    );
-  }, [appointment, updateLocal]);
+  const canReschedule =
+    !!appointment &&
+    (appointment.status === "SCHEDULED" || appointment.status === "CONFIRMED") &&
+    canUpdateOwn;
 
-  if (loading && !appointment) {
-    return (
-      <View style={styles.root}>
-        <StatusBar style="light" />
-        <View style={styles.bodyBackground} />
-        <DetailHeader height={200} />
-        <SafeAreaView style={styles.container} edges={["top"]}>
-          <View style={styles.headerRow}>
-            <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-              <LucideIcons.ChevronLeft size={22} color="#FFFFFF" strokeWidth={2.5} />
-            </TouchableOpacity>
-            <Text style={styles.headerTitle}>Detalle de cita</Text>
-            <View style={styles.refreshButtonPlaceholder} />
-          </View>
-        </SafeAreaView>
-        <AppointmentDetailSkeleton />
-      </View>
-    );
-  }
+  const handleCancelConfirm = useCallback(
+    async (reason: string) => {
+      if (!appointment) return;
+      const updated = await appointmentService.cancel(appointment.id, { reason });
+      setCached(updated);
+      updateLocal(updated);
+    },
+    [appointment, updateLocal],
+  );
 
   if (notFound || (!loading && !appointment)) {
     return (
@@ -174,7 +101,7 @@ export default function AppointmentDetailScreen() {
         <StatusBar style="dark" />
         <View style={styles.headerRowLight}>
           <TouchableOpacity style={styles.backButtonLight} onPress={() => router.back()}>
-            <LucideIcons.ChevronLeft size={22} color="#0F172A" strokeWidth={2.5} />
+            <ChevronLeft size={22} color="#0F172A" strokeWidth={2.5} />
           </TouchableOpacity>
         </View>
         <ListErrorState
@@ -191,7 +118,7 @@ export default function AppointmentDetailScreen() {
         <StatusBar style="dark" />
         <View style={styles.headerRowLight}>
           <TouchableOpacity style={styles.backButtonLight} onPress={() => router.back()}>
-            <LucideIcons.ChevronLeft size={22} color="#0F172A" strokeWidth={2.5} />
+            <ChevronLeft size={22} color="#0F172A" strokeWidth={2.5} />
           </TouchableOpacity>
         </View>
         <ListErrorState message={error} onRetry={refetch} />
@@ -199,27 +126,29 @@ export default function AppointmentDetailScreen() {
     );
   }
 
-  if (!appointment || !date || !status) return null;
+  if (!loading && (!appointment || !date || !status)) return null;
 
   return (
     <View style={styles.root}>
-      <StatusBar style="light" />
-      <View style={styles.bodyBackground} />
-      <DetailHeader height={260} />
+      <StatusBar style="dark" />
       <SafeAreaView style={styles.container} edges={["top"]}>
-        <View style={styles.headerRow}>
-          <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-            <LucideIcons.ChevronLeft size={22} color="#FFFFFF" strokeWidth={2.5} />
+        {loading && !appointment ? (
+          <AppointmentDetailSkeleton />
+        ) : (
+          <>
+        <View style={styles.headerRowLight}>
+          <TouchableOpacity style={styles.backButtonLight} onPress={() => router.back()}>
+            <ChevronLeft size={22} color="#0F172A" strokeWidth={2.5} />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Detalle de cita</Text>
+          <Text style={styles.headerTitleLight}>Detalle de cita</Text>
           <TouchableOpacity
-            style={styles.refreshButton}
+            style={styles.refreshButtonLight}
             onPress={refetch}
             disabled={loading}
           >
-            <LucideIcons.RefreshCw
+            <RefreshCw
               size={18}
-              color="#FFFFFF"
+              color="#0F172A"
               strokeWidth={2.5}
               style={loading ? styles.rotating : undefined}
             />
@@ -256,18 +185,9 @@ export default function AppointmentDetailScreen() {
             <Text style={styles.heroService} numberOfLines={2}>
               {appointment.service?.name ?? "Servicio no disponible"}
             </Text>
-            {priceLabel && <Text style={styles.heroPrice}>{priceLabel}</Text>}
           </View>
 
-          {canManage && (
-            <Section title="Paciente" icon={LucideIcons.User}>
-              <Text style={styles.personName}>
-                — <Text style={styles.personId}>#{appointment.patientId.slice(0, 8)}</Text>
-              </Text>
-            </Section>
-          )}
-
-          <Section title="Profesional" icon={LucideIcons.Stethoscope}>
+          <AppointmentSection title="Profesional" icon={Stethoscope}>
             <Text style={styles.personName}>
               {appointment.doctor?.fullName ?? "Profesional no disponible"}
             </Text>
@@ -276,26 +196,20 @@ export default function AppointmentDetailScreen() {
             )}
             {appointment.doctor?.phoneNumber && (
               <View style={styles.contactRow}>
-                <LucideIcons.Phone size={12} color="#0D9488" strokeWidth={2.2} />
+                <Phone size={12} color="#0D9488" strokeWidth={2.2} />
                 <Text style={styles.contactText}>{appointment.doctor.phoneNumber}</Text>
               </View>
             )}
-          </Section>
+          </AppointmentSection>
 
-          <Section title="Servicio" icon={LucideIcons.Briefcase}>
+          <AppointmentSection title="Servicio" icon={Briefcase}>
             <Text style={styles.metaName}>{appointment.service?.name ?? "—"}</Text>
             {appointment.service?.description && (
               <Text style={styles.metaDescription}>{appointment.service.description}</Text>
             )}
-            {priceLabel && (
-              <View style={styles.priceRow}>
-                <Text style={styles.priceRowLabel}>Precio</Text>
-                <Text style={styles.priceRowValue}>{priceLabel}</Text>
-              </View>
-            )}
-          </Section>
+          </AppointmentSection>
 
-          <Section title="Motivo de consulta" icon={LucideIcons.FileText}>
+          <AppointmentSection title="Motivo de consulta" icon={FileText}>
             <Text style={styles.reasonText}>{appointment.reason}</Text>
             {appointment.notes && (
               <View style={styles.notesBlock}>
@@ -303,12 +217,12 @@ export default function AppointmentDetailScreen() {
                 <Text style={styles.notesText}>{appointment.notes}</Text>
               </View>
             )}
-          </Section>
+          </AppointmentSection>
 
           {appointment.cancellation && (
             <View style={styles.cancellationCard}>
               <View style={styles.cancellationHeader}>
-                <LucideIcons.Ban size={14} color="#B91C1C" strokeWidth={2.5} />
+                <Ban size={14} color="#B91C1C" strokeWidth={2.5} />
                 <Text style={styles.cancellationTitle}>Cita cancelada</Text>
               </View>
               <View style={styles.cancellationRow}>
@@ -328,13 +242,91 @@ export default function AppointmentDetailScreen() {
             </View>
           )}
 
+          {canReschedule && (
+            <View style={styles.actionsBlock}>
+              <TouchableOpacity
+                style={[styles.actionButton, styles.actionReschedule]}
+                onPress={() =>
+                  router.navigate({
+                    pathname: "/appointments/create",
+                    params: {
+                      rescheduleId: appointment.id,
+                      doctorId: appointment.doctorId,
+                      serviceId: appointment.serviceId,
+                    },
+                  })
+                }
+              >
+                <CalendarSync size={16} color="#0D9488" strokeWidth={2.5} />
+                <Text style={[styles.actionText, { color: "#0D9488" }]}>
+                  Reagendar cita
+                </Text>
+              </TouchableOpacity>
+            </View>
+          )}
+
+          <View style={styles.actionsBlock}>
+            <TouchableOpacity
+              style={[styles.actionButton, styles.actionPdf]}
+              onPress={() => setDownloadModalVisible(true)}
+            >
+              <FileDown size={16} color={colors.accent} strokeWidth={2.5} />
+              <Text style={[styles.actionText, { color: colors.accent }]}>
+                Descargar PDF
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          <BottomSheetModal
+            visible={downloadModalVisible}
+            onClose={() => setDownloadModalVisible(false)}
+            height={0.4}
+          >
+            <View style={styles.downloadSheetContent}>
+              <View style={styles.downloadSheetIcon}>
+                <FileDown size={28} color={colors.accent} strokeWidth={2} />
+              </View>
+              <Text style={styles.downloadSheetTitle}>Descargar PDF</Text>
+              <Text style={styles.downloadSheetSubtitle}>
+                Se descargará un PDF con los detalles de la cita médica.
+              </Text>
+              {downloading ? (
+                <View style={styles.downloadSheetLoading}>
+                  <ActivityIndicator size={28} color={colors.accent} />
+                  <Text style={styles.downloadSheetLoadingText}>Descargando...</Text>
+                </View>
+              ) : (
+                <View style={styles.downloadSheetActions}>
+                  <TouchableOpacity
+                    style={styles.downloadSheetCancel}
+                    onPress={() => setDownloadModalVisible(false)}
+                  >
+                    <Text style={styles.downloadSheetCancelText}>Cancelar</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.downloadSheetConfirm}
+                    onPress={async () => {
+                      setDownloading(true);
+                      await pdfService.downloadAppointment(appointment.id);
+                      setDownloading(false);
+                      setDownloadModalVisible(false);
+                    }}
+                  >
+                    <FileDown size={16} color="#FFFFFF" strokeWidth={2.5} />
+                    <Text style={styles.downloadSheetConfirmText}>Descargar</Text>
+                  </TouchableOpacity>
+                </View>
+              )}
+            </View>
+          </BottomSheetModal>
+
           {canCancel && (
             <View style={styles.actionsBlock}>
               <TouchableOpacity
                 style={[styles.actionButton, styles.actionDanger]}
-                onPress={handleCancel}
+                onPress={() => setCancelModalVisible(true)}
               >
-                <LucideIcons.X size={16} color="#B91C1C" strokeWidth={2.5} />
+                <X size={16} color="#B91C1C" strokeWidth={2.5} />
                 <Text style={[styles.actionText, { color: "#B91C1C" }]}>
                   Cancelar cita
                 </Text>
@@ -351,7 +343,17 @@ export default function AppointmentDetailScreen() {
             </Text>
           </View>
         </ScrollView>
+          </>
+        )}
       </SafeAreaView>
+
+      {!!appointment && (
+        <CancelAppointmentModal
+          visible={cancelModalVisible}
+          onClose={() => setCancelModalVisible(false)}
+          onConfirm={handleCancelConfirm}
+        />
+      )}
     </View>
   );
 }
@@ -360,38 +362,13 @@ const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.background },
   container: { flex: 1, backgroundColor: "transparent" },
   body: { flex: 1, backgroundColor: "transparent" },
-  bodyBackground: {
-    position: "absolute",
-    top: 150,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: colors.background,
-    borderTopLeftRadius: 28,
-    borderTopRightRadius: 28,
-  },
-  headerRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 16,
-    paddingTop: 8,
-    paddingBottom: 16,
-    gap: 12,
-  },
   headerRowLight: {
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: 16,
     paddingTop: 8,
     paddingBottom: 8,
-  },
-  backButton: {
-    width: 38,
-    height: 38,
-    borderRadius: 10,
-    backgroundColor: "rgba(255,255,255,0.18)",
-    justifyContent: "center",
-    alignItems: "center",
+    gap: 12,
   },
   backButtonLight: {
     width: 38,
@@ -401,38 +378,33 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-  headerTitle: {
+  headerTitleLight: {
     flex: 1,
     fontSize: 17,
     fontWeight: "600",
-    color: "#FFFFFF",
+    color: "#0F172A",
     letterSpacing: -0.2,
   },
-  refreshButton: {
+  refreshButtonLight: {
     width: 38,
     height: 38,
     borderRadius: 10,
-    backgroundColor: "rgba(255,255,255,0.18)",
+    backgroundColor: "#F1F5F9",
     justifyContent: "center",
     alignItems: "center",
-  },
-  refreshButtonPlaceholder: {
-    width: 38,
-    height: 38,
   },
   rotating: {
     opacity: 0.5,
   },
   scrollContent: {
     paddingHorizontal: 16,
-    paddingTop: 0,
+    paddingTop: 8,
     paddingBottom: 32,
   },
   heroCard: {
     backgroundColor: "#FFFFFF",
     borderRadius: 16,
     padding: 20,
-    marginTop: 130,
     marginBottom: 14,
     borderWidth: 1,
     borderColor: "#EEF0F3",
@@ -514,13 +486,6 @@ const styles = StyleSheet.create({
     lineHeight: 24,
     letterSpacing: -0.3,
   },
-  heroPrice: {
-    fontSize: 16,
-    color: "#0D9488",
-    fontWeight: "700",
-    marginTop: 6,
-    fontVariant: ["tabular-nums"],
-  },
   sectionCard: {
     backgroundColor: "#FFFFFF",
     borderRadius: 14,
@@ -555,12 +520,6 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     lineHeight: 20,
   },
-  personId: {
-    fontSize: 12,
-    color: "#9CA3AF",
-    fontWeight: "500",
-    fontVariant: ["tabular-nums"],
-  },
   personDetail: {
     fontSize: 13,
     color: "#6B7280",
@@ -592,28 +551,6 @@ const styles = StyleSheet.create({
     color: "#6B7280",
     lineHeight: 18,
     marginTop: 6,
-  },
-  priceRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginTop: 12,
-    paddingTop: 12,
-    borderTopWidth: 1,
-    borderTopColor: "#F3F4F6",
-  },
-  priceRowLabel: {
-    fontSize: 12,
-    color: "#9CA3AF",
-    fontWeight: "600",
-    textTransform: "uppercase",
-    letterSpacing: 0.6,
-  },
-  priceRowValue: {
-    fontSize: 16,
-    color: "#111827",
-    fontWeight: "700",
-    fontVariant: ["tabular-nums"],
   },
   reasonText: {
     fontSize: 14,
@@ -690,13 +627,20 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     borderRadius: 12,
   },
-  actionPrimary: {
-    backgroundColor: "#0D9488",
-  },
   actionDanger: {
     backgroundColor: "#FEF2F2",
     borderWidth: 1,
     borderColor: "#FECACA",
+  },
+  actionReschedule: {
+    backgroundColor: "#F0FDFA",
+    borderWidth: 1,
+    borderColor: "#A7F3D0",
+  },
+  actionPdf: {
+    backgroundColor: "#F0FDFA",
+    borderWidth: 1,
+    borderColor: colors.accent + "40",
   },
   actionText: {
     fontSize: 14,
@@ -717,5 +661,74 @@ const styles = StyleSheet.create({
     color: "#9CA3AF",
     fontWeight: "500",
     fontVariant: ["tabular-nums"],
+  },
+  downloadSheetContent: {
+    padding: 24,
+    alignItems: "center",
+    gap: 8,
+  },
+  downloadSheetIcon: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: colors.accent + "15",
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 4,
+  },
+  downloadSheetTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: colors.textPrimary,
+    textAlign: "center",
+  },
+  downloadSheetSubtitle: {
+    fontSize: 13,
+    color: colors.textSecondary,
+    textAlign: "center",
+    lineHeight: 18,
+    marginBottom: 8,
+  },
+  downloadSheetActions: {
+    flexDirection: "row",
+    gap: 12,
+    marginTop: 8,
+  },
+  downloadSheetCancel: {
+    flex: 1,
+    paddingVertical: 14,
+    borderRadius: 12,
+    alignItems: "center",
+    backgroundColor: "#F1F5F9",
+  },
+  downloadSheetCancelText: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: colors.textSecondary,
+  },
+  downloadSheetConfirm: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    paddingVertical: 14,
+    borderRadius: 12,
+    backgroundColor: colors.accent,
+  },
+  downloadSheetConfirmText: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: "#FFFFFF",
+  },
+  downloadSheetLoading: {
+    alignItems: "center",
+    gap: 10,
+    paddingVertical: 14,
+  },
+  downloadSheetLoadingText: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: colors.accent,
   },
 });

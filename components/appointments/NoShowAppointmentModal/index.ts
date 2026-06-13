@@ -1,0 +1,1 @@
+export { NoShowAppointmentModal } from "./NoShowAppointmentModal";

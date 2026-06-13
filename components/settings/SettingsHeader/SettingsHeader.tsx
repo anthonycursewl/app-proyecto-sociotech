@@ -1,8 +1,7 @@
-import * as LucideIcons from "lucide-react-native";
+import { ChevronLeft } from "lucide-react-native";
 import React from "react";
 import { StyleSheet, TouchableOpacity, View } from "react-native";
 import { Text } from "@/components/common/SText"
-import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAuthStore } from "@/shared/zustand/auth/useAuthStore";
@@ -14,17 +13,11 @@ export const SettingsHeader = () => {
   const userName = user ? `${user.firstName} ${user.lastName}` : "Usuario";
 
   return (
-    <View style={styles.wrapper}>
-      <LinearGradient
-        colors={['#FFFFFF', '#F8FAFC']}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 0, y: 1 }}
-        style={styles.gradient}
-      />
+    <View>
       <View style={[styles.container, { paddingTop: insets.top + 12 }]}>
         <View style={styles.topRow}>
           <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-            <LucideIcons.ChevronLeft size={22} color="#0F172A" strokeWidth={2.5} />
+            <ChevronLeft size={22} color="#0F172A" strokeWidth={2.5} />
           </TouchableOpacity>
           <Text style={styles.titleText}>Configuración</Text>
           <View style={styles.placeholder} />
@@ -47,8 +40,6 @@ export const SettingsHeader = () => {
 };
 
 const styles = StyleSheet.create({
-  wrapper: { position: "relative" },
-  gradient: { position: "absolute", top: 0, left: 0, right: 0, height: 160 },
   container: { position: "relative", paddingHorizontal: 16, paddingBottom: 16 },
   topRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 20 },
   backButton: {

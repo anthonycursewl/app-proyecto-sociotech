@@ -7,8 +7,9 @@ import { doctorService, DoctorMetrics } from "@/shared/services/doctor.service";
 import { colors } from "@/shared/theme/colors";
 import { StatusBar } from "expo-status-bar";
 import { useRouter } from "expo-router";
-import React, { useEffect, useState } from "react";
-import { ActivityIndicator, FlatList, StyleSheet, View } from "react-native";
+import React, { useCallback, useEffect, useState } from "react";
+import { ActivityIndicator, InteractionManager, StyleSheet, View } from "react-native";
+import { FlashList } from "@shopify/flash-list";
 import { Text } from "@/components/common/SText";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -27,15 +28,21 @@ function DoctorRowSkeleton() {
 
 export default function DoctorsScreen() {
   const router = useRouter();
-  const { doctors, loading, refreshing, loadingMore, error, searchQuery, activeFilter, changeSearch, changeFilter, refresh, loadMore, reload } = useDoctorsList();
+  const { doctors, loading, refreshing, loadingMore, error, activeFilter, changeSearch, changeFilter, refresh, loadMore, reload } = useDoctorsList();
   const [metrics, setMetrics] = useState<DoctorMetrics | undefined>(undefined);
 
   useEffect(() => {
-    doctorService.getMetrics().then(setMetrics).catch(() => {});
+    const task = InteractionManager.runAfterInteractions(() => {
+      doctorService.getMetrics().then(setMetrics).catch(() => {});
+    });
+    return () => task.cancel();
   }, []);
 
-  const renderItem = ({ item }: { item: DoctorData }) => (
-    <DoctorCard doctor={item} onPress={() => router.push({ pathname: "/doctor/[id]", params: { id: item.id } })} />
+  const renderItem = useCallback(
+    ({ item }: { item: DoctorData }) => (
+      <DoctorCard doctor={item} onPress={() => router.navigate({ pathname: "/doctor/[id]", params: { id: item.id } })} />
+    ),
+    [router],
   );
 
   if (loading) {
@@ -66,7 +73,7 @@ export default function DoctorsScreen() {
     <SafeAreaView style={styles.container} edges={["bottom", "left", "right"]}>
       <StatusBar style="dark" />
       <ManageDoctorsHeader onSearch={changeSearch} metrics={metrics} activeFilter={activeFilter} onFilterChange={changeFilter} />
-      <FlatList
+      <FlashList
         data={doctors}
         renderItem={renderItem}
         keyExtractor={(item) => item.id}

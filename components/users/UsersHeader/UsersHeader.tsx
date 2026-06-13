@@ -1,8 +1,7 @@
-import * as LucideIcons from "lucide-react-native";
+import { ChevronLeft, List, Search, UserCheck, UserX } from "lucide-react-native";
 import React, { useState } from "react";
 import { StyleSheet, TextInput, TouchableOpacity, View } from "react-native";
 import { Text } from "@/components/common/SText";
-import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -35,20 +34,14 @@ export const UsersHeader = ({
   };
 
   return (
-    <View style={styles.wrapper}>
-      <LinearGradient
-        colors={["#FFFFFF", "#F8FAFC"]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 0, y: 1 }}
-        style={styles.gradient}
-      />
+    <View>
       <View style={[styles.container, { paddingTop: insets.top + 12 }]}>
         <View style={styles.topRow}>
           <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-            <LucideIcons.ChevronLeft size={22} color="#0F172A" strokeWidth={2.5} />
+            <ChevronLeft size={22} color="#0F172A" strokeWidth={2.5} />
           </TouchableOpacity>
           <View style={styles.searchContainer}>
-            <LucideIcons.Search size={16} color="#94A3B8" strokeWidth={2.5} />
+            <Search size={16} color="#94A3B8" strokeWidth={2.5} />
             <TextInput
               style={styles.searchInput}
               placeholder="Buscar por nombre o email..."
@@ -67,19 +60,19 @@ export const UsersHeader = ({
         <View style={styles.filterRow}>
           <FilterChip
             label="Todos"
-            icon={LucideIcons.List}
+            icon={List}
             active={statusFilter === "all"}
             onPress={() => onFilterChange?.("all")}
           />
           <FilterChip
             label="Activos"
-            icon={LucideIcons.UserCheck}
+            icon={UserCheck}
             active={statusFilter === "active"}
             onPress={() => onFilterChange?.("active")}
           />
           <FilterChip
             label="Inactivos"
-            icon={LucideIcons.UserX}
+            icon={UserX}
             active={statusFilter === "inactive"}
             onPress={() => onFilterChange?.("inactive")}
           />
@@ -125,8 +118,6 @@ function FilterChip({
 }
 
 const styles = StyleSheet.create({
-  wrapper: { position: "relative" },
-  gradient: { position: "absolute", top: 0, left: 0, right: 0, height: 200 },
   container: { position: "relative", paddingHorizontal: 16, paddingBottom: 16 },
   topRow: { flexDirection: "row", alignItems: "center", gap: 10 },
   backButton: {

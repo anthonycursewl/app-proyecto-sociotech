@@ -1,0 +1,1 @@
+export { MedicalRecordView } from "./MedicalRecordView";

@@ -1,21 +1,22 @@
 import { Text } from "@/components/common/SText";
 import { useAuthStore } from "@/shared/zustand/auth/useAuthStore";
-import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import {
   Check,
+  CheckCircle,
   ChevronLeft,
   Eye,
   EyeOff,
-  HeartPulse,
   Lock,
   Mail,
+  RefreshCw,
   User,
 } from "lucide-react-native";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
+  Image,
   Keyboard,
   KeyboardAvoidingView,
   Platform,
@@ -35,17 +36,20 @@ import Animated, {
 } from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-const TOTAL_STEPS = 3;
+const TOTAL_STEPS = 4;
 
 const STEPS = [
   { title: "Nombre y Apellido", subtitle: "Ingresa tus datos personales" },
   { title: "Correo Electrónico", subtitle: "Confirma tu dirección de correo" },
+  { title: "Verificar Correo", subtitle: "Ingresa el código de verificación" },
   { title: "Contraseña", subtitle: "Crea una contraseña segura" },
 ];
 
+const RESEND_COOLDOWN = 60;
+
 export default function RegisterScreen() {
   const router = useRouter();
-  const { register, loading, error, clearError } = useAuthStore();
+  const { register, sendVerificationCode, verifyCode, loading, error, clearError } = useAuthStore();
   const [step, setStep] = useState(0);
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -57,15 +61,41 @@ export default function RegisterScreen() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [validationError, setValidationError] = useState<string | null>(null);
   const [focused, setFocused] = useState<string | null>(null);
+  const [otpCode, setOtpCode] = useState("");
+  const [codeSent, setCodeSent] = useState(false);
+  const [codeVerified, setCodeVerified] = useState(false);
+  const [sendingCode, setSendingCode] = useState(false);
+  const [verifyingCode, setVerifyingCode] = useState(false);
+  const [resendCooldown, setResendCooldown] = useState(0);
+  const resendTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const pulse = useSharedValue(1);
 
   useEffect(() => {
     pulse.value = withRepeat(
-      withTiming(1.15, { duration: 1400, easing: Easing.inOut(Easing.sin) }),
+      withTiming(1.05, { duration: 1400, easing: Easing.inOut(Easing.sin) }),
       -1,
       true
     );
+  }, [pulse]);
+
+  useEffect(() => {
+    return () => {
+      if (resendTimerRef.current) clearInterval(resendTimerRef.current);
+    };
   }, []);
+
+  const startResendCooldown = () => {
+    setResendCooldown(RESEND_COOLDOWN);
+    resendTimerRef.current = setInterval(() => {
+      setResendCooldown((prev) => {
+        if (prev <= 1) {
+          if (resendTimerRef.current) clearInterval(resendTimerRef.current);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+  };
 
   const glowStyle = useAnimatedStyle(() => ({
     transform: [{ scale: pulse.value }],
@@ -101,6 +131,9 @@ export default function RegisterScreen() {
       return true;
     }
     if (step === 2) {
+      return true;
+    }
+    if (step === 3) {
       if (!password.trim() || !confirmPassword.trim()) {
         setValidationError("Completa todos los campos");
         return false;
@@ -118,9 +151,39 @@ export default function RegisterScreen() {
     return false;
   };
 
+  const handleSendCode = async () => {
+    clearErrors();
+    setSendingCode(true);
+    const success = await sendVerificationCode(email.trim());
+    setSendingCode(false);
+    if (success) {
+      setCodeSent(true);
+      setOtpCode("");
+      startResendCooldown();
+    }
+  };
+
+  const handleVerifyCode = async () => {
+    clearErrors();
+    if (!otpCode.trim() || otpCode.trim().length < 6) {
+      setValidationError("Ingresa el código de 6 dígitos");
+      return;
+    }
+    setVerifyingCode(true);
+    const success = await verifyCode(email.trim(), otpCode.trim());
+    setVerifyingCode(false);
+    if (success) {
+      setCodeVerified(true);
+    }
+  };
+
   const handleNext = () => {
     clearErrors();
     if (!validateStep()) return;
+    if (step === 1 && !codeSent) {
+      handleSendCode();
+      return;
+    }
     if (step < TOTAL_STEPS - 1) {
       setStep(step + 1);
     }
@@ -159,16 +222,13 @@ export default function RegisterScreen() {
                 style={styles.header}
               >
                 <Animated.View style={[styles.logoGlow, glowStyle]}>
-                  <LinearGradient
-                    colors={["#3A9B9B", "#5DC9C9", "#FFF3D6", "#FFD6D6", "#FFFFFF"]}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 1 }}
-                    style={styles.logoCircle}
-                  >
-                    <HeartPulse size={28} color="#FFFFFF" strokeWidth={2.5} />
-                  </LinearGradient>
+                  <Image
+                    source={require("@/assets/logo/LOGO_DOC_2_no_bg.png")}
+                    style={styles.logoImage}
+                    resizeMode="contain"
+                    tintColor="#000000"
+                  />
                 </Animated.View>
-                <Text style={styles.appName}>Sociotech</Text>
                 <Text style={styles.tagline}>
                   Gestión inteligente para tu salud
                 </Text>
@@ -256,6 +316,7 @@ export default function RegisterScreen() {
                           returnKeyType="next"
                         />
                       </View>
+                      <Text style={styles.inputHelper}>Tu nombre real. Se mostrará a los doctores cuando agendes citas.</Text>
                     </View>
 
                     <View style={styles.inputGroup}>
@@ -294,6 +355,7 @@ export default function RegisterScreen() {
                           returnKeyType="done"
                         />
                       </View>
+                      <Text style={styles.inputHelper}>Tu apellido real, tal como aparece en tu documento de identidad.</Text>
                     </View>
 
                     {(validationError || error) && (
@@ -352,6 +414,7 @@ export default function RegisterScreen() {
                           returnKeyType="next"
                         />
                       </View>
+                      <Text style={styles.inputHelper}>Usa un correo al que tengas acceso. Te enviaremos confirmaciones de citas y notificaciones importantes.</Text>
                     </View>
 
                     <View style={styles.inputGroup}>
@@ -393,6 +456,7 @@ export default function RegisterScreen() {
                           returnKeyType="done"
                         />
                       </View>
+                      <Text style={styles.inputHelper}>Repite el mismo correo para confirmar que está bien escrito.</Text>
                     </View>
 
                     {(validationError || error) && (
@@ -421,8 +485,139 @@ export default function RegisterScreen() {
                   </>
                 )}
 
-                {/* Step 2: Password & Confirm Password */}
+                {/* Step 2: OTP Verification */}
                 {step === 2 && (
+                  <>
+                    <View style={styles.inputGroup}>
+                      <Text style={styles.inputHelper}>
+                        Te hemos enviado un código de 6 dígitos a{" "}
+                        <Text style={{ fontWeight: "700", color: "#0F172A" }}>{email}</Text>
+                      </Text>
+                    </View>
+
+                    {!codeSent ? (
+                      <TouchableOpacity
+                        style={[styles.button, sendingCode && styles.buttonDisabled]}
+                        onPress={handleSendCode}
+                        disabled={sendingCode}
+                        activeOpacity={0.85}
+                      >
+                        {sendingCode ? (
+                          <ActivityIndicator size="small" color="#FFFFFF" />
+                        ) : (
+                          <Text style={styles.buttonText}>Enviar código</Text>
+                        )}
+                      </TouchableOpacity>
+                    ) : codeVerified ? (
+                      <>
+                        <View style={styles.successBox}>
+                          <CheckCircle size={20} color="#15803D" strokeWidth={2.5} />
+                          <Text style={styles.successText}>Correo verificado exitosamente</Text>
+                        </View>
+                        <TouchableOpacity
+                          style={styles.button}
+                          onPress={() => setStep(3)}
+                          activeOpacity={0.85}
+                        >
+                          <Text style={styles.buttonText}>Continuar</Text>
+                        </TouchableOpacity>
+                      </>
+                    ) : (
+                      <>
+                        <View style={styles.inputGroup}>
+                          <Text
+                            style={[
+                              styles.inputLabel,
+                              focused === "otp" && styles.inputLabelActive,
+                            ]}
+                          >
+                            Código de verificación
+                          </Text>
+                          <View
+                            style={[
+                              styles.inputRow,
+                              styles.otpInputRow,
+                              focused === "otp" && styles.inputRowActive,
+                            ]}
+                          >
+                            <TextInput
+                              style={styles.otpInput}
+                              value={otpCode}
+                              onChangeText={(v) => {
+                                const digits = v.replace(/[^0-9]/g, "").slice(0, 6);
+                                setOtpCode(digits);
+                                clearErrors();
+                              }}
+                              placeholder="000000"
+                              placeholderTextColor="#C5CDD8"
+                              keyboardType="number-pad"
+                              maxLength={6}
+                              onFocus={() => setFocused("otp")}
+                              onBlur={() => setFocused(null)}
+                              returnKeyType="done"
+                            />
+                          </View>
+                          <Text style={styles.inputHelper}>Ingresa el código de 6 dígitos que enviamos a tu correo.</Text>
+                        </View>
+
+                        {(validationError || error) && (
+                          <View style={styles.errorBox}>
+                            <Text style={styles.errorText}>{validationError || error}</Text>
+                          </View>
+                        )}
+
+                        <View style={styles.buttonsRow}>
+                          <TouchableOpacity
+                            style={styles.backButton}
+                            onPress={handleBack}
+                            activeOpacity={0.7}
+                          >
+                            <ChevronLeft size={20} color="#4CB1B1" strokeWidth={2.5} />
+                            <Text style={styles.backText}>Atrás</Text>
+                          </TouchableOpacity>
+                          <TouchableOpacity
+                            style={[styles.button, styles.buttonFlex, verifyingCode && styles.buttonDisabled]}
+                            onPress={handleVerifyCode}
+                            disabled={verifyingCode || otpCode.length < 6}
+                            activeOpacity={0.85}
+                          >
+                            {verifyingCode ? (
+                              <ActivityIndicator size="small" color="#FFFFFF" />
+                            ) : (
+                              <Text style={styles.buttonText}>Verificar</Text>
+                            )}
+                          </TouchableOpacity>
+                        </View>
+
+                        <TouchableOpacity
+                          style={styles.resendRow}
+                          onPress={handleSendCode}
+                          disabled={resendCooldown > 0 || sendingCode}
+                          activeOpacity={0.7}
+                        >
+                          <RefreshCw
+                            size={14}
+                            color={resendCooldown > 0 ? "#C5CDD8" : "#4CB1B1"}
+                            strokeWidth={2.5}
+                          />
+                          <Text
+                            style={[
+                              styles.resendText,
+                              resendCooldown > 0 && styles.resendTextDisabled,
+                            ]}
+                          >
+                            {resendCooldown > 0
+                              ? `Reenviar código en ${resendCooldown}s`
+                              : "Reenviar código"}
+                          </Text>
+                        </TouchableOpacity>
+                      </>
+                    )}
+                  </>
+                )}
+
+                {/* Step 3: Password & Confirm Password */}
+                {step === 3 && (
                   <>
                     <View style={styles.inputGroup}>
                       <Text
@@ -471,6 +666,7 @@ export default function RegisterScreen() {
                           )}
                         </TouchableOpacity>
                       </View>
+                      <Text style={styles.inputHelper}>Mínimo 6 caracteres. Combina letras, números y símbolos para mayor seguridad. Evita usar datos personales.</Text>
                     </View>
 
                     <View style={styles.inputGroup}>
@@ -526,6 +722,7 @@ export default function RegisterScreen() {
                           )}
                         </TouchableOpacity>
                       </View>
+                      <Text style={styles.inputHelper}>Repite la contraseña exactamente igual para confirmar.</Text>
                     </View>
 
                     {(validationError || error) && (
@@ -589,21 +786,13 @@ const styles = StyleSheet.create({
     marginBottom: 28,
   },
   logoGlow: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
-    backgroundColor: "rgba(255, 215, 215, 0.15)",
     justifyContent: "center",
     alignItems: "center",
     marginBottom: 18,
   },
-  logoCircle: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    backgroundColor: "#4CB1B1",
-    justifyContent: "center",
-    alignItems: "center",
+  logoImage: {
+    width: 240,
+    height: 80,
   },
   appName: {
     fontSize: 30,
@@ -677,6 +866,13 @@ const styles = StyleSheet.create({
   },
   inputGroup: {
     marginBottom: 18,
+  },
+  inputHelper: {
+    fontSize: 11,
+    color: "#94A3B8",
+    marginTop: 5,
+    lineHeight: 15,
+    paddingHorizontal: 2,
   },
   inputLabel: {
     fontSize: 12,
@@ -762,6 +958,52 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: "600",
     color: "#4CB1B1",
+  },
+  otpInputRow: {
+    justifyContent: "center",
+    paddingHorizontal: 20,
+  },
+  otpInput: {
+    flex: 0,
+    width: "100%",
+    fontSize: 28,
+    fontWeight: "700",
+    color: "#0F172A",
+    textAlign: "center",
+    letterSpacing: 12,
+    paddingVertical: 12,
+  },
+  successBox: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    backgroundColor: "#DCFCE7",
+    borderRadius: 14,
+    paddingVertical: 14,
+    paddingHorizontal: 18,
+    marginBottom: 20,
+  },
+  successText: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#15803D",
+    flex: 1,
+  },
+  resendRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    marginTop: 20,
+    paddingVertical: 8,
+  },
+  resendText: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: "#4CB1B1",
+  },
+  resendTextDisabled: {
+    color: "#C5CDD8",
   },
   footer: {
     flexDirection: "row",

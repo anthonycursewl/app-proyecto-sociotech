@@ -1,27 +1,19 @@
 import { HttpClient } from "@/shared/http/http.client";
+import type {
+  ServiceResponse,
+  ServiceDetailResponse,
+  PaginatedServiceResponse,
+  ServiceQuery,
+  ServiceStatusFilter,
+} from "@/shared/entities/Service";
 
-export interface ServiceResponse {
-  id: string;
-  name: string;
-  description: string | null;
-  durationMin: number;
-  price: number | null;
-  isActive: boolean;
-  createdBy: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface PaginatedServiceResponse {
-  data: ServiceResponse[];
-  nextCursor: string | null;
-}
-
-export interface ServiceQuery {
-  cursor?: string;
-  limit?: number;
-  includeInactive?: boolean;
-}
+export type {
+  ServiceResponse,
+  ServiceDetailResponse,
+  PaginatedServiceResponse,
+  ServiceQuery,
+  ServiceStatusFilter,
+};
 
 export const serviceService = {
   getAll: (params?: ServiceQuery) =>
@@ -45,14 +37,14 @@ export const serviceService = {
     ),
 
   getById: (id: string) =>
-    HttpClient.get<ServiceResponse>(`/services/${id}`, {}, { requireAuth: true }),
+    HttpClient.get<ServiceDetailResponse>(`/services/${id}`, {}, { requireAuth: true }),
 
   create: (data: {
     name: string;
     description?: string;
     durationMin?: number;
     price?: number;
-  }) => HttpClient.post<ServiceResponse>("/services", data, { requireAuth: true }),
+  }) => HttpClient.post<ServiceDetailResponse>("/services", data, { requireAuth: true }),
 
   update: (
     id: string,
@@ -63,8 +55,11 @@ export const serviceService = {
       price?: number;
       isActive?: boolean;
     }
-  ) => HttpClient.put<ServiceResponse>(`/services/${id}`, data, { requireAuth: true }),
+  ) => HttpClient.put<ServiceDetailResponse>(`/services/${id}`, data, { requireAuth: true }),
 
-  delete: (id: string) =>
-    HttpClient.delete<ServiceResponse>(`/services/${id}`, { requireAuth: true }),
+  deactivate: (id: string) =>
+    HttpClient.delete<{ message: string }>(`/services/${id}`, { requireAuth: true }),
+
+  restore: (id: string) =>
+    HttpClient.post<ServiceDetailResponse>(`/services/${id}/restore`, {}, { requireAuth: true }),
 };

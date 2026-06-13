@@ -1,4 +1,4 @@
-import * as LucideIcons from "lucide-react-native";
+import { ChevronLeft } from "lucide-react-native";
 import React from "react";
 import { TouchableOpacity, View } from "react-native";
 import { Text } from "@/components/common/SText"
@@ -33,7 +33,7 @@ export const ScreenHeader = ({ title, subtitle, showBackButton = true, rightActi
       <View style={styles.row}>
         {showBackButton ? (
           <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-            <LucideIcons.ChevronLeft size={24} color="#0F172A" strokeWidth={2.5} />
+            <ChevronLeft size={24} color="#0F172A" strokeWidth={2.5} />
           </TouchableOpacity>
         ) : (
           <View style={styles.backButtonPlaceholder} />

@@ -1,7 +1,7 @@
 import { useAuthStore } from "@/shared/zustand/auth/useAuthStore";
 import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import React, { useEffect } from "react";
+import React from "react";
 import { Alert, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Header } from "../../components/dashboard/Header/Header";
@@ -10,18 +10,7 @@ import { FloatingActionButton } from "../../components/common/FloatingActionButt
 
 export default function HomeScreen() {
   const router = useRouter();
-  const { verifyToken, user, logout, permissions } = useAuthStore();
-
-  useEffect(() => {
-    const verify = async () => {
-      const success = await verifyToken();
-      if (!success) {
-        router.replace("/(auth)/login");
-      }
-    }
-
-    verify();
-  }, []);
+  const { user, logout, permissions } = useAuthStore();
 
   const canCreateAppointment = permissions.some(
     (p) => p === "appointments:create:own" || p === "appointments:create",

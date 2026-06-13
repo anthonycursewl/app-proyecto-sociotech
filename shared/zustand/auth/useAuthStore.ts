@@ -1,6 +1,7 @@
 import { User, UserRole } from "@/shared/entities/User";
-import { HttpClient } from "@/shared/http/http.client";
+import { HttpClient, SessionExpiredError } from "@/shared/http/http.client";
 import { authService } from "@/shared/services/auth.service";
+import { doctorService, DoctorProfileResponse } from "@/shared/services/doctor.service";
 import { create } from "zustand";
 
 interface AuthState {
@@ -10,11 +11,20 @@ interface AuthState {
     permissions: string[];
     setPermissions: (permissions: string[]) => void;
 
+    doctorProfile: DoctorProfileResponse | null;
+    doctorProfileLoading: boolean;
+    setDoctorProfile: (profile: DoctorProfileResponse | null) => void;
+    loadDoctorProfile: () => Promise<void>;
+
     loading: boolean;
     error: string | null;
 
     login: (email: string, password: string) => Promise<boolean>;
     register: (email: string, password: string, firstName: string, lastName: string) => Promise<boolean>;
+    sendVerificationCode: (email: string) => Promise<boolean>;
+    verifyCode: (email: string, code: string) => Promise<boolean>;
+    forgotPassword: (email: string) => Promise<boolean>;
+    resetPassword: (email: string, code: string, password: string) => Promise<boolean>;
     updateUser: (data: { firstName: string; lastName: string }) => Promise<boolean>;
     logout: () => void;
     clearError: () => void;
@@ -42,7 +52,11 @@ export const useAuthStore = create<AuthState>((set, get) => {
             set({ loading: false });
             return result;
         } catch (err: any) {
-            set({ loading: false, error: err.message || "Error inesperado" });
+            set({ loading: false });
+            if (err instanceof SessionExpiredError) {
+                return false;
+            }
+            set({ error: err.message || "Error inesperado" });
             return false;
         }
     };
@@ -50,9 +64,13 @@ export const useAuthStore = create<AuthState>((set, get) => {
     return {
         user: null,
         setUser: (user: User) => set({ user }),
-        clearUser: () => set({ user: null }),
+        clearUser: () => set({ user: null, doctorProfile: null }),
         permissions: [],
         setPermissions: (permissions: string[]) => set({ permissions }),
+
+        doctorProfile: null,
+        doctorProfileLoading: false,
+        setDoctorProfile: (profile: DoctorProfileResponse | null) => set({ doctorProfile: profile }),
 
         loading: false,
         error: null,
@@ -87,6 +105,38 @@ export const useAuthStore = create<AuthState>((set, get) => {
             return result === true;
         },
 
+        sendVerificationCode: async (email: string): Promise<boolean> => {
+            const result = await runAction(async () => {
+                const response = await authService.sendVerificationCode({ email });
+                return !!response;
+            });
+            return result === true;
+        },
+
+        verifyCode: async (email: string, code: string): Promise<boolean> => {
+            const result = await runAction(async () => {
+                const response = await authService.verifyCode({ email, code });
+                return !!response;
+            });
+            return result === true;
+        },
+
+        forgotPassword: async (email: string): Promise<boolean> => {
+            const result = await runAction(async () => {
+                const response = await authService.forgotPassword({ email });
+                return !!response;
+            });
+            return result === true;
+        },
+
+        resetPassword: async (email: string, code: string, password: string): Promise<boolean> => {
+            const result = await runAction(async () => {
+                const response = await authService.resetPassword({ email, code, password });
+                return !!response;
+            });
+            return result === true;
+        },
+
         verifyToken: async (): Promise<boolean> => {
             const result = await runAction(async () => {
                 const response = await authService.me();
@@ -98,6 +148,22 @@ export const useAuthStore = create<AuthState>((set, get) => {
                 return true;
             });
             return result === true;
+        },
+
+        loadDoctorProfile: async () => {
+            const state = get();
+            if (state.doctorProfile || state.doctorProfileLoading) return;
+            set({ doctorProfileLoading: true });
+            try {
+                const profile = await doctorService.getMyProfile();
+                set({ doctorProfile: profile });
+            } catch (err) {
+                if (!(err instanceof SessionExpiredError)) {
+                    console.warn("[useAuthStore] loadDoctorProfile failed:", err);
+                }
+            } finally {
+                set({ doctorProfileLoading: false });
+            }
         },
 
         updateUser: async (data: { firstName: string; lastName: string }): Promise<boolean> => {
@@ -118,6 +184,7 @@ export const useAuthStore = create<AuthState>((set, get) => {
             set({
                 user: null,
                 permissions: [],
+                doctorProfile: null,
                 error: null,
                 loading: false,
             });

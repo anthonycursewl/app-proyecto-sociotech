@@ -13,7 +13,7 @@ import { useCallback, useEffect, useState } from "react";
 
 export type AppointmentsListMode = "own" | "manage";
 
-export function useAppointmentsList(mode: AppointmentsListMode, defaultFilter: AppointmentFilter = "upcoming") {
+export function useAppointmentsList(mode: AppointmentsListMode, defaultFilter: AppointmentFilter = "upcoming", doctorId?: string) {
   const [appointments, setAppointments] = useState<AppointmentData[]>([]);
   const [adminAppointments, setAdminAppointments] = useState<AdminAppointmentData[]>([]);
   const [loading, setLoading] = useState(true);
@@ -28,7 +28,7 @@ export function useAppointmentsList(mode: AppointmentsListMode, defaultFilter: A
         const mapped = (Array.isArray(res) ? res : []).map(mapToAppointmentData);
         setAppointments(mapped);
       } else {
-        const res = await appointmentService.getAll(activeFilter);
+        const res = await appointmentService.getAll(activeFilter, doctorId);
         const mapped = (Array.isArray(res) ? res : []).map(mapToAdminAppointmentData);
         setAdminAppointments(mapped);
       }
@@ -36,7 +36,7 @@ export function useAppointmentsList(mode: AppointmentsListMode, defaultFilter: A
     } catch (err) {
       setError(getApiErrorMessage(err));
     }
-  }, [mode]);
+  }, [mode, doctorId]);
 
   useEffect(() => {
     (async () => {

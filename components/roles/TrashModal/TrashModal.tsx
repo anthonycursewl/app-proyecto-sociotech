@@ -1,15 +1,14 @@
+import { RotateCcw, ShieldOff, Trash2 } from "lucide-react-native";
 import { Text } from "@/components/common/SText";
 import { RoleListItem } from "@/shared/services/role.service";
 import { colors } from "@/shared/theme/colors";
 import { useRoleTrash } from "@/shared/hooks/useRoleTrash";
-import * as LucideIcons from "lucide-react-native";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
   Animated,
   Dimensions,
-  FlatList,
   Modal,
   PanResponder,
   Pressable,
@@ -18,6 +17,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { FlashList } from "@shopify/flash-list";
 
 const { height: SCREEN_HEIGHT } = Dimensions.get("window");
 
@@ -77,7 +77,7 @@ export const TrashModal = ({ visible, onClose, onRestore }: TrashModalProps) => 
         useNativeDriver: true,
       }),
     ]).start(() => setAnimating(false));
-  }, [fetchTrash]);
+  }, [fetchTrash, overlayOpacity, slideY, sheetScale]);
 
   const closeAnimation = useCallback(() => {
     setAnimating(true);
@@ -102,7 +102,7 @@ export const TrashModal = ({ visible, onClose, onRestore }: TrashModalProps) => 
       setAnimating(false);
       onClose();
     });
-  }, [onClose]);
+  }, [onClose, overlayOpacity, slideY, sheetScale]);
 
   useEffect(() => {
     if (visible && !isVisible) {
@@ -181,7 +181,7 @@ export const TrashModal = ({ visible, onClose, onRestore }: TrashModalProps) => 
     <View style={styles.trashItem}>
       <View style={styles.trashItemHeader}>
         <View style={styles.trashItemName}>
-          <LucideIcons.ShieldOff size={16} color="#94A3B8" strokeWidth={2} />
+          <ShieldOff size={16} color="#94A3B8" strokeWidth={2} />
           <Text style={styles.trashItemTitle}>{formatRoleName(item.name)}</Text>
         </View>
         <Text style={styles.deletedAt}>{formatDate(item.deletedAt!)}</Text>
@@ -199,7 +199,7 @@ export const TrashModal = ({ visible, onClose, onRestore }: TrashModalProps) => 
           onPress={() => handleRestore(item)}
           activeOpacity={0.85}
         >
-          <LucideIcons.RotateCcw size={14} color="#22C55E" strokeWidth={2} />
+          <RotateCcw size={14} color="#22C55E" strokeWidth={2} />
           <Text style={styles.restoreButtonText}>Restaurar</Text>
         </TouchableOpacity>
         <TouchableOpacity
@@ -207,7 +207,7 @@ export const TrashModal = ({ visible, onClose, onRestore }: TrashModalProps) => 
           onPress={() => handleDeletePermanent(item)}
           activeOpacity={0.85}
         >
-          <LucideIcons.Trash2 size={14} color="#EF4444" strokeWidth={2} />
+          <Trash2 size={14} color="#EF4444" strokeWidth={2} />
           <Text style={styles.deletePermButtonText}>Eliminar</Text>
         </TouchableOpacity>
       </View>
@@ -244,7 +244,7 @@ export const TrashModal = ({ visible, onClose, onRestore }: TrashModalProps) => 
 
           <View style={styles.header}>
             <View style={styles.headerTitle}>
-              <LucideIcons.Trash2 size={20} color="#64748B" strokeWidth={2} />
+              <Trash2 size={20} color="#64748B" strokeWidth={2} />
               <Text style={styles.title}>Papelera</Text>
             </View>
             <TouchableOpacity onPress={closeAnimation} disabled={animating}>
@@ -258,11 +258,11 @@ export const TrashModal = ({ visible, onClose, onRestore }: TrashModalProps) => 
             </View>
           ) : trashItems.length === 0 ? (
             <View style={styles.emptyContainer}>
-              <LucideIcons.Trash2 size={48} color="#CBD5E1" strokeWidth={1.5} />
+              <Trash2 size={48} color="#CBD5E1" strokeWidth={1.5} />
               <Text style={styles.emptyText}>La papelera está vacía</Text>
             </View>
           ) : (
-            <FlatList
+            <FlashList
               data={trashItems}
               renderItem={renderItem}
               keyExtractor={(item) => item.id}

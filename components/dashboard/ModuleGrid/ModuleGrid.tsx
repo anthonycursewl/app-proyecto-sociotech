@@ -1,13 +1,21 @@
-import * as LucideIcons from "lucide-react-native";
+import { BriefcaseMedical, CalendarCheck, HeartPulse, Shield } from "lucide-react-native";
 import React from "react";
 import { ScrollView, View } from "react-native";
-import { Text } from "@/components/common/SText"
+import { Text } from "@/components/common/SText";
 import { ModuleCard } from "../ModuleCard/ModuleCard";
-import { styles } from './ModuleGrid.styles';
-import { useModuleGrid, CategorySection } from './useModuleGrid';
+import { styles } from "./ModuleGrid.styles";
+import { useModuleGrid, CategorySection } from "./useModuleGrid";
 
-const CategoryHeader = ({ section }: { section: CategorySection }) => {
-  const IconComponent = (LucideIcons as any)[section.icon];
+// Mapeo estático de los iconos requeridos para los encabezados de categoría
+const HEADER_ICON_MAP: Record<string, React.ComponentType<any>> = {
+  CalendarCheck: CalendarCheck,
+  HeartPulse: HeartPulse,
+  BriefcaseMedical: BriefcaseMedical,
+  Shield: Shield,
+};
+
+const CategoryHeader = React.memo(function CategoryHeader({ section }: { section: CategorySection }) {
+  const IconComponent = HEADER_ICON_MAP[section.icon];
   return (
     <View style={styles.categoryHeader}>
       <View style={styles.categoryIconWrap}>
@@ -19,7 +27,7 @@ const CategoryHeader = ({ section }: { section: CategorySection }) => {
       <View style={styles.categoryDivider} />
     </View>
   );
-};
+});
 
 export const ModuleGrid = () => {
   const { sections, handleModulePress } = useModuleGrid();
@@ -37,6 +45,7 @@ export const ModuleGrid = () => {
       style={styles.container}
       contentContainerStyle={styles.content}
       showsVerticalScrollIndicator={false}
+      removeClippedSubviews={true}
     >
       {sections.map((section) => (
         <View key={section.id} style={styles.categorySection}>

@@ -1,10 +1,9 @@
+import { AlertCircle, AlertTriangle, Briefcase, CalendarClock, ChevronLeft, UserCircle } from "lucide-react-native";
 import { StatusBar } from "expo-status-bar";
 import React, { useEffect, useState } from "react";
-import { ActivityIndicator, ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
+import { ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
 import { Text } from "@/components/common/SText"
 import { SafeAreaView } from "react-native-safe-area-context";
-import { LinearGradient } from "expo-linear-gradient";
-import * as LucideIcons from "lucide-react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { doctorService, DoctorDetailResponse } from "@/shared/services/doctor.service";
 import { ApiError } from "@/shared/http/http.client";
@@ -37,11 +36,10 @@ export default function DoctorDetailScreen() {
   if (loading) {
     return (
       <SafeAreaView style={styles.container} edges={["bottom", "left", "right"]}>
-        <StatusBar style="light" />
-        <LinearGradient colors={['#4CB1B1', 'transparent']} start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }} style={styles.headerGradient} />
+        <StatusBar style="dark" />
         <View style={styles.header}>
           <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-            <LucideIcons.ChevronLeft size={20} color="#FFFFFF" strokeWidth={2.5} />
+            <ChevronLeft size={20} color="#0F172A" strokeWidth={2.5} />
           </TouchableOpacity>
           <View style={{ flex: 1 }}>
             <Skeleton width={160} height={20} borderRadius={10} />
@@ -60,10 +58,10 @@ export default function DoctorDetailScreen() {
 
   if (error || !doctor) {
     return (
-      <SafeAreaView style={styles.container} edges={["bottom", "left", "right"]}>
+    <SafeAreaView style={styles.container} edges={["bottom", "left", "right"]}>
         <StatusBar style="dark" />
         <View style={styles.errorContainer}>
-          <LucideIcons.AlertCircle size={48} color="#EF4444" strokeWidth={1.5} />
+          <AlertCircle size={48} color="#EF4444" strokeWidth={1.5} />
           <Text style={styles.errorText}>{error || "Doctor no encontrado"}</Text>
           <TouchableOpacity style={styles.retryButton} onPress={() => router.back()}>
             <Text style={styles.retryText}>Volver</Text>
@@ -86,16 +84,10 @@ export default function DoctorDetailScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={["bottom", "left", "right"]}>
-      <StatusBar style="light" />
-      <LinearGradient
-        colors={['#4CB1B1', 'transparent']}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 0, y: 1 }}
-        style={styles.headerGradient}
-      />
+      <StatusBar style="dark" />
       <View style={styles.header}>
         <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-          <LucideIcons.ChevronLeft size={20} color="#FFFFFF" strokeWidth={2.5} />
+          <ChevronLeft size={20} color="#0F172A" strokeWidth={2.5} />
         </TouchableOpacity>
         <View style={styles.headerInfo}>
           <Text style={styles.headerTitle} numberOfLines={1}>{fullName}</Text>
@@ -122,7 +114,7 @@ export default function DoctorDetailScreen() {
 
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
-              <LucideIcons.UserCircle size={17} color="#4CB1B1" strokeWidth={2.5} />
+              <UserCircle size={17} color="#4CB1B1" strokeWidth={2.5} />
               <Text style={styles.sectionTitle}>Información General</Text>
             </View>
             <InfoRow label="Nombre Completo" value={fullName} />
@@ -133,7 +125,7 @@ export default function DoctorDetailScreen() {
 
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
-              <LucideIcons.Briefcase size={17} color="#4CB1B1" strokeWidth={2.5} />
+              <Briefcase size={17} color="#4CB1B1" strokeWidth={2.5} />
               <Text style={styles.sectionTitle}>Información Profesional</Text>
             </View>
             <InfoRow label="N° Licencia" value={doctor.licenseNumber || "—"} />
@@ -146,7 +138,7 @@ export default function DoctorDetailScreen() {
 
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
-              <LucideIcons.CalendarClock size={17} color="#4CB1B1" strokeWidth={2.5} />
+              <CalendarClock size={17} color="#4CB1B1" strokeWidth={2.5} />
               <Text style={styles.sectionTitle}>Horarios de Atención</Text>
             </View>
             {doctor.schedules && doctor.schedules.length > 0 ? (
@@ -169,7 +161,7 @@ export default function DoctorDetailScreen() {
               ))
             ) : (
               <View style={styles.noSchedules}>
-                <LucideIcons.AlertTriangle size={28} color="#F59E0B" strokeWidth={1.5} />
+                <AlertTriangle size={28} color="#F59E0B" strokeWidth={1.5} />
                 <Text style={styles.noSchedulesTitle}>Sin horarios registrados</Text>
                 <Text style={styles.noSchedulesText}>
                   Este doctor no tiene horarios de atención configurados.
@@ -185,10 +177,8 @@ export default function DoctorDetailScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#F8FAFC" },
-  headerGradient: { position: "absolute", top: 0, left: 0, right: 0, height: 140 },
 
   header: {
-    position: "relative",
     paddingTop: 48,
     paddingHorizontal: 20,
     paddingBottom: 16,
@@ -199,14 +189,15 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 10,
-    backgroundColor: "rgba(255,255,255,0.2)",
+    backgroundColor: "#FFFFFF",
     justifyContent: "center",
     alignItems: "center",
     marginRight: 12,
+    shadowColor: "#000", shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 1,
   },
   headerInfo: { flex: 1 },
-  headerTitle: { fontSize: 20, fontWeight: "800", color: "#FFFFFF", letterSpacing: -0.5 },
-  headerSubtitle: { fontSize: 12, color: "rgba(255,255,255,0.85)", marginTop: 1 },
+  headerTitle: { fontSize: 20, fontWeight: "800", color: "#0F172A", letterSpacing: -0.5 },
+  headerSubtitle: { fontSize: 12, color: "#64748B", marginTop: 1 },
 
   scrollView: { flex: 1 },
   content: { padding: 16 },

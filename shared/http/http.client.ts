@@ -15,10 +15,35 @@ export interface RequestOptions extends RequestInit {
     requireAuth?: boolean;
 }
 
+export interface ApiResponse<T> {
+    success: boolean;
+    data: T;
+    meta?: {
+        nextCursor?: string | null;
+        hasMore?: boolean;
+    };
+}
+
+export interface ApiErrorResponse {
+    success: boolean;
+    statusCode: number;
+    message: string;
+    error: string;
+    timestamp: string;
+    path: string;
+}
+
 export class ApiError extends Error {
-    constructor(public status: number, message: string, public data?: any) {
+    constructor(public status: number, message: string, public data?: ApiErrorResponse) {
         super(message);
         this.name = 'ApiError';
+    }
+}
+
+export class SessionExpiredError extends ApiError {
+    constructor() {
+        super(401, 'Su sesión ha expirado. Inicie sesión nuevamente.');
+        this.name = 'SessionExpiredError';
     }
 }
 
@@ -52,13 +77,14 @@ export class HttpClient {
     }
 
     private static notifySubscribers(token: string | null, error?: Error) {
-        this.refreshSubscribers.forEach(cb => cb(token, error));
+        const subs = this.refreshSubscribers;
         this.refreshSubscribers = [];
+        subs.forEach(cb => cb(token, error));
     }
 
     private static async refreshTokens(): Promise<string> {
         const rt = await this.getRefreshToken();
-        if (!rt) throw new ApiError(401, 'No refresh token available');
+        if (!rt) throw new SessionExpiredError();
 
         const res = await fetch(`${BASE_URL}/auth/refresh`, {
             method: 'POST',
@@ -67,13 +93,13 @@ export class HttpClient {
         });
 
         if (!res.ok) {
-            const errorData = await res.json().catch(() => ({}));
-            throw new ApiError(res.status, errorData.message || 'Refresh session failed', errorData);
+            throw new SessionExpiredError();
         }
 
-        const data = await res.json();
+        const json = await res.json();
+        const data = json?.success !== undefined ? json.data : json;
         if (!data.accessToken || !data.refreshToken) {
-            throw new ApiError(500, 'Invalid refresh response: missing tokens');
+            throw new SessionExpiredError();
         }
 
         await this.saveTokens(data.accessToken, data.refreshToken);
@@ -90,16 +116,20 @@ export class HttpClient {
 
         const url = `${BASE_URL}${endpoint}${this.serializeParams(params)}`;
 
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), timeout);
-
         const headers = new Headers(fetchOptions.headers || {});
 
         if (!headers.has('Content-Type') && !(fetchOptions.body instanceof FormData)) {
             headers.set('Content-Type', 'application/json');
         }
 
+        const buildController = () => {
+            const c = new AbortController();
+            const id = setTimeout(() => c.abort(), timeout);
+            return { controller: c, timeoutId: id };
+        };
+
         const execute = async (token?: string | null) => {
+            const { controller, timeoutId } = buildController();
             if (requireAuth && token) {
                 headers.set('Authorization', `Bearer ${token}`);
             }
@@ -121,7 +151,7 @@ export class HttpClient {
 
             if (response.status === 401 && requireAuth && !endpoint.startsWith('/auth/refresh')) {
                 if (this.isRefreshing) {
-                    return new Promise((resolve, reject) => {
+                    return new Promise<T>((resolve, reject) => {
                         this.refreshSubscribers.push((newToken, err) => {
                             if (err) return reject(err);
                             this.request<T>(endpoint, options).then(resolve).catch(reject);
@@ -132,20 +162,20 @@ export class HttpClient {
                 this.isRefreshing = true;
                 try {
                     const newToken = await this.refreshTokens();
-                    this.notifySubscribers(newToken);
                     this.isRefreshing = false;
+                    this.notifySubscribers(newToken);
                     response = await execute(newToken);
                 } catch (err) {
-                    this.notifySubscribers(null, err instanceof Error ? err : new Error('Session refresh failed'));
                     this.isRefreshing = false;
+                    this.notifySubscribers(null, err instanceof Error ? err : new Error('Session refresh failed'));
                     await this.clearTokens();
                     this.onSessionExpired?.();
-                    throw new ApiError(401, 'Su sesión ha expirado. Inicie sesión nuevamente.');
+                    throw new SessionExpiredError();
                 }
             }
 
             if (!response.ok) {
-                const errorData = await response.json().catch(() => ({}));
+                const errorData = await response.json().catch(() => ({})) as ApiErrorResponse;
                 throw new ApiError(
                     response.status,
                     errorData.message || `API Error: ${response.status}`,
@@ -154,8 +184,32 @@ export class HttpClient {
             }
 
             const contentType = response.headers.get('content-type');
+            if (contentType?.includes('application/octet-stream') || contentType?.includes('application/pdf')) {
+                return (await response.blob()) as unknown as T;
+            }
+
             if (contentType?.includes('application/json')) {
-                return await response.json();
+                const json = await response.json() as ApiResponse<T>;
+                if (json && typeof json === 'object' && 'success' in json && 'data' in json) {
+                    if (json.meta) {
+                        if (Array.isArray(json.data)) {
+                            return {
+                                data: json.data,
+                                nextCursor: json.meta.nextCursor ?? null,
+                                hasNext: json.meta.hasMore ?? false,
+                            } as unknown as T;
+                        }
+                        if (typeof json.data === 'object' && json.data !== null) {
+                            return {
+                                ...json.data,
+                                nextCursor: json.meta.nextCursor ?? null,
+                                hasNext: json.meta.hasMore ?? false,
+                            } as unknown as T;
+                        }
+                    }
+                    return json.data;
+                }
+                return json as unknown as T;
             }
             return (await response.text()) as unknown as T;
 

@@ -1,4 +1,4 @@
-import * as LucideIcons from "lucide-react-native";
+import { FileText, Phone, Pill, Scissors, Stethoscope, TestTube } from "lucide-react-native";
 import React from "react";
 import { TouchableOpacity, View } from "react-native";
 import { Text } from "@/components/common/SText"
@@ -24,10 +24,10 @@ interface AdminRecordCardProps {
 
 export const AdminRecordCard = ({ record, onPress }: AdminRecordCardProps) => {
   const typeConfig = {
-    consultation: { icon: LucideIcons.FileText, color: "#4CB1B1", bgColor: "#E0F2F1", label: "Consulta" },
-    prescription: { icon: LucideIcons.Pill, color: "#8B5CF6", bgColor: "#F3E8FF", label: "Receta" },
-    exam: { icon: LucideIcons.TestTube, color: "#F59E0B", bgColor: "#FEF3C7", label: "Examen" },
-    procedure: { icon: LucideIcons.Scissors, color: "#EF4444", bgColor: "#FEE2E2", label: "Procedimiento" },
+    consultation: { icon: FileText, color: "#4CB1B1", bgColor: "#E0F2F1", label: "Consulta" },
+    prescription: { icon: Pill, color: "#8B5CF6", bgColor: "#F3E8FF", label: "Receta" },
+    exam: { icon: TestTube, color: "#F59E0B", bgColor: "#FEF3C7", label: "Examen" },
+    procedure: { icon: Scissors, color: "#EF4444", bgColor: "#FEE2E2", label: "Procedimiento" },
   };
 
   const typeStyle = typeConfig[record.type];
@@ -62,13 +62,13 @@ export const AdminRecordCard = ({ record, onPress }: AdminRecordCardProps) => {
 
       <View style={styles.footer}>
         <View style={styles.doctorInfo}>
-          <LucideIcons.Stethoscope size={12} color="#94A3B8" strokeWidth={2} />
+          <Stethoscope size={12} color="#94A3B8" strokeWidth={2} />
           <Text style={styles.doctorText}>{record.doctorName}</Text>
           <Text style={styles.specialtyText}>• {record.specialty}</Text>
         </View>
         {record.phone && (
           <View style={styles.phoneInfo}>
-            <LucideIcons.Phone size={12} color="#4CB1B1" strokeWidth={2} />
+            <Phone size={12} color="#4CB1B1" strokeWidth={2} />
             <Text style={styles.phoneText}>{record.phone}</Text>
           </View>
         )}

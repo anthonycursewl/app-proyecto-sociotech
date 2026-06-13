@@ -1,18 +1,19 @@
+import { CalendarCheck, CalendarClock, CalendarDays, CalendarSync, Check, CheckCircle, ChevronDown, ChevronLeft, Clock, Edit3, FileText, Info, LayoutList, MessageSquare, Package, Search, Stethoscope } from "lucide-react-native";
 import { StatusBar } from "expo-status-bar";
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ActivityIndicator, Animated, FlatList, StyleSheet, TextInput, TouchableOpacity, View, Alert, ScrollView } from "react-native";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { ActivityIndicator, Animated, StyleSheet, TextInput, TouchableOpacity, View, Alert, ScrollView } from "react-native";
+import { FlashList } from "@shopify/flash-list";
 import { Text } from "@/components/common/SText"
 import { SafeAreaView } from "react-native-safe-area-context";
-import { LinearGradient } from "expo-linear-gradient";
-import * as LucideIcons from "lucide-react-native";
-import { useRouter } from "expo-router";
+import { useRouter, useLocalSearchParams } from "expo-router";
 import { appointmentService } from "@/shared/services/appointment.service";
+import { invalidate, setCached } from "@/shared/cache/appointmentCache";
 import { doctorService, DoctorBase, DoctorSchedule } from "@/shared/services/doctor.service";
 import { serviceService, ServiceResponse } from "@/shared/services/service.service";
 import { SkeletonLayout } from "@/components/common/Skeleton";
 import { BottomSheetModal } from "@/components/common/BottomSheetModal";
 import { BookingCalendar } from "@/components/appointments/BookingCalendar";
-import { toISODate, isSameMonth } from "@/shared/utils/date.utils";
+import { AppointmentSection } from "@/components/appointments/AppointmentSection";
 
 type MonthAvailability = {
   year: number;
@@ -20,36 +21,10 @@ type MonthAvailability = {
   map: Map<string, number>;
 };
 
-type SectionIcon = React.ComponentType<{
-  size?: number;
-  color?: string;
-  strokeWidth?: number;
-}>;
-
-function FormSection({
-  title,
-  icon: Icon,
-  children,
-}: {
-  title: string;
-  icon: SectionIcon;
-  children: React.ReactNode;
-}) {
-  return (
-    <View style={styles.sectionCard}>
-      <View style={styles.sectionHeader}>
-        <View style={styles.sectionIconWrap}>
-          <Icon size={17} color="#0D9488" strokeWidth={2.5} />
-        </View>
-        <Text style={styles.sectionTitle}>{title}</Text>
-      </View>
-      {children}
-    </View>
-  );
-}
-
 export default function CreateAppointmentScreen() {
   const router = useRouter();
+  const params = useLocalSearchParams<{ rescheduleId?: string; doctorId?: string; serviceId?: string }>();
+  const isReschedule = !!params.rescheduleId;
   const scrollRef = useRef<ScrollView>(null);
 
   const [loading, setLoading] = useState(true);
@@ -67,9 +42,9 @@ export default function CreateAppointmentScreen() {
   const [loadingServices, setLoadingServices] = useState(false);
   const [selectedService, setSelectedService] = useState<ServiceResponse | null>(null);
   const [servicePickerOpen, setServicePickerOpen] = useState(false);
-  const [doctorSchedules, setDoctorSchedules] = useState<DoctorSchedule[]>([]);
+  const [, setDoctorSchedules] = useState<DoctorSchedule[]>([]);
 
-  const [date, setDate] = useState("");
+
   const [availableSlots, setAvailableSlots] = useState<string[]>([]);
   const [loadingSlots, setLoadingSlots] = useState(false);
   const [selectedSlot, setSelectedSlot] = useState<string | null>(null);
@@ -246,41 +221,48 @@ export default function CreateAppointmentScreen() {
         reason: reason.trim(),
         notes: notes.trim() || undefined,
       };
-      console.log("[DEBUG] create payload", payload);
-      const result = await appointmentService.create(payload);
-      console.log("[DEBUG] create result", result);
-      Alert.alert("Éxito", "Cita registrada correctamente", [
-        { text: "OK", onPress: () => router.back() },
-      ]);
+
+      if (isReschedule && params.rescheduleId) {
+        const updated = await appointmentService.reschedule(params.rescheduleId, payload.scheduledAt);
+        invalidate(params.rescheduleId);
+        setCached(updated);
+        Alert.alert("Éxito", "Cita reagendada correctamente", [
+          { text: "OK", onPress: () => router.back() },
+        ]);
+      } else {
+        await appointmentService.create(payload);
+        Alert.alert("Éxito", "Cita registrada correctamente", [
+          { text: "OK", onPress: () => router.back() },
+        ]);
+      }
     } catch (err: any) {
-      console.log("[DEBUG] create error", {
-        status: err?.status,
-        message: err?.message,
-        data: err?.data,
-        full: err,
-      });
-      Alert.alert("Error", err.message || "No se pudo registrar la cita");
+      Alert.alert("Error", err.message || (isReschedule ? "No se pudo reagendar la cita" : "No se pudo registrar la cita"));
     } finally {
       setSaving(false);
     }
   };
 
   const headerSubtitle = useMemo(() => {
+    if (isReschedule) {
+      if (!selectedDoctor) return "Selecciona el doctor";
+      if (!selectedService) return "Elige el servicio";
+      if (!selectedSlot) return "Escoge el nuevo horario";
+      return "Confirma el reagendamiento";
+    }
     if (!selectedDoctor) return "Paso 1: Selecciona un doctor";
     if (!selectedService) return "Paso 2: Elige un servicio";
     if (!selectedSlot) return "Paso 3: Escoge un horario";
     return "Revisa y confirma tu cita";
-  }, [selectedDoctor, selectedService, selectedSlot]);
+  }, [selectedDoctor, selectedService, selectedSlot, isReschedule]);
 
   if (showSkeleton) {
     return (
       <SafeAreaView style={styles.container} edges={["bottom", "left", "right"]}>
-        <StatusBar style="light" />
-        <LinearGradient colors={['#4CB1B1', 'transparent']} start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }} style={styles.headerGradient} />
+        <StatusBar style="dark" />
         <SkeletonLayout>
           <View style={styles.header}>
             <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-              <LucideIcons.ChevronLeft size={20} color="#FFFFFF" strokeWidth={2.5} />
+              <ChevronLeft size={20} color="#0F172A" strokeWidth={2.5} />
             </TouchableOpacity>
             <View style={styles.headerTextWrap}>
               <SkeletonLayout.Block width={140} height={18} borderRadius={9} />
@@ -311,22 +293,23 @@ export default function CreateAppointmentScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={["bottom", "left", "right"]}>
-      <StatusBar style="light" />
-      <LinearGradient
-        colors={['#4CB1B1', 'transparent']}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 0, y: 1 }}
-        style={styles.headerGradient}
-      />
+      <StatusBar style="dark" />
       <View style={styles.header}>
         <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-          <LucideIcons.ChevronLeft size={20} color="#FFFFFF" strokeWidth={2.5} />
+          <ChevronLeft size={20} color="#0F172A" strokeWidth={2.5} />
         </TouchableOpacity>
         <View style={styles.headerTextWrap}>
           <Text style={styles.headerTitle}>Nueva Cita</Text>
           <Text style={styles.headerSubtitle}>{headerSubtitle}</Text>
         </View>
       </View>
+
+      {isReschedule && (
+        <View style={styles.rescheduleBanner}>
+          <CalendarSync size={14} color="#0D9488" strokeWidth={2.5} />
+          <Text style={styles.rescheduleBannerText}>Reagendando cita existente</Text>
+        </View>
+      )}
 
       <Animated.View style={{ flex: 1, opacity: contentOpacity }}>
         <ScrollView ref={scrollRef} style={styles.scrollView} showsVerticalScrollIndicator={false}>
@@ -346,31 +329,27 @@ export default function CreateAppointmentScreen() {
                     <Text style={styles.doctorSelectorSpecialty}>
                       {selectedDoctor.specialty || "Sin especialidad"}
                     </Text>
-                    <View style={styles.doctorSelectorPriceRow}>
-                      <LucideIcons.DollarSign size={12} color="#4CB1B1" strokeWidth={3} />
-                      <Text style={styles.doctorSelectorPrice}>
-                        {selectedDoctor.consultationPrice?.toFixed(2) ?? "—"} $
-                      </Text>
-                    </View>
                   </View>
-                  <LucideIcons.ChevronDown size={18} color="#94A3B8" strokeWidth={2} />
+                  <ChevronDown size={18} color="#94A3B8" strokeWidth={2} />
                 </>
               ) : (
                 <>
                   <View style={[styles.doctorSelectorAvatar, styles.doctorSelectorAvatarEmpty]}>
-                    <LucideIcons.Stethoscope size={22} color="#94A3B8" strokeWidth={2} />
+                    <Stethoscope size={22} color="#94A3B8" strokeWidth={2} />
                   </View>
                   <View style={styles.doctorSelectorInfo}>
                     <Text style={styles.doctorSelectorPlaceholder}>Seleccionar Doctor</Text>
                     <Text style={styles.doctorSelectorHint}>Toca para elegir un profesional</Text>
                   </View>
-                  <LucideIcons.ChevronDown size={18} color="#94A3B8" strokeWidth={2} />
+                  <ChevronDown size={18} color="#94A3B8" strokeWidth={2} />
                 </>
               )}
             </TouchableOpacity>
+            <Text style={styles.fieldHelper}>Toca para elegir el profesional que te atenderá. Solo verás doctores con disponibilidad en sus horarios configurados.</Text>
 
             {selectedDoctor && (
-              <FormSection title="Servicio" icon={LucideIcons.Package}>
+              <AppointmentSection title="Servicio" icon={Package}>
+                <Text style={styles.fieldHelper}>Selecciona el tipo de consulta que necesitas. Cada servicio tiene una duración definida por el doctor.</Text>
                 {loadingServices ? (
                   <ActivityIndicator style={{ paddingVertical: 16 }} color="#4CB1B1" />
                 ) : services.length === 0 ? (
@@ -392,10 +371,10 @@ export default function CreateAppointmentScreen() {
                               {svc.name}
                             </Text>
                             <Text style={styles.serviceMeta}>
-                              {svc.durationMin} min {svc.price != null ? `| ${svc.price.toFixed(2)} $` : ""}
+                              {svc.durationMin} min
                             </Text>
                           </View>
-                          {selected && <LucideIcons.Check size={16} color="#FFFFFF" strokeWidth={3} />}
+                          {selected && <Check size={16} color="#FFFFFF" strokeWidth={3} />}
                         </TouchableOpacity>
                       );
                     })}
@@ -405,7 +384,7 @@ export default function CreateAppointmentScreen() {
                         onPress={() => setServicePickerOpen(true)}
                         activeOpacity={0.7}
                       >
-                        <LucideIcons.LayoutList size={14} color="#4CB1B1" strokeWidth={2.5} />
+                        <LayoutList size={14} color="#4CB1B1" strokeWidth={2.5} />
                         <Text style={styles.viewAllText}>
                           Ver todos ({services.length})
                         </Text>
@@ -413,10 +392,11 @@ export default function CreateAppointmentScreen() {
                     )}
                   </View>
                 )}
-              </FormSection>
+              </AppointmentSection>
             )}
 
-            <FormSection title="Fecha y Hora" icon={LucideIcons.CalendarClock}>
+            <AppointmentSection title="Fecha y Hora" icon={CalendarClock}>
+              <Text style={styles.fieldHelper}>Los días marcados indican disponibilidad del doctor. Toca un día disponible y luego escoge la hora que prefieras.</Text>
               {selectedDoctor && selectedService ? (
                 <>
                   <BookingCalendar
@@ -476,7 +456,7 @@ export default function CreateAppointmentScreen() {
                         <ActivityIndicator style={{ paddingVertical: 16 }} color="#4CB1B1" />
                       ) : availableSlots.length === 0 ? (
                         <View style={styles.noSlots}>
-                          <LucideIcons.Clock size={24} color="#94A3B8" strokeWidth={1.5} />
+                          <Clock size={24} color="#94A3B8" strokeWidth={1.5} />
                           <Text style={styles.noSlotsText}>
                             No hay horarios disponibles para esta fecha
                           </Text>
@@ -492,7 +472,7 @@ export default function CreateAppointmentScreen() {
                                 onPress={() => setSelectedSlot(slot)}
                                 activeOpacity={0.7}
                               >
-                                <LucideIcons.Clock
+                                <Clock
                                   size={12}
                                   color={selected ? "#FFFFFF" : "#64748B"}
                                   strokeWidth={2.5}
@@ -511,7 +491,7 @@ export default function CreateAppointmentScreen() {
                 </>
               ) : (
                 <View style={styles.calendarPlaceholder}>
-                  <LucideIcons.CalendarDays size={28} color="#94A3B8" strokeWidth={1.5} />
+                  <CalendarDays size={28} color="#94A3B8" strokeWidth={1.5} />
                   <Text style={styles.calendarPlaceholderText}>
                     {!selectedDoctor
                       ? "Selecciona un doctor para ver la disponibilidad"
@@ -519,13 +499,13 @@ export default function CreateAppointmentScreen() {
                   </Text>
                 </View>
               )}
-            </FormSection>
+            </AppointmentSection>
 
-            <FormSection title="Motivo de la Consulta" icon={LucideIcons.MessageSquare}>
+            <AppointmentSection title="Motivo de la Consulta" icon={MessageSquare}>
               <View style={styles.inputWrapper}>
                 <Text style={styles.fieldLabel}>Motivo *</Text>
                 <View style={styles.inputRow}>
-                  <LucideIcons.FileText size={16} color="#94A3B8" strokeWidth={2} style={styles.inputIcon} />
+                  <FileText size={16} color="#94A3B8" strokeWidth={2} style={styles.inputIcon} />
                   <TextInput
                     style={styles.input}
                     value={reason}
@@ -534,11 +514,12 @@ export default function CreateAppointmentScreen() {
                     placeholderTextColor="#C5CDD8"
                   />
                 </View>
+                <Text style={styles.fieldHelper}>En una frase breve indica por qué solicitas la cita (síntoma, control, seguimiento). Esto ayuda al doctor a prepararse antes de atenderte.</Text>
               </View>
               <View style={styles.inputWrapper}>
                 <Text style={styles.fieldLabel}>Notas adicionales (opcional)</Text>
                 <View style={styles.inputRow}>
-                  <LucideIcons.Edit3 size={16} color="#94A3B8" strokeWidth={2} style={styles.inputIcon} />
+                  <Edit3 size={16} color="#94A3B8" strokeWidth={2} style={styles.inputIcon} />
                   <TextInput
                     style={[styles.input, styles.textarea]}
                     value={notes}
@@ -549,12 +530,13 @@ export default function CreateAppointmentScreen() {
                     textAlignVertical="top"
                   />
                 </View>
+                <Text style={styles.fieldHelper}>Información complementaria que consideres relevante: alergias, medicamentos actuales, desde cuándo tienes los síntomas, etc.</Text>
               </View>
-            </FormSection>
+            </AppointmentSection>
 
             <View style={styles.summaryCard}>
               <View style={styles.summaryRow}>
-                <LucideIcons.Info size={16} color="#4CB1B1" strokeWidth={2.5} />
+                <Info size={16} color="#4CB1B1" strokeWidth={2.5} />
                 <Text style={styles.summaryText}>
                   Recibirás una confirmación una vez el doctor apruebe la cita.
                 </Text>
@@ -570,10 +552,10 @@ export default function CreateAppointmentScreen() {
               {saving ? (
                 <ActivityIndicator size="small" color="#FFFFFF" />
               ) : (
-                <LucideIcons.CalendarCheck size={20} color="#FFFFFF" strokeWidth={2.5} />
+                <CalendarCheck size={20} color="#FFFFFF" strokeWidth={2.5} />
               )}
               <Text style={styles.submitText}>
-                {saving ? "Programando..." : "Programar Cita"}
+                {saving ? "Programando..." : isReschedule ? "Reagendar Cita" : "Programar Cita"}
               </Text>
             </TouchableOpacity>
           </View>
@@ -587,7 +569,7 @@ export default function CreateAppointmentScreen() {
       >
         <Text style={styles.pickerTitle}>Seleccionar Doctor</Text>
         <View style={styles.pickerSearchRow}>
-          <LucideIcons.Search size={16} color="#94A3B8" strokeWidth={2} />
+          <Search size={16} color="#94A3B8" strokeWidth={2} />
           <TextInput
             style={styles.pickerSearchInput}
             placeholder="Buscar doctor..."
@@ -599,7 +581,7 @@ export default function CreateAppointmentScreen() {
         ) : doctors.length === 0 ? (
           <Text style={styles.emptyDoctors}>No hay doctores disponibles</Text>
         ) : (
-          <FlatList
+          <FlashList
             data={doctors}
             keyExtractor={(item) => item.id}
             style={styles.pickerList}
@@ -626,7 +608,7 @@ export default function CreateAppointmentScreen() {
                     </Text>
                   </View>
                   {selected && (
-                    <LucideIcons.CheckCircle size={20} color="#4CB1B1" strokeWidth={2.5} />
+                    <CheckCircle size={20} color="#4CB1B1" strokeWidth={2.5} />
                   )}
                 </TouchableOpacity>
               );
@@ -647,7 +629,7 @@ export default function CreateAppointmentScreen() {
         {services.length === 0 ? (
           <Text style={styles.emptyDoctors}>No hay servicios disponibles</Text>
         ) : (
-          <FlatList
+          <FlashList
             data={services}
             keyExtractor={(item) => item.id}
             style={styles.pickerList}
@@ -667,10 +649,10 @@ export default function CreateAppointmentScreen() {
                       {item.name}
                     </Text>
                     <Text style={styles.serviceMeta}>
-                      {item.durationMin} min {item.price != null ? `| ${item.price.toFixed(2)} $` : ""}
+                      {item.durationMin} min
                     </Text>
                   </View>
-                  {selected && <LucideIcons.Check size={16} color="#FFFFFF" strokeWidth={3} />}
+                  {selected && <Check size={16} color="#FFFFFF" strokeWidth={3} />}
                 </TouchableOpacity>
               );
             }}
@@ -683,10 +665,8 @@ export default function CreateAppointmentScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#F8FAFC" },
-  headerGradient: { position: "absolute", top: 0, left: 0, right: 0, height: 140 },
 
   header: {
-    position: "relative",
     paddingTop: 48,
     paddingHorizontal: 20,
     paddingBottom: 16,
@@ -695,12 +675,13 @@ const styles = StyleSheet.create({
   },
   backButton: {
     width: 32, height: 32, borderRadius: 10,
-    backgroundColor: "rgba(255,255,255,0.2)",
+    backgroundColor: "#FFFFFF",
     justifyContent: "center", alignItems: "center", marginRight: 12,
+    shadowColor: "#000", shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 1,
   },
   headerTextWrap: { flex: 1 },
-  headerTitle: { fontSize: 20, fontWeight: "800", color: "#FFFFFF", letterSpacing: -0.5 },
-  headerSubtitle: { fontSize: 12, color: "rgba(255,255,255,0.85)", marginTop: 1 },
+  headerTitle: { fontSize: 20, fontWeight: "800", color: "#0F172A", letterSpacing: -0.5 },
+  headerSubtitle: { fontSize: 12, color: "#64748B", marginTop: 1 },
 
   scrollView: { flex: 1 },
   form: { paddingHorizontal: 16, paddingTop: 12, paddingBottom: 32 },
@@ -722,8 +703,6 @@ const styles = StyleSheet.create({
   doctorSelectorInfo: { flex: 1 },
   doctorSelectorName: { fontSize: 15, fontWeight: "700", color: "#0F172A" },
   doctorSelectorSpecialty: { fontSize: 12, color: "#64748B", fontWeight: "500", marginTop: 1 },
-  doctorSelectorPriceRow: { flexDirection: "row", alignItems: "center", gap: 3, marginTop: 2 },
-  doctorSelectorPrice: { fontSize: 12, color: "#4CB1B1", fontWeight: "600" },
   doctorSelectorPlaceholder: { fontSize: 15, fontWeight: "600", color: "#94A3B8" },
   doctorSelectorHint: { fontSize: 12, color: "#CBD5E1", fontWeight: "500", marginTop: 1 },
 
@@ -778,6 +757,7 @@ const styles = StyleSheet.create({
 
   inputWrapper: { marginBottom: 14 },
   fieldLabel: { fontSize: 12, fontWeight: "600", color: "#64748B", marginBottom: 5, letterSpacing: 0.2 },
+  fieldHelper: { fontSize: 11, color: "#94A3B8", marginTop: 4, lineHeight: 15, paddingHorizontal: 2 },
   inputRow: {
     flexDirection: "row", alignItems: "center",
     backgroundColor: "#F8FAFC", borderRadius: 12, paddingHorizontal: 12,
@@ -862,4 +842,20 @@ const styles = StyleSheet.create({
   doctorOptionInfo: { flex: 1 },
   doctorOptionName: { fontSize: 14, fontWeight: "600", color: "#0F172A" },
   doctorOptionSpecialty: { fontSize: 12, color: "#94A3B8", fontWeight: "500", marginTop: 1 },
+
+  rescheduleBanner: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    paddingVertical: 8,
+    backgroundColor: "#F0FDFA",
+    borderBottomWidth: 1,
+    borderBottomColor: "#A7F3D0",
+  },
+  rescheduleBannerText: {
+    fontSize: 12,
+    color: "#0D9488",
+    fontWeight: "600",
+  },
 });

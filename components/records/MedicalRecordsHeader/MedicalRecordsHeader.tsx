@@ -1,8 +1,7 @@
-import * as LucideIcons from "lucide-react-native";
+import { ChevronLeft, ClipboardList, FileCheck, FileText, Filter, Pill, Search } from "lucide-react-native";
 import React, { useState } from "react";
 import { StyleSheet, TextInput, TouchableOpacity, View } from "react-native";
 import { Text } from "@/components/common/SText"
-import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -22,21 +21,15 @@ export const MedicalRecordsHeader = ({ title = "Historias Clínicas", onSearch }
   };
 
   return (
-    <View style={styles.wrapper}>
-      <LinearGradient
-        colors={['#FFFFFF', '#F8FAFC']}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 0, y: 1 }}
-        style={styles.gradient}
-      />
+    <View>
       <View style={[styles.container, { paddingTop: insets.top + 12 }]}>
         <View style={styles.topRow}>
           <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-            <LucideIcons.ChevronLeft size={22} color="#0F172A" strokeWidth={2.5} />
+            <ChevronLeft size={22} color="#0F172A" strokeWidth={2.5} />
           </TouchableOpacity>
 
           <View style={styles.searchContainer}>
-            <LucideIcons.Search size={16} color="#94A3B8" strokeWidth={2.5} />
+            <Search size={16} color="#94A3B8" strokeWidth={2.5} />
             <TextInput
               style={styles.searchInput}
               placeholder="Buscar historia clínica..."
@@ -47,7 +40,7 @@ export const MedicalRecordsHeader = ({ title = "Historias Clínicas", onSearch }
           </View>
 
           <TouchableOpacity style={styles.actionButton}>
-            <LucideIcons.Filter size={20} color="#64748B" strokeWidth={2} />
+            <Filter size={20} color="#64748B" strokeWidth={2} />
           </TouchableOpacity>
         </View>
 
@@ -58,19 +51,19 @@ export const MedicalRecordsHeader = ({ title = "Historias Clínicas", onSearch }
 
         <View style={styles.filterRow}>
           <TouchableOpacity style={styles.filterChipActive}>
-            <LucideIcons.ClipboardList size={14} color="#FFFFFF" strokeWidth={2} />
+            <ClipboardList size={14} color="#FFFFFF" strokeWidth={2} />
             <Text style={styles.filterChipTextActive}>Todas</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.filterChip}>
-            <LucideIcons.FileText size={14} color="#64748B" strokeWidth={2} />
+            <FileText size={14} color="#64748B" strokeWidth={2} />
             <Text style={styles.filterChipText}>Consultas</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.filterChip}>
-            <LucideIcons.Pill size={14} color="#64748B" strokeWidth={2} />
+            <Pill size={14} color="#64748B" strokeWidth={2} />
             <Text style={styles.filterChipText}>Recetas</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.filterChip}>
-            <LucideIcons.FileCheck size={14} color="#64748B" strokeWidth={2} />
+            <FileCheck size={14} color="#64748B" strokeWidth={2} />
             <Text style={styles.filterChipText}>Exámenes</Text>
           </TouchableOpacity>
         </View>
@@ -80,16 +73,6 @@ export const MedicalRecordsHeader = ({ title = "Historias Clínicas", onSearch }
 };
 
 const styles = StyleSheet.create({
-  wrapper: {
-    position: "relative",
-  },
-  gradient: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    height: 200,
-  },
   container: {
     position: "relative",
     paddingHorizontal: 16,

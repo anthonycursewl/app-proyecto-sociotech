@@ -10,8 +10,9 @@ import { usePermissions } from "@/shared/permissions/usePermissions";
 import { RoleDetail, RoleListItem, roleService } from "@/shared/services/role.service";
 import { colors } from "@/shared/theme/colors";
 import { StatusBar } from "expo-status-bar";
-import React, { useMemo, useState } from "react";
-import { ActivityIndicator, Alert, FlatList, StyleSheet, View } from "react-native";
+import React, { useCallback, useMemo, useState } from "react";
+import { ActivityIndicator, Alert, StyleSheet, View } from "react-native";
+import { FlashList } from "@shopify/flash-list";
 import { Text } from "@/components/common/SText";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -98,10 +99,10 @@ export default function RolesScreen() {
     }
   };
 
-  const handleViewDetail = (roleId: string) => {
+  const handleViewDetail = useCallback((roleId: string) => {
     setSelectedRoleId(roleId);
     setDetailModalVisible(true);
-  };
+  }, []);
 
   const handleDeleteFromDetail = (deletedRole: RoleDetail) => {
     removeRoleFromList(deletedRole.id);
@@ -114,12 +115,12 @@ export default function RolesScreen() {
     addRoleToList(role);
   };
 
-  const renderItem = ({ item }: { item: RoleListItem }) => (
+  const renderItem = useCallback(({ item }: { item: RoleListItem }) => (
     <RoleCard
       role={item}
       onViewDetail={() => handleViewDetail(item.id)}
     />
-  );
+  ), [handleViewDetail]);
 
   if (loading) {
     return (
@@ -179,7 +180,7 @@ export default function RolesScreen() {
         onOpenTrash={() => setTrashModalVisible(true)}
         canCreate={canCreate}
       />
-      <FlatList
+      <FlashList
         data={filteredRoles}
         renderItem={renderItem}
         keyExtractor={(item) => item.id}

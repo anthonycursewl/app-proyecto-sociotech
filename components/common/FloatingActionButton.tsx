@@ -1,7 +1,6 @@
+import { Plus } from "lucide-react-native";
 import React from "react";
 import { StyleSheet, TouchableOpacity } from "react-native";
-import * as LucideIcons from "lucide-react-native";
-
 interface FloatingActionButtonProps {
   onPress: () => void;
 }
@@ -9,7 +8,7 @@ interface FloatingActionButtonProps {
 export const FloatingActionButton = ({ onPress }: FloatingActionButtonProps) => {
   return (
     <TouchableOpacity style={styles.fab} onPress={onPress} activeOpacity={0.85}>
-      <LucideIcons.Plus size={24} color="#FFFFFF" strokeWidth={3} />
+      <Plus size={24} color="#FFFFFF" strokeWidth={3} />
     </TouchableOpacity>
   );
 };

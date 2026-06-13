@@ -1,8 +1,8 @@
+import { Calendar, Check, CheckCircle, ChevronLeft, LogOut, Mail, PenLine, ShieldCheck, User, X } from "lucide-react-native";
 import { Text } from "@/components/common/SText";
 import { useAuthStore } from "@/shared/zustand/auth/useAuthStore";
 import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import * as LucideIcons from "lucide-react-native";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
@@ -16,14 +16,6 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-
-const ROLE_LABELS: Record<string, string> = {
-  PATIENT: "Paciente",
-  DOCTOR: "Doctor",
-  ASSISTANT: "Asistente",
-  ADMIN: "Administrador",
-  SUPER_ADMIN: "Super Admin",
-};
 
 const ACCENT = "#4CB1B1";
 const ACCENT_DARK = "#3A9494";
@@ -184,7 +176,6 @@ export default function ProfileScreen() {
 
   const initials = `${user.firstName?.charAt(0) ?? ""}${user.lastName?.charAt(0) ?? ""}`;
   const fullName = `${user.firstName ?? ""} ${user.lastName ?? ""}`.trim();
-  const roleLabel = ROLE_LABELS[user.role] || user.role;
   const memberSince = new Date(user.createdAt).toLocaleDateString("es-ES", {
     year: "numeric",
     month: "long",
@@ -215,7 +206,7 @@ export default function ProfileScreen() {
             },
           ]}
         >
-          <LucideIcons.CheckCircle size={18} color="#22C55E" strokeWidth={2.5} />
+          <CheckCircle size={18} color="#22C55E" strokeWidth={2.5} />
           <Text style={styles.toastText}>Perfil actualizado correctamente</Text>
         </Animated.View>
       )}
@@ -223,7 +214,7 @@ export default function ProfileScreen() {
       {/* Top Bar */}
       <View style={styles.topBar}>
         <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-          <LucideIcons.ChevronLeft size={22} color="#0F172A" strokeWidth={2.5} />
+          <ChevronLeft size={22} color="#0F172A" strokeWidth={2.5} />
         </TouchableOpacity>
         <Text style={styles.topBarTitle}>Mi Perfil</Text>
         <TouchableOpacity
@@ -232,9 +223,9 @@ export default function ProfileScreen() {
           activeOpacity={isEditing ? 1 : 0.7}
         >
           {isEditing ? (
-            <LucideIcons.PenLine size={18} color="#FFFFFF" strokeWidth={2.5} />
+            <PenLine size={18} color="#FFFFFF" strokeWidth={2.5} />
           ) : (
-            <LucideIcons.PenLine size={18} color={ACCENT} strokeWidth={2.5} />
+            <PenLine size={18} color={ACCENT} strokeWidth={2.5} />
           )}
         </TouchableOpacity>
       </View>
@@ -269,18 +260,21 @@ export default function ProfileScreen() {
           {/* First Name */}
           <View style={styles.fieldGroup}>
             <View style={styles.fieldLabel}>
-              <LucideIcons.User size={15} color="#94A3B8" strokeWidth={2} />
+              <User size={15} color="#94A3B8" strokeWidth={2} />
               <Text style={styles.fieldLabelText}>Nombre</Text>
             </View>
             {isEditing ? (
-              <TextInput
-                style={styles.fieldInput}
-                value={firstName}
-                onChangeText={setFirstName}
-                placeholder="Tu nombre"
-                placeholderTextColor="#CBD5E1"
-                autoCapitalize="words"
-              />
+              <>
+                <TextInput
+                  style={styles.fieldInput}
+                  value={firstName}
+                  onChangeText={setFirstName}
+                  placeholder="Tu nombre"
+                  placeholderTextColor="#CBD5E1"
+                  autoCapitalize="words"
+                />
+                <Text style={styles.fieldHelper}>Tu nombre real. Se mostrará en tus citas, recetas y mensajes con el consultorio.</Text>
+              </>
             ) : (
               <Text style={styles.fieldValue}>{user.firstName}</Text>
             )}
@@ -291,18 +285,21 @@ export default function ProfileScreen() {
           {/* Last Name */}
           <View style={styles.fieldGroup}>
             <View style={styles.fieldLabel}>
-              <LucideIcons.User size={15} color="#94A3B8" strokeWidth={2} />
+              <User size={15} color="#94A3B8" strokeWidth={2} />
               <Text style={styles.fieldLabelText}>Apellido</Text>
             </View>
             {isEditing ? (
-              <TextInput
-                style={styles.fieldInput}
-                value={lastName}
-                onChangeText={setLastName}
-                placeholder="Tu apellido"
-                placeholderTextColor="#CBD5E1"
-                autoCapitalize="words"
-              />
+              <>
+                <TextInput
+                  style={styles.fieldInput}
+                  value={lastName}
+                  onChangeText={setLastName}
+                  placeholder="Tu apellido"
+                  placeholderTextColor="#CBD5E1"
+                  autoCapitalize="words"
+                />
+                <Text style={styles.fieldHelper}>Tu apellido legal, tal como aparece en tu documento de identidad.</Text>
+              </>
             ) : (
               <Text style={styles.fieldValue}>{user.lastName}</Text>
             )}
@@ -313,7 +310,7 @@ export default function ProfileScreen() {
           {/* Email (read-only) */}
           <View style={styles.fieldGroup}>
             <View style={styles.fieldLabel}>
-              <LucideIcons.Mail size={15} color="#94A3B8" strokeWidth={2} />
+              <Mail size={15} color="#94A3B8" strokeWidth={2} />
               <Text style={styles.fieldLabelText}>Correo electrónico</Text>
             </View>
             <Text style={styles.fieldValue}>{user.email}</Text>
@@ -333,7 +330,7 @@ export default function ProfileScreen() {
                 <ActivityIndicator size="small" color="#FFFFFF" />
               ) : (
                 <>
-                  <LucideIcons.Check size={18} color="#FFFFFF" strokeWidth={2.5} />
+                  <Check size={18} color="#FFFFFF" strokeWidth={2.5} />
                   <Text style={styles.saveBtnText}>Guardar Cambios</Text>
                 </>
               )}
@@ -344,7 +341,7 @@ export default function ProfileScreen() {
               disabled={loading}
               activeOpacity={0.8}
             >
-              <LucideIcons.X size={18} color="#64748B" strokeWidth={2.5} />
+              <X size={18} color="#64748B" strokeWidth={2.5} />
               <Text style={styles.cancelBtnText}>Cancelar</Text>
             </TouchableOpacity>
           </View>
@@ -358,7 +355,7 @@ export default function ProfileScreen() {
 
           <View style={styles.fieldGroup}>
             <View style={styles.fieldLabel}>
-              <LucideIcons.Calendar size={15} color="#94A3B8" strokeWidth={2} />
+              <Calendar size={15} color="#94A3B8" strokeWidth={2} />
               <Text style={styles.fieldLabelText}>Miembro desde</Text>
             </View>
             <Text style={styles.fieldValue}>{memberSince}</Text>
@@ -368,7 +365,7 @@ export default function ProfileScreen() {
 
           <View style={styles.fieldGroup}>
             <View style={styles.fieldLabel}>
-              <LucideIcons.ShieldCheck size={15} color="#94A3B8" strokeWidth={2} />
+              <ShieldCheck size={15} color="#94A3B8" strokeWidth={2} />
               <Text style={styles.fieldLabelText}>Estado de cuenta</Text>
             </View>
             <View
@@ -397,7 +394,7 @@ export default function ProfileScreen() {
 
         {/* Logout Button */}
         <TouchableOpacity style={styles.logoutButton} onPress={handleLogout} activeOpacity={0.8}>
-          <LucideIcons.LogOut size={18} color="#EF4444" strokeWidth={2.5} />
+          <LogOut size={18} color="#EF4444" strokeWidth={2.5} />
           <Text style={styles.logoutText}>Cerrar Sesión</Text>
         </TouchableOpacity>
 
@@ -633,6 +630,13 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#E2E8F0",
     marginTop: 2,
+  },
+  fieldHelper: {
+    fontSize: 11,
+    color: "#94A3B8",
+    marginTop: 4,
+    lineHeight: 15,
+    paddingHorizontal: 2,
   },
   fieldDivider: {
     height: 1,

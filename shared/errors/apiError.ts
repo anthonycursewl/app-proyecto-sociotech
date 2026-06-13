@@ -1,4 +1,4 @@
-import { ApiError } from "@/shared/http/http.client";
+import { ApiError, SessionExpiredError } from "@/shared/http/http.client";
 
 const STATUS_MESSAGES: Record<number, string> = {
   400: "Los datos enviados no son válidos.",
@@ -10,7 +10,15 @@ const STATUS_MESSAGES: Record<number, string> = {
   500: "Error del servidor. Intenta más tarde.",
 };
 
-export function getApiErrorMessage(error: unknown): string {
+export function isSessionExpired(error: unknown): boolean {
+  return error instanceof SessionExpiredError;
+}
+
+export function getApiErrorMessage(error: unknown): string | null {
+  if (error instanceof SessionExpiredError) {
+    return null;
+  }
+
   if (error instanceof ApiError) {
     if (error.message && error.message !== `API Error: ${error.status}`) {
       return error.message;
@@ -21,9 +29,6 @@ export function getApiErrorMessage(error: unknown): string {
   if (error instanceof Error) {
     if (error.message.includes("timed out")) {
       return "La solicitud tardó demasiado. Revisa tu conexión.";
-    }
-    if (error.message.includes("session") || error.message.includes("sesión")) {
-      return error.message;
     }
     return error.message || "Ocurrió un error inesperado.";
   }

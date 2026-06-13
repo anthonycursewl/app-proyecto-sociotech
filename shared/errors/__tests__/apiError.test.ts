@@ -1,3 +1,6 @@
+import { ApiError, SessionExpiredError } from "@/shared/http/http.client";
+import { getApiErrorMessage } from "../apiError";
+
 jest.mock("@/shared/http/http.client", () => {
   class ApiError extends Error {
     constructor(
@@ -9,11 +12,14 @@ jest.mock("@/shared/http/http.client", () => {
       this.name = "ApiError";
     }
   }
-  return { ApiError };
+  class SessionExpiredError extends ApiError {
+    constructor() {
+      super(401, "Su sesión ha expirado. Inicie sesión nuevamente.");
+      this.name = "SessionExpiredError";
+    }
+  }
+  return { ApiError, SessionExpiredError };
 });
-
-import { ApiError } from "@/shared/http/http.client";
-import { getApiErrorMessage } from "../apiError";
 
 describe("getApiErrorMessage", () => {
   it("maps ApiError status to Spanish message", () => {
@@ -26,5 +32,9 @@ describe("getApiErrorMessage", () => {
 
   it("handles generic Error", () => {
     expect(getApiErrorMessage(new Error("Network failed"))).toBe("Network failed");
+  });
+
+  it("returns null for SessionExpiredError", () => {
+    expect(getApiErrorMessage(new SessionExpiredError())).toBeNull();
   });
 });

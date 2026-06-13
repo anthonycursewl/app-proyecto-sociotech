@@ -1,8 +1,7 @@
-import * as LucideIcons from "lucide-react-native";
+import { ChevronLeft, Settings, Stethoscope } from "lucide-react-native";
 import React from "react";
 import { StyleSheet, TouchableOpacity, View } from "react-native";
 import { Text } from "@/components/common/SText"
-import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAuthStore } from "@/shared/zustand/auth/useAuthStore";
@@ -16,49 +15,41 @@ export const DoctorProfileHeader = () => {
   const initials = user ? `${user.firstName?.charAt(0) ?? ''}${user.lastName?.charAt(0) ?? ''}` : "D";
 
   return (
-    <View style={styles.wrapper}>
-      <LinearGradient
-        colors={['#4CB1B1', '#3A9A9A']}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={styles.gradient}
-      />
-      <View style={[styles.container, { paddingTop: insets.top + 12 }]}>
-        <View style={styles.topRow}>
-          <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-            <LucideIcons.ChevronLeft size={22} color="#FFFFFF" strokeWidth={2.5} />
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.settingsButton}>
-            <LucideIcons.Settings size={22} color="#FFFFFF" strokeWidth={2} />
-          </TouchableOpacity>
-        </View>
+    <View style={[styles.container, { paddingTop: insets.top + 12 }]}>
+      <View style={styles.topRow}>
+        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+          <ChevronLeft size={22} color="#0F172A" strokeWidth={2.5} />
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.settingsButton}>
+          <Settings size={22} color="#64748B" strokeWidth={2} />
+        </TouchableOpacity>
+      </View>
 
-        <View style={styles.profileSection}>
-          <View style={styles.avatar}>
-            <Text style={styles.avatarText}>{initials}</Text>
-          </View>
-          <Text style={styles.name}>{userName}</Text>
-          <View style={styles.roleBadge}>
-            <LucideIcons.Stethoscope size={12} color="#4CB1B1" strokeWidth={2.5} />
-            <Text style={styles.roleText}>Doctor</Text>
-          </View>
+      <View style={styles.profileSection}>
+        <View style={styles.avatar}>
+          <Text style={styles.avatarText}>{initials}</Text>
         </View>
+        <Text style={styles.name}>{userName}</Text>
+        <View style={styles.roleBadge}>
+          <Stethoscope size={12} color="#4CB1B1" strokeWidth={2.5} />
+          <Text style={styles.roleText}>Doctor</Text>
+        </View>
+      </View>
 
-        <View style={styles.statsRow}>
-          <View style={styles.statItem}>
-            <Text style={styles.statValue}>12</Text>
-            <Text style={styles.statLabel}>Citas hoy</Text>
-          </View>
-          <View style={styles.statDivider} />
-          <View style={styles.statItem}>
-            <Text style={styles.statValue}>48</Text>
-            <Text style={styles.statLabel}>Pacientes</Text>
-          </View>
-          <View style={styles.statDivider} />
-          <View style={styles.statItem}>
-            <Text style={styles.statValue}>5</Text>
-            <Text style={styles.statLabel}>Años exp.</Text>
-          </View>
+      <View style={styles.statsRow}>
+        <View style={styles.statItem}>
+          <Text style={styles.statValue}>12</Text>
+          <Text style={styles.statLabel}>Citas hoy</Text>
+        </View>
+        <View style={styles.statDivider} />
+        <View style={styles.statItem}>
+          <Text style={styles.statValue}>48</Text>
+          <Text style={styles.statLabel}>Pacientes</Text>
+        </View>
+        <View style={styles.statDivider} />
+        <View style={styles.statItem}>
+          <Text style={styles.statValue}>5</Text>
+          <Text style={styles.statLabel}>Años exp.</Text>
         </View>
       </View>
     </View>
@@ -66,18 +57,7 @@ export const DoctorProfileHeader = () => {
 };
 
 const styles = StyleSheet.create({
-  wrapper: {
-    position: "relative",
-  },
-  gradient: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    height: 240,
-  },
   container: {
-    position: "relative",
     paddingHorizontal: 16,
     paddingBottom: 20,
   },
@@ -91,17 +71,19 @@ const styles = StyleSheet.create({
     width: 38,
     height: 38,
     borderRadius: 10,
-    backgroundColor: "rgba(255,255,255,0.2)",
+    backgroundColor: "#FFFFFF",
     justifyContent: "center",
     alignItems: "center",
+    shadowColor: "#000", shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 1,
   },
   settingsButton: {
     width: 38,
     height: 38,
     borderRadius: 10,
-    backgroundColor: "rgba(255,255,255,0.2)",
+    backgroundColor: "#FFFFFF",
     justifyContent: "center",
     alignItems: "center",
+    shadowColor: "#000", shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 1,
   },
   profileSection: {
     alignItems: "center",
@@ -111,15 +93,10 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: "#E0F2F1",
     justifyContent: "center",
     alignItems: "center",
     marginBottom: 12,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 4,
   },
   avatarText: {
     fontSize: 28,
@@ -129,7 +106,7 @@ const styles = StyleSheet.create({
   name: {
     fontSize: 22,
     fontWeight: "800",
-    color: "#FFFFFF",
+    color: "#0F172A",
     letterSpacing: -0.5,
     marginBottom: 6,
   },

@@ -9,9 +9,15 @@ export const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#EEF0F3",
   },
-  containerCancelled: {
+  containerMuted: {
     backgroundColor: "#FAFAFA",
     borderColor: "#E5E7EB",
+  },
+  dateDayMuted: {
+    color: "#D1D5DB",
+  },
+  timeMuted: {
+    color: "#D1D5DB",
   },
   headerRow: {
     flexDirection: "row",
@@ -82,27 +88,8 @@ export const styles = StyleSheet.create({
   },
   statusLabel: {
     fontSize: 12,
-    color: "#6B7280",
-    fontWeight: "500",
+    fontWeight: "600",
     letterSpacing: 0.2,
-  },
-  priceBlock: {
-    alignItems: "flex-end",
-    paddingLeft: 12,
-  },
-  priceLabel: {
-    fontSize: 10,
-    color: "#9CA3AF",
-    fontWeight: "600",
-    textTransform: "uppercase",
-    letterSpacing: 0.6,
-    marginBottom: 2,
-  },
-  price: {
-    fontSize: 14,
-    color: "#111827",
-    fontWeight: "600",
-    fontVariant: ["tabular-nums"],
   },
   divider: {
     height: 1,

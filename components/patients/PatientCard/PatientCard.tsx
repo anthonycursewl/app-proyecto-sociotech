@@ -1,4 +1,4 @@
-import * as LucideIcons from "lucide-react-native";
+import { Calendar, ChevronRight, Clock, Mail, Phone } from "lucide-react-native";
 import React from "react";
 import { TouchableOpacity, View } from "react-native";
 import { Text } from "@/components/common/SText"
@@ -52,12 +52,12 @@ export const PatientCard = ({ patient, onPress }: PatientCardProps) => {
 
         <View style={styles.statsRow}>
           <View style={styles.stat}>
-            <LucideIcons.Calendar size={12} color="#94A3B8" strokeWidth={2} />
+            <Calendar size={12} color="#94A3B8" strokeWidth={2} />
             <Text style={styles.statText}>{patient.totalAppointments} visitas</Text>
           </View>
           {patient.lastVisit && (
             <View style={styles.stat}>
-              <LucideIcons.Clock size={12} color="#94A3B8" strokeWidth={2} />
+              <Clock size={12} color="#94A3B8" strokeWidth={2} />
               <Text style={styles.statText}>Última: {patient.lastVisit}</Text>
             </View>
           )}
@@ -65,18 +65,18 @@ export const PatientCard = ({ patient, onPress }: PatientCardProps) => {
 
         <View style={styles.contactRow}>
           <View style={styles.contactItem}>
-            <LucideIcons.Mail size={12} color="#94A3B8" strokeWidth={2} />
+            <Mail size={12} color="#94A3B8" strokeWidth={2} />
             <Text style={styles.contactText}>{patient.email}</Text>
           </View>
           <View style={styles.contactItem}>
-            <LucideIcons.Phone size={12} color="#94A3B8" strokeWidth={2} />
+            <Phone size={12} color="#94A3B8" strokeWidth={2} />
             <Text style={styles.contactText}>{patient.phone}</Text>
           </View>
         </View>
       </View>
 
       <View style={styles.chevron}>
-        <LucideIcons.ChevronRight size={18} color="#CBD5E1" strokeWidth={2.5} />
+        <ChevronRight size={18} color="#CBD5E1" strokeWidth={2.5} />
       </View>
     </TouchableOpacity>
   );

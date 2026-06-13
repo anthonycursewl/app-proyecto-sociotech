@@ -31,7 +31,8 @@ export function useUsersList(statusFilter: UserStatusFilter = "all") {
           limit: PAGE_LIMIT,
           isActive,
         });
-        setUsers((prev) => (cursor ? [...prev, ...response.users] : response.users));
+        const items = response.data ?? response.users ?? [];
+        setUsers((prev) => (cursor ? [...prev, ...items] : items));
         setNextCursor(response.nextCursor);
         setHasNext(response.hasNext);
         setError(null);

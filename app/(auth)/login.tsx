@@ -1,18 +1,20 @@
 import { Text } from "@/components/common/SText";
 import { useAuthStore } from "@/shared/zustand/auth/useAuthStore";
-import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import { Eye, EyeOff, HeartPulse, Lock, Mail } from "lucide-react-native";
+import { Eye, EyeOff, Lock, Mail } from "lucide-react-native";
 import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
+  Image,
+  Keyboard,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
   StyleSheet,
   TextInput,
   TouchableOpacity,
+  TouchableWithoutFeedback,
   View,
 } from "react-native";
 import Animated, {
@@ -32,16 +34,15 @@ export default function LoginScreen() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [focused, setFocused] = useState<"email" | "password" | null>(null);
-  const formRef = React.useRef<ScrollView>(null);
   const pulse = useSharedValue(1);
 
   useEffect(() => {
     pulse.value = withRepeat(
-      withTiming(1.15, { duration: 1400, easing: Easing.inOut(Easing.sin) }),
+      withTiming(1.05, { duration: 1400, easing: Easing.inOut(Easing.sin) }),
       -1,
       true,
     );
-  }, []);
+  }, [pulse]);
 
   const glowStyle = useAnimatedStyle(() => ({
     transform: [{ scale: pulse.value }],
@@ -67,12 +68,6 @@ export default function LoginScreen() {
     if (error) clearError();
   };
 
-  const scrollToPassword = () => {
-    setTimeout(() => {
-      formRef.current?.scrollToEnd({ animated: true });
-    }, 100);
-  };
-
   return (
     <View style={styles.container}>
       <StatusBar style="dark" />
@@ -81,12 +76,11 @@ export default function LoginScreen() {
       <SafeAreaView style={styles.safe}>
         <KeyboardAvoidingView
           style={{ flex: 1 }}
-          behavior={Platform.OS === "ios" ? "padding" : undefined}
+          behavior="padding"
           keyboardVerticalOffset={Platform.OS === "ios" ? 8 : 0}
         >
+          <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
           <ScrollView
-            ScrollView
-            ref={formRef}
             contentContainerStyle={styles.scrollContent}
             keyboardShouldPersistTaps="handled"
             showsVerticalScrollIndicator={false}
@@ -97,22 +91,13 @@ export default function LoginScreen() {
               style={styles.header}
             >
               <Animated.View style={[styles.logoGlow, glowStyle]}>
-                <LinearGradient
-                  colors={[
-                    "#3A9B9B",
-                    "#5DC9C9",
-                    "#FFF3D6",
-                    "#FFD6D6",
-                    "#FFFFFF",
-                  ]}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 1 }}
-                  style={styles.logoCircle}
-                >
-                  <HeartPulse size={28} color="#FFFFFF" strokeWidth={2.5} />
-                </LinearGradient>
+                <Image
+                  source={require("@/assets/logo/LOGO_DOC_2_no_bg.png")}
+                  style={styles.logoImage}
+                  resizeMode="contain"
+                  tintColor="#000000"
+                />
               </Animated.View>
-              <Text style={styles.appName}>Sociotech</Text>
               <Text style={styles.tagline}>
                 Gestión inteligente para tu salud
               </Text>
@@ -158,6 +143,7 @@ export default function LoginScreen() {
                     onBlur={() => setFocused(null)}
                   />
                 </View>
+                <Text style={styles.inputHelper}>El correo con el que te registraste en la plataforma.</Text>
               </View>
 
               <View style={styles.inputGroup}>
@@ -186,13 +172,10 @@ export default function LoginScreen() {
                     onChangeText={handlePasswordChange}
                     placeholder="••••••••"
                     placeholderTextColor="#C5CDD8"
-                    secureTextEntry={!showPassword}
-                    autoCapitalize="none"
-                    autoComplete="password"
-                    onFocus={() => {
-                      setFocused("password");
-                      scrollToPassword();
-                    }}
+                      secureTextEntry={!showPassword}
+                      autoCapitalize="none"
+                      autoComplete="password"
+                      onFocus={() => setFocused("password")}
                     onBlur={() => setFocused(null)}
                   />
                   <TouchableOpacity
@@ -206,9 +189,14 @@ export default function LoginScreen() {
                     )}
                   </TouchableOpacity>
                 </View>
+                <Text style={styles.inputHelper}>Tu contraseña actual. Toca el ícono de ojo para mostrarla u ocultarla.</Text>
               </View>
 
-              <TouchableOpacity style={styles.forgotRow} activeOpacity={0.7}>
+              <TouchableOpacity
+                style={styles.forgotRow}
+                onPress={() => router.replace("/(auth)/forgot-password")}
+                activeOpacity={0.7}
+              >
                 <Text style={styles.forgotText}>¿Olvidaste tu contraseña?</Text>
               </TouchableOpacity>
 
@@ -242,6 +230,7 @@ export default function LoginScreen() {
               </View>
             </Animated.View>
           </ScrollView>
+          </TouchableWithoutFeedback>
         </KeyboardAvoidingView>
       </SafeAreaView>
     </View>
@@ -265,21 +254,13 @@ const styles = StyleSheet.create({
     paddingTop: 60,
   },
   logoGlow: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
-    backgroundColor: "rgba(255, 215, 215, 0.15)",
     justifyContent: "center",
     alignItems: "center",
     marginBottom: 18,
   },
-  logoCircle: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    backgroundColor: "#4CB1B1",
-    justifyContent: "center",
-    alignItems: "center",
+  logoImage: {
+    width: 240,
+    height: 80,
   },
   appName: {
     fontSize: 30,
@@ -312,6 +293,13 @@ const styles = StyleSheet.create({
   },
   inputGroup: {
     marginBottom: 18,
+  },
+  inputHelper: {
+    fontSize: 11,
+    color: "#94A3B8",
+    marginTop: 5,
+    lineHeight: 15,
+    paddingHorizontal: 2,
   },
   inputLabel: {
     fontSize: 12,

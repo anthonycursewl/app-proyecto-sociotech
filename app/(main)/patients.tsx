@@ -1,15 +1,16 @@
 import { ListErrorState } from "@/components/common/ListErrorState";
 import { Skeleton } from "@/components/common/Skeleton";
-import { PatientCard, PatientData } from "@/components/patients/PatientCard";
+import { Text } from "@/components/common/SText";
 import { ManagePatientsHeader } from "@/components/patients/ManagePatientsHeader";
+import { PatientCard, PatientData } from "@/components/patients/PatientCard";
 import { usePatientsList } from "@/shared/hooks/usePatientsList";
-import { patientService, PatientMetrics } from "@/shared/services/patient.service";
+import { PatientMetrics, patientService } from "@/shared/services/patient.service";
 import { colors } from "@/shared/theme/colors";
 import { StatusBar } from "expo-status-bar";
+import { FlashList } from "@shopify/flash-list";
 import { useRouter } from "expo-router";
-import React, { useEffect, useMemo, useState } from "react";
-import { ActivityIndicator, FlatList, StyleSheet, View } from "react-native";
-import { Text } from "@/components/common/SText";
+import React, { useCallback, useEffect, useState } from "react";
+import { ActivityIndicator, InteractionManager, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 function PatientRowSkeleton() {
@@ -27,95 +28,94 @@ function PatientRowSkeleton() {
 
 export default function PatientsScreen() {
   const router = useRouter();
-  const { patients, loading, refreshing, loadingMore, error, activeFilter, changeFilter, refresh, loadMore, reload } =
-    usePatientsList();
+  const { 
+    patients, 
+    loading, 
+    refreshing, 
+    loadingMore, 
+    error, 
+    activeFilter, 
+    changeFilter, 
+    refresh, 
+    loadMore, 
+    reload,
+    setQuery 
+  } = usePatientsList();
   const [metrics, setMetrics] = useState<PatientMetrics | undefined>(undefined);
 
   useEffect(() => {
-    patientService.getMetrics().then(setMetrics).catch(() => {});
+    const task = InteractionManager.runAfterInteractions(() => {
+      patientService.getMetrics().then(setMetrics).catch(() => {});
+    });
+    return () => task.cancel();
   }, []);
 
-  const [searchQuery, setSearchQuery] = useState("");
-
-  const filteredPatients = useMemo(() => {
-    if (!searchQuery.trim()) return patients;
-    const q = searchQuery.toLowerCase();
-    return patients.filter(
-      (patient) =>
-        patient.name.toLowerCase().includes(q) ||
-        patient.medicalId.toLowerCase().includes(q) ||
-        patient.email.toLowerCase().includes(q),
-    );
-  }, [patients, searchQuery]);
-
-  const renderItem = ({ item }: { item: PatientData }) => (
-    <PatientCard
-      patient={item}
-      onPress={() => router.push(`/patient/${item.id}` as any)}
-    />
+  const renderItem = useCallback(
+    ({ item }: { item: PatientData }) => (
+      <PatientCard
+        patient={item}
+        onPress={() => router.navigate({ pathname: "/admin/patients/[id]", params: { id: item.id } })}
+      />
+    ),
+    [router],
   );
 
-  if (loading) {
-    return (
-      <SafeAreaView style={styles.container} edges={["bottom", "left", "right"]}>
-        <StatusBar style="dark" />
-        <ManagePatientsHeader onSearch={setSearchQuery} metrics={metrics} activeFilter={activeFilter} onFilterChange={changeFilter} />
+  const screen = (
+    <>
+      <ManagePatientsHeader onSearch={setQuery} metrics={metrics} activeFilter={activeFilter} onFilterChange={changeFilter} />
+      {loading ? (
         <View style={styles.list}>
           {Array.from({ length: 6 }).map((_, i) => (
             <PatientRowSkeleton key={i} />
           ))}
         </View>
-      </SafeAreaView>
-    );
-  }
-
-  if (error && patients.length === 0) {
-    return (
-      <SafeAreaView style={styles.container} edges={["bottom", "left", "right"]}>
-        <StatusBar style="dark" />
-        <ManagePatientsHeader onSearch={setSearchQuery} metrics={metrics} activeFilter={activeFilter} onFilterChange={changeFilter} />
+      ) : error && patients.length === 0 ? (
         <ListErrorState message={error} onRetry={reload} />
-      </SafeAreaView>
-    );
-  }
+      ) : (
+        <FlashList
+          data={patients}
+          renderItem={renderItem}
+          keyExtractor={(item) => item.id}
+          contentContainerStyle={styles.list}
+          showsVerticalScrollIndicator={false}
+          refreshing={refreshing}
+          onRefresh={refresh}
+          onEndReached={loadMore}
+          onEndReachedThreshold={0.3}
+          ListHeaderComponent={
+            <Text style={styles.countText}>
+              {patients.length} paciente{patients.length !== 1 ? "s" : ""} {" "}
+              encontrado{patients.length !== 1 ? "s" : ""}
+            </Text>
+          }
+          ListFooterComponent={
+            loadingMore ? (
+              <ActivityIndicator style={{ paddingVertical: 16 }} color={colors.accent} />
+            ) : null
+          }
+          ListEmptyComponent={
+            <View style={styles.emptyContainer}>
+              <Text style={styles.emptyText}>No se encontraron pacientes</Text>
+            </View>
+          }
+        />
+      )}
+    </>
+  );
 
   return (
-    <SafeAreaView style={styles.container} edges={["bottom", "left", "right"]}>
+    <View style={styles.root}>
       <StatusBar style="dark" />
-      <ManagePatientsHeader onSearch={setSearchQuery} metrics={metrics} activeFilter={activeFilter} onFilterChange={changeFilter} />
-      <FlatList
-        data={filteredPatients}
-        renderItem={renderItem}
-        keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.list}
-        showsVerticalScrollIndicator={false}
-        refreshing={refreshing}
-        onRefresh={refresh}
-        onEndReached={loadMore}
-        onEndReachedThreshold={0.3}
-        ListHeaderComponent={
-          <Text style={styles.countText}>
-            {filteredPatients.length} paciente{filteredPatients.length !== 1 ? "s" : ""}{" "}
-            encontrado{filteredPatients.length !== 1 ? "s" : ""}
-          </Text>
-        }
-        ListFooterComponent={
-          loadingMore ? (
-            <ActivityIndicator style={{ paddingVertical: 16 }} color={colors.accent} />
-          ) : null
-        }
-        ListEmptyComponent={
-          <View style={styles.emptyContainer}>
-            <Text style={styles.emptyText}>No se encontraron pacientes</Text>
-          </View>
-        }
-      />
-    </SafeAreaView>
+      <SafeAreaView style={styles.container} edges={["bottom", "left", "right"]}>
+        {screen}
+      </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
+  root: { flex: 1, backgroundColor: colors.background },
+  container: { flex: 1, backgroundColor: "transparent" },
   list: { padding: 16 },
   countText: { fontSize: 13, color: colors.textSecondary, marginBottom: 12, fontWeight: "500" },
   skeletonCard: {

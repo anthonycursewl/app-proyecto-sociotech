@@ -1,129 +1,95 @@
-import { StatusBar } from "expo-status-bar";
-import React, { useState } from "react";
-import { FlatList, StyleSheet, View } from "react-native";
-import { Text } from "@/components/common/SText"
+import { ClipboardList } from "lucide-react-native";
+import { ListErrorState } from "@/components/common/ListErrorState";
+import { Text } from "@/components/common/SText";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { ManageRecordsHeader } from "../../../components/records/ManageRecordsHeader";
-import { AdminRecordCard, AdminRecordData } from "../../../components/records/AdminRecordCard";
-
-const MOCK_ADMIN_RECORDS: AdminRecordData[] = [
-  {
-    id: "1",
-    patientName: "María García",
-    patientId: "HM-2024-0142",
-    type: "consultation",
-    title: "Consulta de Control",
-    description: "Paciente presenta cuadro de infección respiratoria aguda. Se indican estudios.",
-    date: "2026-05-05",
-    doctorName: "Dr. Carlos Rodríguez",
-    specialty: "Medicina General",
-    phone: "0414-1234567",
-  },
-  {
-    id: "2",
-    patientName: "Juan Pérez",
-    patientId: "HM-2024-0089",
-    type: "prescription",
-    title: "Receta - Antibióticos",
-    description: "Amoxicilina 500mg cada 8 horas por 7 días. Ibuprofeno 400mg según necesidad.",
-    date: "2026-05-04",
-    doctorName: "Dra. Ana Martínez",
-    specialty: "Cardiología",
-    phone: "0412-9876543",
-  },
-  {
-    id: "3",
-    patientName: "Laura Hernández",
-    patientId: "HM-2023-0567",
-    type: "exam",
-    title: "Resultado - Química Sanguínea",
-    description: "Glucosa: 95 mg/dL (normal), Colesterol total: 210 mg/dL (elevado).",
-    date: "2026-05-03",
-    doctorName: "Tec. María González",
-    specialty: "Laboratorio Clínico",
-    phone: "0414-5551234",
-  },
-  {
-    id: "4",
-    patientName: "Carlos López",
-    patientId: "HM-2024-0234",
-    type: "consultation",
-    title: "Valoración Cardiología",
-    description: "Electrocardiograma dentro de parámetros normales. Se recomienda ejercicio.",
-    date: "2026-05-02",
-    doctorName: "Dra. Ana Martínez",
-    specialty: "Cardiología",
-    phone: "0424-2223333",
-  },
-  {
-    id: "5",
-    patientName: "Ana Martínez",
-    patientId: "HM-2023-0412",
-    type: "procedure",
-    title: "Curación de Herida",
-    description: "Se realiza curación de herida postquirúrgica en miembro inferior derecho.",
-    date: "2026-05-01",
-    doctorName: "Dr. Roberto Sánchez",
-    specialty: "Cirugía General",
-    phone: "0416-6667777",
-  },
-  {
-    id: "6",
-    patientName: "Pedro Ramírez",
-    patientId: "HM-2024-0318",
-    type: "exam",
-    title: "Rayos X - Tórax",
-    description: "Radiografía de tórax sin alteraciones significativas. Campos pulmonares limpios.",
-    date: "2026-04-30",
-    doctorName: "Tec. José Martínez",
-    specialty: "Radiología",
-    phone: "0426-8889999",
-  },
-];
+import { StatusBar } from "expo-status-bar";
+import { useRouter } from "expo-router";
+import { useAuthStore } from "@/shared/zustand/auth/useAuthStore";
+import React, { useCallback } from "react";
+import { ActivityIndicator, StyleSheet, View } from "react-native";
+import { FlashList } from "@shopify/flash-list";
+import { MedicalRecordListItem } from "@/components/medical-records/MedicalRecordListItem";
+import { useMyCreatedMedicalRecords } from "@/shared/hooks/useMyCreatedMedicalRecords";
+import { colors } from "@/shared/theme/colors";
 
 export default function AdminRecordsScreen() {
-  const [searchQuery, setSearchQuery] = useState("");
-  const [filteredRecords, setFilteredRecords] = useState(MOCK_ADMIN_RECORDS);
+  const router = useRouter();
+  const doctorProfile = useAuthStore((s) => s.doctorProfile);
+  const { records, loading, refreshing, error, refresh, reload } =
+    useMyCreatedMedicalRecords(doctorProfile?.id ?? null);
 
-  const handleSearch = (query: string) => {
-    setSearchQuery(query);
-    if (!query.trim()) {
-      setFilteredRecords(MOCK_ADMIN_RECORDS);
-    } else {
-      const lowerQuery = query.toLowerCase();
-      setFilteredRecords(
-        MOCK_ADMIN_RECORDS.filter(
-          (record) =>
-            record.patientName.toLowerCase().includes(lowerQuery) ||
-            record.title.toLowerCase().includes(lowerQuery) ||
-            record.doctorName.toLowerCase().includes(lowerQuery)
-        )
-      );
-    }
-  };
+  const doctorName = doctorProfile
+    ? `${doctorProfile.firstName} ${doctorProfile.lastName}`.trim()
+    : null;
 
-  const renderItem = ({ item }: { item: AdminRecordData }) => (
-    <AdminRecordCard record={item} />
+  const renderItem = useCallback(
+    ({ item }: { item: import("@/shared/services/medicalRecord.service").MedicalRecordResponse }) => (
+      <MedicalRecordListItem
+        record={item}
+        onPress={() => router.navigate({ pathname: "/admin/records/[id]", params: { id: item.id } })}
+        doctorName="—"
+      />
+    ),
+    [router],
   );
+
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.container} edges={["bottom", "left", "right"]}>
+        <StatusBar style="dark" />
+        <View style={styles.headerSection}>
+          <Text style={styles.title}>Historias Clínicas</Text>
+          {doctorName && <Text style={styles.subtitle}>{doctorName}</Text>}
+        </View>
+        <View style={styles.loadingWrap}>
+          <ActivityIndicator color={colors.accent} />
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  if (error && records.length === 0) {
+    return (
+      <SafeAreaView style={styles.container} edges={["bottom", "left", "right"]}>
+        <StatusBar style="dark" />
+        <View style={styles.headerSection}>
+          <Text style={styles.title}>Historias Clínicas</Text>
+          {doctorName && <Text style={styles.subtitle}>{doctorName}</Text>}
+        </View>
+        <ListErrorState message={error} onRetry={reload} />
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container} edges={["bottom", "left", "right"]}>
       <StatusBar style="dark" />
-      <ManageRecordsHeader onSearch={handleSearch} />
-      <FlatList
-        data={filteredRecords}
+      <FlashList
+        data={records}
         renderItem={renderItem}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.list}
+        refreshing={refreshing}
+        onRefresh={refresh}
         showsVerticalScrollIndicator={false}
         ListHeaderComponent={
-          <Text style={styles.countText}>
-            {filteredRecords.length} registros encontrados
-          </Text>
+          <View style={styles.headerSection}>
+            <Text style={styles.title}>Historias Clínicas</Text>
+            {doctorName && <Text style={styles.subtitle}>{doctorName}</Text>}
+            <Text style={styles.countText}>
+              {records.length} {records.length === 1 ? "historia" : "historias"}
+            </Text>
+          </View>
         }
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
-            <Text style={styles.emptyText}>No se encontraron registros</Text>
+            <View style={styles.emptyIcon}>
+              <ClipboardList size={28} color="#94A3B8" strokeWidth={2} />
+            </View>
+            <Text style={styles.emptyText}>No has creado historias clínicas</Text>
+            <Text style={styles.emptySubtext}>
+              Las historias que crees desde las citas aparecerán aquí.
+            </Text>
           </View>
         }
       />
@@ -134,24 +100,62 @@ export default function AdminRecordsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F8FAFC",
+    backgroundColor: colors.background,
   },
   list: {
-    padding: 16,
+    paddingHorizontal: 16,
+    paddingTop: 8,
+  },
+  headerSection: {
+    marginBottom: 12,
+  },
+  title: {
+    fontSize: 20,
+    fontWeight: "700",
+    color: colors.textPrimary,
+    letterSpacing: -0.3,
+  },
+  subtitle: {
+    fontSize: 13,
+    color: colors.textSecondary,
+    fontWeight: "500",
+    marginTop: 2,
   },
   countText: {
-    fontSize: 13,
-    color: "#64748B",
-    marginBottom: 12,
+    fontSize: 12,
+    color: colors.textSecondary,
     fontWeight: "500",
+    marginTop: 8,
   },
-  emptyContainer: {
-    paddingVertical: 40,
+  loadingWrap: {
+    flex: 1,
+    justifyContent: "center",
     alignItems: "center",
   },
+  emptyContainer: {
+    paddingVertical: 60,
+    alignItems: "center",
+  },
+  emptyIcon: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: "#F1F5F9",
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 12,
+  },
   emptyText: {
-    fontSize: 15,
-    color: "#94A3B8",
-    fontWeight: "500",
+    fontSize: 16,
+    color: colors.textPrimary,
+    fontWeight: "700",
+    marginBottom: 4,
+  },
+  emptySubtext: {
+    fontSize: 13,
+    color: colors.textSecondary,
+    textAlign: "center",
+    paddingHorizontal: 32,
+    lineHeight: 18,
   },
 });

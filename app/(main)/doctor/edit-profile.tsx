@@ -1,10 +1,10 @@
+import { CheckCheck, ChevronDown, ChevronLeft, Clock, DollarSign, FileText, HeartPulse, IdCard, Mail, Pencil, Phone, Plus, Stethoscope, Trash2, User, UserCircle } from "lucide-react-native";
 import { StatusBar } from "expo-status-bar";
 import React, { useEffect, useRef, useState } from "react";
-import { ActivityIndicator, StyleSheet, TextInput, TouchableOpacity, View, Alert, ScrollView, Modal, Pressable, Animated, Switch } from "react-native";
+import { ActivityIndicator, StyleSheet, TextInput, TouchableOpacity, View, Alert, ScrollView, Animated, Switch } from "react-native";
 import { Text } from "@/components/common/SText"
 import { SafeAreaView } from "react-native-safe-area-context";
-import { LinearGradient } from "expo-linear-gradient";
-import * as LucideIcons from "lucide-react-native";
+import { BottomSheetModal } from "@/components/common/BottomSheetModal";
 import { useRouter } from "expo-router";
 import { useAuthStore } from "@/shared/zustand/auth/useAuthStore";
 import { doctorService, CreateDoctorData, DoctorSchedule as ScheduleType } from "@/shared/services/doctor.service";
@@ -104,6 +104,8 @@ export default function DoctorEditProfileScreen() {
   const [specialtyPickerOpen, setSpecialtyPickerOpen] = useState(false);
   const [scheduleModalOpen, setScheduleModalOpen] = useState(false);
   const [editingSchedule, setEditingSchedule] = useState<ScheduleType | null>(null);
+  const [useCustomSpecialty, setUseCustomSpecialty] = useState(false);
+  const [customSpecialtyValue, setCustomSpecialtyValue] = useState("");
 
   const [loading, setLoading] = useState(true);
   const [showSkeleton, setShowSkeleton] = useState(true);
@@ -161,7 +163,18 @@ export default function DoctorEditProfileScreen() {
         setLoading(false);
       }
     })();
-  }, []);
+  }, [user?.firstName, user?.lastName, user?.email]);
+
+  // Sync the specialty picker's local state when the modal opens so the
+  // toggle position reflects the current value (Cardiología vs custom).
+  useEffect(() => {
+    if (specialtyPickerOpen) {
+      const current = form.specialty.trim();
+      const isPredefined = current === "Cardiología";
+      setUseCustomSpecialty(!isPredefined && current.length > 0);
+      setCustomSpecialtyValue(isPredefined ? "" : current);
+    }
+  }, [specialtyPickerOpen, form.specialty]);
 
   const handleSaveProfile = async () => {
     if (mode === "create") {
@@ -199,7 +212,7 @@ export default function DoctorEditProfileScreen() {
         { text: "OK", onPress: () => router.back() }
       ]);
     } catch (err: any) {
-      Alert.alert("Error", getApiErrorMessage(err));
+      Alert.alert("Error", getApiErrorMessage(err) ?? "Error al guardar el perfil");
     } finally {
       setSaving(false);
     }
@@ -246,7 +259,7 @@ export default function DoctorEditProfileScreen() {
       }
       setScheduleModalOpen(false);
     } catch (err: any) {
-      Alert.alert("Error", getApiErrorMessage(err));
+      Alert.alert("Error", getApiErrorMessage(err) ?? "Error al guardar el horario");
     } finally {
       setSavingSchedule(false);
     }
@@ -266,7 +279,7 @@ export default function DoctorEditProfileScreen() {
               await doctorService.deleteSchedule(schedule.id);
               setSchedules(prev => prev.filter(s => s.id !== schedule.id));
             } catch (err: any) {
-              Alert.alert("Error", getApiErrorMessage(err));
+              Alert.alert("Error", getApiErrorMessage(err) ?? "Error al eliminar el horario");
             }
           },
         },
@@ -281,11 +294,11 @@ export default function DoctorEditProfileScreen() {
       });
       setSchedules(prev => prev.map(s => s.id === updated.id ? updated : s));
     } catch (err: any) {
-      Alert.alert("Error", getApiErrorMessage(err));
+      Alert.alert("Error", getApiErrorMessage(err) ?? "Error al actualizar el horario");
     }
   };
 
-  const renderInput = (key: keyof ProfileForm, label: string, icon: React.ReactNode, placeholder: string, opts?: { multiline?: boolean; keyboardType?: "default" | "email-address" | "phone-pad" | "decimal-pad" | "number-pad"; autoCapitalize?: "none" | "sentences" | "words" | "characters"; editable?: boolean }) => (
+  const renderInput = (key: keyof ProfileForm, label: string, icon: React.ReactNode, placeholder: string, opts?: { multiline?: boolean; keyboardType?: "default" | "email-address" | "phone-pad" | "decimal-pad" | "number-pad"; autoCapitalize?: "none" | "sentences" | "words" | "characters"; editable?: boolean; helper?: string }) => (
     <View key={key} style={styles.inputWrapper}>
       <Text style={[styles.fieldLabel, opts?.editable === false && { color: "#94A3B8" }]}>{label}</Text>
       <View style={[styles.fieldContainer, opts?.editable === false && { backgroundColor: "#F1F5F9" }]}>
@@ -303,29 +316,30 @@ export default function DoctorEditProfileScreen() {
           editable={opts?.editable}
         />
       </View>
+      {opts?.helper && <Text style={styles.fieldHelper}>{opts.helper}</Text>}
     </View>
   );
 
-  const renderPicker = (label: string, value: string, placeholder: string, icon: React.ReactNode, onPress: () => void) => (
+  const renderPicker = (label: string, value: string, placeholder: string, icon: React.ReactNode, onPress: () => void, helper?: string) => (
     <View style={styles.inputWrapper}>
       <Text style={styles.fieldLabel}>{label}</Text>
       <TouchableOpacity style={[styles.fieldContainer, styles.pickerSelector]} onPress={onPress} activeOpacity={0.7}>
         {icon}
         <Text style={[styles.pickerValue, !value && { color: "#C5CDD8" }]}>{value || placeholder}</Text>
-        <LucideIcons.ChevronDown size={16} color="#94A3B8" strokeWidth={2} />
+        <ChevronDown size={16} color="#94A3B8" strokeWidth={2} />
       </TouchableOpacity>
+      {helper && <Text style={styles.fieldHelper}>{helper}</Text>}
     </View>
   );
 
   if (showSkeleton) {
     return (
       <SafeAreaView style={styles.container} edges={["bottom", "left", "right"]}>
-        <StatusBar style="light" />
-        <LinearGradient colors={['#4CB1B1', 'transparent']} start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }} style={styles.headerGradient} />
+        <StatusBar style="dark" />
         <SkeletonLayout>
         <View style={styles.header}>
           <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-            <LucideIcons.ChevronLeft size={20} color="#FFFFFF" strokeWidth={2.5} />
+            <ChevronLeft size={20} color="#0F172A" strokeWidth={2.5} />
           </TouchableOpacity>
           <View style={styles.headerTextWrap}>
             <SkeletonLayout.Block width={140} height={18} borderRadius={9} />
@@ -375,16 +389,10 @@ export default function DoctorEditProfileScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={["bottom", "left", "right"]}>
-      <StatusBar style="light" />
-      <LinearGradient
-        colors={['#4CB1B1', 'transparent']}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 0, y: 1 }}
-        style={styles.headerGradient}
-      />
+      <StatusBar style="dark" />
       <View style={styles.header}>
         <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-          <LucideIcons.ChevronLeft size={20} color="#FFFFFF" strokeWidth={2.5} />
+          <ChevronLeft size={20} color="#0F172A" strokeWidth={2.5} />
         </TouchableOpacity>
         <View style={styles.headerTextWrap}>
           <Text style={styles.headerTitle}>Mi Perfil Doctor</Text>
@@ -395,27 +403,27 @@ export default function DoctorEditProfileScreen() {
       <Animated.View style={{ flex: 1, opacity: contentOpacity }}>
       <ScrollView ref={scrollRef} style={styles.scrollView} showsVerticalScrollIndicator={false}>
         <View style={styles.form}>
-          <FormSection title="Información Personal" icon={LucideIcons.UserCircle}>
+          <FormSection title="Información Personal" icon={UserCircle}>
             <View style={styles.row}>
               <View style={{ flex: 1 }}>
-                {renderInput("firstName", "Nombre", <LucideIcons.User size={16} color="#94A3B8" strokeWidth={2} style={styles.fieldIcon} />, "Tu nombre", { autoCapitalize: "words", editable: false })}
+                {renderInput("firstName", "Nombre", <User size={16} color="#94A3B8" strokeWidth={2} style={styles.fieldIcon} />, "Tu nombre", { autoCapitalize: "words", editable: false, helper: "Tu nombre legal, tomado de tu cuenta. No se puede modificar aquí." })}
               </View>
               <View style={{ width: 12 }} />
               <View style={{ flex: 1 }}>
-                {renderInput("lastName", "Apellido", <LucideIcons.User size={16} color="#94A3B8" strokeWidth={2} style={styles.fieldIcon} />, "Tu apellido", { autoCapitalize: "words", editable: false })}
+                {renderInput("lastName", "Apellido", <User size={16} color="#94A3B8" strokeWidth={2} style={styles.fieldIcon} />, "Tu apellido", { autoCapitalize: "words", editable: false, helper: "Tu apellido legal, tomado de tu cuenta. No se puede modificar aquí." })}
               </View>
             </View>
-            {renderInput("phoneNumber", "Teléfono", <LucideIcons.Phone size={16} color="#94A3B8" strokeWidth={2} style={styles.fieldIcon} />, "+584141234567", { keyboardType: "phone-pad" })}
-            {renderInput("email", "Correo electrónico", <LucideIcons.Mail size={16} color="#94A3B8" strokeWidth={2} style={styles.fieldIcon} />, "correo@ejemplo.com", { keyboardType: "email-address", autoCapitalize: "none", editable: false })}
+            {renderInput("phoneNumber", "Teléfono", <Phone size={16} color="#94A3B8" strokeWidth={2} style={styles.fieldIcon} />, "+584141234567", { keyboardType: "phone-pad", helper: "Incluye código de país. Los pacientes usarán este número para contactarte sobre sus citas." })}
+            {renderInput("email", "Correo electrónico", <Mail size={16} color="#94A3B8" strokeWidth={2} style={styles.fieldIcon} />, "correo@ejemplo.com", { keyboardType: "email-address", autoCapitalize: "none", editable: false, helper: "Correo de tu cuenta. Se usa para notificaciones del sistema y recuperación de acceso." })}
           </FormSection>
 
-          <FormSection title="Información Profesional" icon={LucideIcons.Stethoscope}>
-            {renderPicker("Especialidad", form.specialty, "Seleccionar especialidad", <LucideIcons.Stethoscope size={16} color="#94A3B8" strokeWidth={2} style={styles.fieldIcon} />, () => setSpecialtyPickerOpen(true))}
-            {renderInput("licenseNumber", "Número de Licencia", <LucideIcons.IdCard size={16} color="#94A3B8" strokeWidth={2} style={styles.fieldIcon} />, "LIC-XXXXX")}
+          <FormSection title="Información Profesional" icon={Stethoscope}>
+            {renderPicker("Especialidad", form.specialty, "Seleccionar especialidad", <Stethoscope size={16} color="#94A3B8" strokeWidth={2} style={styles.fieldIcon} />, () => setSpecialtyPickerOpen(true), "Elige el área médica en la que te especializas. Los pacientes te buscarán por este campo.")}
+            {renderInput("licenseNumber", "Número de Licencia", <IdCard size={16} color="#94A3B8" strokeWidth={2} style={styles.fieldIcon} />, "LIC-XXXXX", { helper: "Número de tu licencia médica o exequátur que te autoriza a ejercer. Aparece tal cual en tu documentación oficial." })}
             <View style={styles.inputWrapper}>
               <Text style={styles.fieldLabel}>Precio de Consulta ($)</Text>
               <View style={styles.fieldContainer}>
-                <LucideIcons.DollarSign size={16} color="#94A3B8" strokeWidth={2} style={styles.fieldIcon} />
+                <DollarSign size={16} color="#94A3B8" strokeWidth={2} style={styles.fieldIcon} />
                 <TextInput
                   style={styles.fieldInput}
                   value={form.consultationPrice}
@@ -425,11 +433,13 @@ export default function DoctorEditProfileScreen() {
                   keyboardType="decimal-pad"
                 />
               </View>
+              <Text style={styles.fieldHelper}>Costo en dólares por consulta. Usa punto (.) para los decimales, por ejemplo 150.00. Este monto se muestra al paciente al agendar.</Text>
             </View>
-            {renderInput("biography", "Biografía", <LucideIcons.FileText size={16} color="#94A3B8" strokeWidth={2} style={styles.fieldIcon} />, "Cuéntanos sobre tu experiencia profesional...", { multiline: true })}
+            {renderInput("biography", "Biografía", <FileText size={16} color="#94A3B8" strokeWidth={2} style={styles.fieldIcon} />, "Cuéntanos sobre tu experiencia profesional...", { multiline: true, helper: "Descripción que verán los pacientes: tu experiencia, subespecialidades, idiomas, enfoques de tratamiento, etc." })}
           </FormSection>
 
-          <FormSection title="Horarios" icon={LucideIcons.Clock}>
+          <FormSection title="Horarios" icon={Clock}>
+            <Text style={styles.fieldHelper}>Define los días y horas en que atiendes. Los pacientes solo podrán reservar citas dentro de estos horarios.</Text>
             {schedules.length === 0 && !loading && (
               <Text style={styles.emptyText}>No has configurado horarios aún</Text>
             )}
@@ -447,16 +457,16 @@ export default function DoctorEditProfileScreen() {
                     thumbColor={schedule.isActive ? "#4CB1B1" : "#CBD5E1"}
                   />
                   <TouchableOpacity onPress={() => handleEditSchedule(schedule)} style={styles.scheduleEditBtn} activeOpacity={0.7}>
-                    <LucideIcons.Pencil size={16} color="#94A3B8" strokeWidth={2} />
+                    <Pencil size={16} color="#94A3B8" strokeWidth={2} />
                   </TouchableOpacity>
                   <TouchableOpacity onPress={() => handleDeleteSchedule(schedule)} style={styles.scheduleDeleteBtn} activeOpacity={0.7}>
-                    <LucideIcons.Trash2 size={16} color="#EF4444" strokeWidth={2} />
+                    <Trash2 size={16} color="#EF4444" strokeWidth={2} />
                   </TouchableOpacity>
                 </View>
               </View>
             ))}
             <TouchableOpacity style={styles.addScheduleBtn} onPress={handleAddSchedule} activeOpacity={0.7}>
-              <LucideIcons.Plus size={18} color="#4CB1B1" strokeWidth={2.5} />
+              <Plus size={18} color="#4CB1B1" strokeWidth={2.5} />
               <Text style={styles.addScheduleText}>Agregar Horario</Text>
             </TouchableOpacity>
           </FormSection>
@@ -465,7 +475,7 @@ export default function DoctorEditProfileScreen() {
             {saving ? (
               <ActivityIndicator size="small" color="#FFFFFF" />
             ) : (
-              <LucideIcons.CheckCheck size={18} color="#FFFFFF" strokeWidth={2.5} />
+              <CheckCheck size={18} color="#FFFFFF" strokeWidth={2.5} />
             )}
             <Text style={styles.saveButtonText}>{saving ? "Guardando..." : mode === "create" ? "Crear Perfil" : "Guardar Cambios"}</Text>
           </TouchableOpacity>
@@ -473,108 +483,185 @@ export default function DoctorEditProfileScreen() {
       </ScrollView>
       </Animated.View>
 
-      <Modal visible={specialtyPickerOpen} transparent animationType="fade" onRequestClose={() => setSpecialtyPickerOpen(false)}>
-        <Pressable style={styles.modalOverlay} onPress={() => setSpecialtyPickerOpen(false)}>
-          <Pressable style={styles.pickerSheet} onPress={() => {}}>
-            <View style={styles.pickerHandle} />
+      <BottomSheetModal visible={specialtyPickerOpen} onClose={() => setSpecialtyPickerOpen(false)} height={useCustomSpecialty ? 0.55 : 0.45}>
+        <View style={styles.pickerHeader}>
+          <View style={styles.pickerIcon}>
+            <Stethoscope size={18} color="#0D9488" strokeWidth={2.5} />
+          </View>
+          <View style={{ flex: 1 }}>
             <Text style={styles.pickerTitle}>Especialidad</Text>
-            <View style={styles.pickerGrid}>
-              {SPECIALTIES.map((spec) => {
-                const selected = form.specialty === spec;
+            <Text style={styles.pickerSubtitle}>
+              {useCustomSpecialty
+                ? "Escribe tu especialidad personalizada"
+                : "Solo Cardiología está disponible por ahora"}
+            </Text>
+          </View>
+        </View>
+
+        {!useCustomSpecialty && (
+          <TouchableOpacity
+            style={[styles.specialtyCard, form.specialty === "Cardiología" && styles.specialtyCardSelected]}
+            onPress={() => { updateField("specialty", "Cardiología"); setSpecialtyPickerOpen(false); }}
+            activeOpacity={0.7}
+          >
+            <View style={[styles.specialtyCardIcon, form.specialty === "Cardiología" && styles.specialtyCardIconSelected]}>
+              <HeartPulse size={22} color="#0D9488" strokeWidth={2} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.specialtyCardTitle, form.specialty === "Cardiología" && styles.specialtyCardTitleSelected]}>
+                Cardiología
+              </Text>
+              <Text style={styles.specialtyCardSubtitle}>
+                Diagnóstico y tratamiento de enfermedades cardiovasculares
+              </Text>
+            </View>
+            {form.specialty === "Cardiología" && (
+              <View style={styles.specialtyCardCheck}>
+                <CheckCheck size={14} color="#FFFFFF" strokeWidth={3} />
+              </View>
+            )}
+          </TouchableOpacity>
+        )}
+
+        {useCustomSpecialty && (
+          <View style={styles.customSpecialtyInputWrapper}>
+            <View style={styles.customSpecialtyInputRow}>
+              <Pencil size={16} color="#94A3B8" strokeWidth={2} style={{ marginRight: 8 }} />
+              <TextInput
+                style={styles.customSpecialtyInput}
+                value={customSpecialtyValue}
+                onChangeText={setCustomSpecialtyValue}
+                placeholder="Ej: Pediatría, Neurología, Ginecología..."
+                placeholderTextColor="#C5CDD8"
+                autoCapitalize="sentences"
+                autoFocus
+                returnKeyType="done"
+              />
+            </View>
+            <Text style={styles.customSpecialtyHelper}>
+              Escribe exactamente la especialidad que quieres mostrar a tus pacientes.
+            </Text>
+            <TouchableOpacity
+              style={[styles.customSpecialtySaveButton, !customSpecialtyValue.trim() && { opacity: 0.5 }]}
+              onPress={() => {
+                const trimmed = customSpecialtyValue.trim();
+                if (trimmed) {
+                  updateField("specialty", trimmed);
+                  setSpecialtyPickerOpen(false);
+                }
+              }}
+              disabled={!customSpecialtyValue.trim()}
+              activeOpacity={0.85}
+            >
+              <CheckCheck size={16} color="#FFFFFF" strokeWidth={2.5} />
+              <Text style={styles.customSpecialtySaveButtonText}>Usar esta especialidad</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
+        <View style={styles.specialtyToggleRow}>
+          <View style={styles.specialtyToggleLabelWrap}>
+            <Pencil size={14} color="#0D9488" strokeWidth={2} />
+            <Text style={styles.specialtyToggleLabel}>
+              Usar especialidad personalizada
+            </Text>
+          </View>
+          <Switch
+            value={useCustomSpecialty}
+            onValueChange={setUseCustomSpecialty}
+            trackColor={{ false: "#E2E8F0", true: "#A7F3D0" }}
+            thumbColor={useCustomSpecialty ? "#0D9488" : "#F8FAFC"}
+          />
+        </View>
+      </BottomSheetModal>
+
+      <BottomSheetModal visible={scheduleModalOpen} onClose={() => setScheduleModalOpen(false)} height={0.55}>
+        <ScrollView keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+          <View style={styles.pickerHeader}>
+            <View style={styles.pickerIcon}>
+              <Clock size={18} color="#0D9488" strokeWidth={2.5} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.pickerTitle}>{editingSchedule ? "Editar Horario" : "Agregar Horario"}</Text>
+              <Text style={styles.pickerSubtitle}>Define el día y horario de atención</Text>
+            </View>
+          </View>
+
+          <View style={styles.inputWrapper}>
+            <Text style={styles.fieldLabel}>Día de la Semana</Text>
+            <View style={styles.dayGrid}>
+              {DAY_LABELS.map((label, idx) => {
+                const selected = scheduleForm.dayOfWeek === idx;
                 return (
-                  <TouchableOpacity key={spec} style={[styles.pickerOption, selected && styles.pickerOptionSelected]} onPress={() => { updateField("specialty", spec); setSpecialtyPickerOpen(false); }} activeOpacity={0.7}>
-                    <Text style={[styles.pickerOptionText, selected && styles.pickerOptionTextSelected]}>{spec}</Text>
+                  <TouchableOpacity
+                    key={idx}
+                    style={[styles.dayOption, selected && styles.dayOptionSelected]}
+                    onPress={() => setScheduleForm(prev => ({ ...prev, dayOfWeek: idx }))}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={[styles.dayOptionText, selected && styles.dayOptionTextSelected]}>
+                      {label.slice(0, 3)}
+                    </Text>
                   </TouchableOpacity>
                 );
               })}
             </View>
-          </Pressable>
-        </Pressable>
-      </Modal>
+          </View>
 
-      <Modal visible={scheduleModalOpen} transparent animationType="fade" onRequestClose={() => setScheduleModalOpen(false)}>
-        <Pressable style={styles.modalOverlay} onPress={() => setScheduleModalOpen(false)}>
-          <Pressable style={styles.pickerSheet} onPress={() => {}}>
-            <View style={styles.pickerHandle} />
-            <Text style={styles.pickerTitle}>{editingSchedule ? "Editar Horario" : "Agregar Horario"}</Text>
-
-            <View style={styles.inputWrapper}>
-              <Text style={styles.fieldLabel}>Día de la Semana</Text>
-              <View style={styles.dayGrid}>
-                {DAY_LABELS.map((label, idx) => {
-                  const selected = scheduleForm.dayOfWeek === idx;
-                  return (
-                    <TouchableOpacity
-                      key={idx}
-                      style={[styles.dayOption, selected && styles.dayOptionSelected]}
-                      onPress={() => setScheduleForm(prev => ({ ...prev, dayOfWeek: idx }))}
-                      activeOpacity={0.7}
-                    >
-                      <Text style={[styles.dayOptionText, selected && styles.dayOptionTextSelected]}>
-                        {label.slice(0, 3)}
-                      </Text>
-                    </TouchableOpacity>
-                  );
-                })}
+          <View style={styles.row}>
+            <View style={{ flex: 1 }}>
+              <View style={styles.inputWrapper}>
+                <Text style={styles.fieldLabel}>Hora Inicio</Text>
+                <TextInput
+                  style={styles.timeInput}
+                  value={scheduleForm.startTime}
+                  onChangeText={(v) => setScheduleForm(prev => ({ ...prev, startTime: formatTimeInput(v) }))}
+                  placeholder="08:00"
+                  placeholderTextColor="#C5CDD8"
+                  keyboardType="number-pad"
+                />
               </View>
             </View>
-
-            <View style={styles.row}>
-              <View style={{ flex: 1 }}>
-                <View style={styles.inputWrapper}>
-                  <Text style={styles.fieldLabel}>Hora Inicio</Text>
-                  <TextInput
-                    style={styles.timeInput}
-                    value={scheduleForm.startTime}
-                    onChangeText={(v) => setScheduleForm(prev => ({ ...prev, startTime: formatTimeInput(v) }))}
-                    placeholder="08:00"
-                    placeholderTextColor="#C5CDD8"
-                    keyboardType="number-pad"
-                  />
-                </View>
-              </View>
-              <View style={{ width: 12 }} />
-              <View style={{ flex: 1 }}>
-                <View style={styles.inputWrapper}>
-                  <Text style={styles.fieldLabel}>Hora Fin</Text>
-                  <TextInput
-                    style={styles.timeInput}
-                    value={scheduleForm.endTime}
-                    onChangeText={(v) => setScheduleForm(prev => ({ ...prev, endTime: formatTimeInput(v) }))}
-                    placeholder="12:00"
-                    placeholderTextColor="#C5CDD8"
-                    keyboardType="number-pad"
-                  />
-                </View>
+            <View style={{ width: 12 }} />
+            <View style={{ flex: 1 }}>
+              <View style={styles.inputWrapper}>
+                <Text style={styles.fieldLabel}>Hora Fin</Text>
+                <TextInput
+                  style={styles.timeInput}
+                  value={scheduleForm.endTime}
+                  onChangeText={(v) => setScheduleForm(prev => ({ ...prev, endTime: formatTimeInput(v) }))}
+                  placeholder="12:00"
+                  placeholderTextColor="#C5CDD8"
+                  keyboardType="number-pad"
+                />
               </View>
             </View>
+          </View>
+          <Text style={styles.fieldHelper}>Formato 24 horas (HH:MM). Por ejemplo 08:00 a 12:00 cubre la mañana. La hora de fin debe ser posterior a la de inicio.</Text>
 
-            <TouchableOpacity
-              style={[styles.saveButton, savingSchedule && { opacity: 0.7 }, { marginTop: 8 }]}
-              onPress={handleSaveSchedule}
-              disabled={savingSchedule}
-              activeOpacity={0.85}
-            >
-              {savingSchedule ? (
-                <ActivityIndicator size="small" color="#FFFFFF" />
-              ) : (
-                <LucideIcons.CheckCheck size={18} color="#FFFFFF" strokeWidth={2.5} />
-              )}
-              <Text style={styles.saveButtonText}>{savingSchedule ? "Guardando..." : editingSchedule ? "Actualizar Horario" : "Crear Horario"}</Text>
-            </TouchableOpacity>
-          </Pressable>
-        </Pressable>
-      </Modal>
+          <TouchableOpacity
+            style={[styles.saveButton, savingSchedule && { opacity: 0.7 }, { marginTop: 8 }]}
+            onPress={handleSaveSchedule}
+            disabled={savingSchedule}
+            activeOpacity={0.85}
+          >
+            {savingSchedule ? (
+              <ActivityIndicator size="small" color="#FFFFFF" />
+            ) : (
+              <CheckCheck size={18} color="#FFFFFF" strokeWidth={2.5} />
+            )}
+            <Text style={styles.saveButtonText}>{savingSchedule ? "Guardando..." : editingSchedule ? "Actualizar Horario" : "Crear Horario"}</Text>
+          </TouchableOpacity>
+        </ScrollView>
+      </BottomSheetModal>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#F8FAFC" },
-  headerGradient: { position: "absolute", top: 0, left: 0, right: 0, height: 140 },
 
   header: {
-    position: "relative",
     paddingTop: 48,
     paddingHorizontal: 20,
     paddingBottom: 16,
@@ -585,21 +672,22 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 10,
-    backgroundColor: "rgba(255,255,255,0.2)",
+    backgroundColor: "#FFFFFF",
     justifyContent: "center",
     alignItems: "center",
     marginRight: 12,
+    shadowColor: "#000", shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 1,
   },
   headerTextWrap: { flex: 1 },
   headerTitle: {
     fontSize: 20,
     fontWeight: "800",
-    color: "#FFFFFF",
+    color: "#0F172A",
     letterSpacing: -0.5,
   },
   headerSubtitle: {
     fontSize: 12,
-    color: "rgba(255,255,255,0.85)",
+    color: "#64748B",
     marginTop: 1,
   },
 
@@ -660,6 +748,13 @@ const styles = StyleSheet.create({
     color: "#64748B",
     marginBottom: 5,
     letterSpacing: 0.2,
+  },
+  fieldHelper: {
+    fontSize: 11,
+    color: "#94A3B8",
+    marginTop: 4,
+    lineHeight: 15,
+    paddingHorizontal: 2,
   },
   fieldContainer: {
     flexDirection: "row",
@@ -780,60 +875,184 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
   },
 
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.4)",
-    justifyContent: "flex-end",
+  pickerHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    marginBottom: 16,
   },
-  pickerSheet: {
-    backgroundColor: "#FFFFFF",
-    borderTopLeftRadius: 28,
-    borderTopRightRadius: 28,
-    paddingHorizontal: 24,
-    paddingTop: 12,
-    paddingBottom: 40,
-  },
-  pickerHandle: {
+  pickerIcon: {
     width: 36,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: "#E2E8F0",
-    alignSelf: "center",
-    marginBottom: 20,
+    height: 36,
+    borderRadius: 10,
+    backgroundColor: "#F0FDF9",
+    justifyContent: "center",
+    alignItems: "center",
   },
   pickerTitle: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: "700",
     color: "#0F172A",
-    textAlign: "center",
-    marginBottom: 20,
+    letterSpacing: -0.2,
+  },
+  pickerSubtitle: {
+    fontSize: 12,
+    color: "#64748B",
+    marginTop: 2,
+    fontWeight: "500",
   },
   pickerGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 10,
+    gap: 8,
     justifyContent: "center",
   },
   pickerOption: {
-    width: "46%",
-    paddingVertical: 14,
-    borderRadius: 14,
+    flexBasis: "47%",
+    flexGrow: 1,
+    minWidth: 100,
+    paddingVertical: 12,
+    paddingHorizontal: 10,
+    borderRadius: 12,
     backgroundColor: "#F8FAFC",
     borderWidth: 1,
-    borderColor: "#F1F5F9",
+    borderColor: "#EEF2F6",
     alignItems: "center",
   },
   pickerOptionSelected: {
     backgroundColor: "#F0FDF9",
     borderColor: "#4CB1B1",
+    borderWidth: 1.5,
   },
   pickerOptionText: {
     fontSize: 13,
     fontWeight: "600",
-    color: "#64748B",
+    color: "#475569",
   },
   pickerOptionTextSelected: {
-    color: "#4CB1B1",
+    color: "#0F766E",
+  },
+
+  specialtyCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    padding: 14,
+    backgroundColor: "#F8FAFC",
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: "#EEF2F6",
+  },
+  specialtyCardSelected: {
+    backgroundColor: "#F0FDF9",
+    borderColor: "#4CB1B1",
+    borderWidth: 1.5,
+  },
+  specialtyCardIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    backgroundColor: "#FFFFFF",
+    justifyContent: "center",
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#EEF2F6",
+  },
+  specialtyCardIconSelected: {
+    backgroundColor: "#FFFFFF",
+    borderColor: "#CCFBEF",
+  },
+  specialtyCardTitle: {
+    fontSize: 15,
+    fontWeight: "700",
+    color: "#0F172A",
+    letterSpacing: -0.2,
+  },
+  specialtyCardTitleSelected: {
+    color: "#0F766E",
+  },
+  specialtyCardSubtitle: {
+    fontSize: 12,
+    color: "#64748B",
+    fontWeight: "500",
+    marginTop: 2,
+  },
+  specialtyCardCheck: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: "#0D9488",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+
+  customSpecialtyInputWrapper: {
+    gap: 8,
+  },
+  customSpecialtyInputRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#F8FAFC",
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
+    minHeight: 44,
+  },
+  customSpecialtyInput: {
+    flex: 1,
+    fontSize: 15,
+    color: "#0F172A",
+    fontWeight: "500",
+    paddingVertical: 10,
+  },
+  customSpecialtyHelper: {
+    fontSize: 11,
+    color: "#94A3B8",
+    lineHeight: 15,
+    paddingHorizontal: 2,
+  },
+  customSpecialtySaveButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    backgroundColor: "#4CB1B1",
+    borderRadius: 12,
+    paddingVertical: 13,
+    marginTop: 4,
+    shadowColor: "#4CB1B1",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  customSpecialtySaveButtonText: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: "#FFFFFF",
+    letterSpacing: 0.2,
+  },
+
+  specialtyToggleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingVertical: 10,
+    paddingHorizontal: 4,
+    marginTop: 4,
+    borderTopWidth: 1,
+    borderTopColor: "#F1F5F9",
+  },
+  specialtyToggleLabelWrap: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+  specialtyToggleLabel: {
+    fontSize: 13,
+    color: "#475569",
+    fontWeight: "600",
   },
 
   dayGrid: {

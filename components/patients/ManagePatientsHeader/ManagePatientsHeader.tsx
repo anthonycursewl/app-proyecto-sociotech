@@ -1,12 +1,12 @@
-import * as LucideIcons from "lucide-react-native";
-import React, { useState } from "react";
-import { StyleSheet, TextInput, TouchableOpacity, View } from "react-native";
-import { Text } from "@/components/common/SText"
-import { LinearGradient } from "expo-linear-gradient";
+import { Text } from "@/components/common/SText";
 import { useRouter } from "expo-router";
+import { ChevronLeft, List, Search, UserCheck, UserX } from "lucide-react-native";
+import React, { useEffect, useState } from "react";
+import { InteractionManager, StyleSheet, TextInput, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { PatientMetrics } from "@/shared/services/patient.service";
+import { colors } from "@/shared/theme/colors";
 
 interface ManagePatientsHeaderProps {
   title?: string;
@@ -21,39 +21,35 @@ export const ManagePatientsHeader = ({ title = "Pacientes", onSearch, metrics, a
   const insets = useSafeAreaInsets();
   const [searchQuery, setSearchQuery] = useState("");
 
+  useEffect(() => {
+    InteractionManager.runAfterInteractions(() => {
+      router.prefetch("/(main)/patient/edit");
+    });
+  }, [router]);
+
   const handleSearch = (text: string) => {
     setSearchQuery(text);
     onSearch?.(text);
   };
 
   return (
-    <View style={styles.wrapper}>
-      <LinearGradient
-        colors={['#FFFFFF', '#F8FAFC']}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 0, y: 1 }}
-        style={styles.gradient}
-      />
+    <View>
       <View style={[styles.container, { paddingTop: insets.top + 12 }]}>
         <View style={styles.topRow}>
           <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-            <LucideIcons.ChevronLeft size={22} color="#0F172A" strokeWidth={2.5} />
+            <ChevronLeft size={22} color={colors.textPrimary} strokeWidth={2.5} />
           </TouchableOpacity>
 
           <View style={styles.searchContainer}>
-            <LucideIcons.Search size={16} color="#94A3B8" strokeWidth={2.5} />
+            <Search size={16} color={colors.textMuted} strokeWidth={2.5} />
             <TextInput
               style={styles.searchInput}
               placeholder="Buscar paciente..."
-              placeholderTextColor="#94A3B8"
+              placeholderTextColor={colors.textMuted}
               value={searchQuery}
               onChangeText={handleSearch}
             />
           </View>
-
-          <TouchableOpacity style={styles.actionButton}>
-            <LucideIcons.UserPlus size={20} color="#FFFFFF" strokeWidth={2} />
-          </TouchableOpacity>
         </View>
 
         <View style={styles.bottomRow}>
@@ -63,15 +59,15 @@ export const ManagePatientsHeader = ({ title = "Pacientes", onSearch, metrics, a
 
         <View style={styles.filterRow}>
           <TouchableOpacity style={activeFilter === undefined ? styles.filterChipActive : styles.filterChip} onPress={() => onFilterChange?.(undefined)} activeOpacity={0.7}>
-            <LucideIcons.List size={14} color={activeFilter === undefined ? "#FFFFFF" : "#64748B"} strokeWidth={2} />
+            <List size={14} color={activeFilter === undefined ? "#FFFFFF" : colors.textSecondary} strokeWidth={2} />
             <Text style={activeFilter === undefined ? styles.filterChipTextActive : styles.filterChipText}>Todos</Text>
           </TouchableOpacity>
           <TouchableOpacity style={activeFilter === true ? styles.filterChipActive : styles.filterChip} onPress={() => onFilterChange?.(true)} activeOpacity={0.7}>
-            <LucideIcons.UserCheck size={14} color={activeFilter === true ? "#FFFFFF" : "#64748B"} strokeWidth={2} />
+            <UserCheck size={14} color={activeFilter === true ? "#FFFFFF" : colors.textSecondary} strokeWidth={2} />
             <Text style={activeFilter === true ? styles.filterChipTextActive : styles.filterChipText}>Activos</Text>
           </TouchableOpacity>
           <TouchableOpacity style={activeFilter === false ? styles.filterChipActive : styles.filterChip} onPress={() => onFilterChange?.(false)} activeOpacity={0.7}>
-            <LucideIcons.UserX size={14} color={activeFilter === false ? "#FFFFFF" : "#64748B"} strokeWidth={2} />
+            <UserX size={14} color={activeFilter === false ? "#FFFFFF" : colors.textSecondary} strokeWidth={2} />
             <Text style={activeFilter === false ? styles.filterChipTextActive : styles.filterChipText}>Inactivos</Text>
           </TouchableOpacity>
         </View>
@@ -98,16 +94,6 @@ export const ManagePatientsHeader = ({ title = "Pacientes", onSearch, metrics, a
 };
 
 const styles = StyleSheet.create({
-  wrapper: {
-    position: "relative",
-  },
-  gradient: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    height: 220,
-  },
   container: {
     position: "relative",
     paddingHorizontal: 16,
@@ -119,22 +105,14 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   backButton: {
-    width: 38,
-    height: 38,
-    borderRadius: 10,
-    backgroundColor: "#FFFFFF",
+    padding: 4,
     justifyContent: "center",
     alignItems: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 1,
   },
   searchContainer: {
     flex: 1,
     height: 40,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surface,
     borderRadius: 10,
     paddingHorizontal: 12,
     flexDirection: "row",
@@ -149,21 +127,8 @@ const styles = StyleSheet.create({
   searchInput: {
     flex: 1,
     fontSize: 14,
-    color: "#0F172A",
+    color: colors.textPrimary,
     fontWeight: "500",
-  },
-  actionButton: {
-    width: 38,
-    height: 38,
-    borderRadius: 10,
-    backgroundColor: "#8B5CF6",
-    justifyContent: "center",
-    alignItems: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
   },
   bottomRow: {
     flexDirection: "row",
@@ -175,12 +140,12 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 22,
     fontWeight: "800",
-    color: "#0F172A",
+    color: colors.textPrimary,
     letterSpacing: -0.5,
   },
   count: {
     fontSize: 13,
-    color: "#64748B",
+    color: colors.textSecondary,
     fontWeight: "500",
   },
   filterRow: {
@@ -193,7 +158,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 6,
     borderRadius: 20,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surface,
     flexDirection: "row",
     alignItems: "center",
     gap: 4,
@@ -207,14 +172,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 6,
     borderRadius: 20,
-    backgroundColor: "#8B5CF6",
+    backgroundColor: colors.accent,
     flexDirection: "row",
     alignItems: "center",
     gap: 4,
   },
   filterChipText: {
     fontSize: 11,
-    color: "#64748B",
+    color: colors.textSecondary,
     fontWeight: "500",
   },
   filterChipTextActive: {
@@ -224,7 +189,7 @@ const styles = StyleSheet.create({
   },
   statsRow: {
     flexDirection: "row",
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surface,
     borderRadius: 12,
     paddingVertical: 12,
     paddingHorizontal: 16,
@@ -242,11 +207,11 @@ const styles = StyleSheet.create({
   statValue: {
     fontSize: 20,
     fontWeight: "800",
-    color: "#0F172A",
+    color: colors.textPrimary,
   },
   statLabel: {
     fontSize: 11,
-    color: "#94A3B8",
+    color: colors.textMuted,
     fontWeight: "500",
     marginTop: 2,
   },

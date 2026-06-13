@@ -9,9 +9,15 @@ export const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#EEF0F3",
   },
-  containerCancelled: {
+  containerMuted: {
     backgroundColor: "#FAFAFA",
     borderColor: "#E5E7EB",
+  },
+  dateDayMuted: {
+    color: "#D1D5DB",
+  },
+  timeMuted: {
+    color: "#D1D5DB",
   },
   headerRow: {
     flexDirection: "row",
@@ -69,30 +75,21 @@ export const styles = StyleSheet.create({
     color: "#9CA3AF",
     fontWeight: "500",
   },
+  statusRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    marginTop: 3,
+  },
+  statusDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+  },
   statusLabel: {
     fontSize: 12,
-    color: "#6B7280",
-    fontWeight: "500",
-    marginTop: 2,
+    fontWeight: "600",
     letterSpacing: 0.2,
-  },
-  priceBlock: {
-    alignItems: "flex-end",
-    paddingLeft: 12,
-  },
-  priceLabel: {
-    fontSize: 10,
-    color: "#9CA3AF",
-    fontWeight: "600",
-    textTransform: "uppercase",
-    letterSpacing: 0.6,
-    marginBottom: 2,
-  },
-  price: {
-    fontSize: 14,
-    color: "#111827",
-    fontWeight: "600",
-    fontVariant: ["tabular-nums"],
   },
   divider: {
     height: 1,

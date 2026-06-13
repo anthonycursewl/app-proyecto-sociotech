@@ -1,101 +1,33 @@
 import { HttpClient } from "@/shared/http/http.client";
+import type {
+  DoctorBase,
+  DoctorProfileResponse,
+  DoctorScheduleBrief,
+  DoctorDetailResponse,
+  ListDoctorResponse,
+  DoctorMetrics,
+  DoctorListQuery,
+  CreateDoctorData,
+  UpdateDoctorData,
+  DoctorSchedule,
+  CreateScheduleData,
+  UpdateScheduleData,
+} from "@/shared/entities/Doctor";
 
-// ── Shared doctor shape matching API responses ──
-
-export interface DoctorBase {
-  id: string;
-  userId: string;
-  specialty: string;
-  licenseNumber: string;
-  firstName: string;
-  lastName: string;
-  email: string;
-  consultationPrice: number | null;
-  phoneNumber: string | null;
-  isActive: boolean;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface DoctorProfileResponse extends DoctorBase {
-  biography: string | null;
-}
-
-export interface DoctorScheduleBrief {
-  id: string;
-  dayOfWeek: number;
-  startTime: string;
-  endTime: string;
-  isActive: boolean;
-}
-
-export interface DoctorDetailResponse extends DoctorBase {
-  biography: string | null;
-  schedules: DoctorScheduleBrief[];
-}
-
-export interface ListDoctorResponse {
-  doctors: DoctorBase[];
-  nextCursor: string | null;
-  hasNext: boolean;
-}
-
-export interface DoctorMetrics {
-  totalActive: number;
-  totalInactive: number;
-  totalPatients: number;
-  updatedAt: string;
-}
-
-export interface DoctorListQuery {
-  cursor?: string;
-  limit?: number;
-  isActive?: boolean;
-}
-
-// ── Profile CRUD ──
-
-export interface CreateDoctorData {
-  specialty?: string;
-  licenseNumber?: string;
-  consultationPrice: number | null;
-  biography?: string;
-  phoneNumber?: string;
-}
-
-export interface UpdateDoctorData {
-  specialty?: string;
-  licenseNumber?: string;
-  consultationPrice?: number;
-  biography?: string;
-  phoneNumber?: string;
-}
-
-// ── Schedules ──
-
-export interface DoctorSchedule {
-  id: string;
-  doctorId: string;
-  dayOfWeek: number;
-  startTime: string;
-  endTime: string;
-  isActive: boolean;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface CreateScheduleData {
-  dayOfWeek: number;
-  startTime: string;
-  endTime: string;
-  isActive?: boolean;
-}
-
-export interface UpdateScheduleData {
-  startTime?: string;
-  endTime?: string;
-  isActive?: boolean;
-}
+export type {
+  DoctorBase,
+  DoctorProfileResponse,
+  DoctorScheduleBrief,
+  DoctorDetailResponse,
+  ListDoctorResponse,
+  DoctorMetrics,
+  DoctorListQuery,
+  CreateDoctorData,
+  UpdateDoctorData,
+  DoctorSchedule,
+  CreateScheduleData,
+  UpdateScheduleData,
+};
 
 // ── In-memory cache for getById ──
 

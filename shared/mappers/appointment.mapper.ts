@@ -54,8 +54,8 @@ export function mapToAdminAppointmentData(item: Appointment): AdminAppointmentDa
   return {
     ...base,
     patientId: item.patientId,
-    patientName: "Paciente",
-    patientPhone: null,
+    patientName: item.patient?.fullName ?? "Paciente",
+    patientPhone: item.patient?.phone ?? null,
     cancellation: item.cancellation as AppointmentCancellation | null,
   };
 }

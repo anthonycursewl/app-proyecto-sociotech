@@ -32,12 +32,13 @@ export const NoiseGradient = ({
         end={end}
         style={StyleSheet.absoluteFill}
       />
-      <Image
-        source={noiseSource}
-        style={[StyleSheet.absoluteFill, { opacity: noiseOpacity }]}
-        resizeMode="repeat"
-        pointerEvents="none"
-      />
+      <View pointerEvents="none" style={StyleSheet.absoluteFill}>
+        <Image
+          source={noiseSource}
+          style={[StyleSheet.absoluteFill, { opacity: noiseOpacity }]}
+          resizeMode="repeat"
+        />
+      </View>
       {children}
     </View>
   );

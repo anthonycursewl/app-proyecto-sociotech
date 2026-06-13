@@ -1,6 +1,5 @@
 import { CustomButton } from "@/components/common/CustomButton";
 import { Text } from "@/components/common/SText";
-import { colors } from "@/shared/theme/colors";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   Alert,
@@ -65,7 +64,7 @@ export const CreateRoleModal = ({
         useNativeDriver: true,
       }),
     ]).start(() => setAnimating(false));
-  }, []);
+  }, [overlayOpacity, slideY, sheetScale]);
 
   const closeAnimation = useCallback(() => {
     if (creating) return;
@@ -93,7 +92,7 @@ export const CreateRoleModal = ({
       setDescription("");
       onClose();
     });
-  }, [creating, onClose]);
+  }, [creating, onClose, overlayOpacity, slideY, sheetScale]);
 
   useEffect(() => {
     if (visible && !isVisible) {
@@ -194,7 +193,7 @@ export const CreateRoleModal = ({
                 autoCapitalize="characters"
                 editable={!creating}
               />
-              <Text style={styles.hint}>Se convertirá a mayúsculas automáticamente</Text>
+              <Text style={styles.helper}>Nombre único que identifica al rol. Se convertirá a mayúsculas automáticamente. Ejemplos: RECEPCIONISTA, ENFERMERA, CAJERO.</Text>
             </View>
 
             <View style={styles.field}>
@@ -210,6 +209,7 @@ export const CreateRoleModal = ({
                 textAlignVertical="top"
                 editable={!creating}
               />
+              <Text style={styles.helper}>Explica brevemente las responsabilidades de este rol para que otros administradores entiendan su propósito.</Text>
             </View>
           </View>
 
@@ -304,10 +304,11 @@ const styles = StyleSheet.create({
     height: 80,
     paddingTop: 12,
   },
-  hint: {
+  helper: {
     fontSize: 11,
     color: "#94A3B8",
-    marginTop: 4,
+    marginTop: 6,
+    lineHeight: 15,
   },
   footer: {
     flexDirection: "row",
