@@ -158,7 +158,7 @@ Copia `.env.example` a `.env` y define:
 | 4 | ✅ | Citas con API (`appointment.service`, hooks) |
 | 5 | ✅ | `typecheck`, tests Jest, README y contratos |
 | 6 | ✅ | Lista admin de pacientes (`GET /patients`) |
-| 7+ | ⏳ | Historias, exámenes, reportes, auditoría, doctores (quitar mocks) |
+| 7+ | ✅ | Historias, exámenes, reportes, auditoría, doctores (quitar mocks) |
 
 ## Licencia
 
