@@ -9,6 +9,7 @@ export interface DoctorBase {
   consultationPrice: number | null;
   phoneNumber: string | null;
   isActive: boolean;
+  isVisible: boolean;
   createdAt: string;
   updatedAt: string;
 }

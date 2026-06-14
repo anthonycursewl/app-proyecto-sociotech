@@ -1,12 +1,14 @@
-import { CalendarClock, ChevronRight, ClipboardList, Settings, UserPen, Users } from "lucide-react-native";
+import { CalendarClock, ChevronRight, ClipboardList, Eye, EyeOff, Settings, UserPen, Users } from "lucide-react-native";
 import { StatusBar } from "expo-status-bar";
-import React, { useCallback } from "react";
-import { StyleSheet, TouchableOpacity, View } from "react-native";
+import React, { useCallback, useEffect, useState } from "react";
+import { ActivityIndicator, Alert, StyleSheet, TouchableOpacity, View } from "react-native";
 import { FlashList } from "@shopify/flash-list";
 import { Text } from "@/components/common/SText"
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { DoctorProfileHeader } from "../../../components/doctors/DoctorProfileHeader";
+import { useAuthStore } from "@/shared/zustand/auth/useAuthStore";
+import { doctorService } from "@/shared/services/doctor.service";
 
 const QUICK_ACTIONS = [
   { id: "schedule", title: "Mi Agenda", icon: CalendarClock, color: "#4CB1B1", route: "/admin/appointments" },
@@ -18,6 +20,30 @@ const QUICK_ACTIONS = [
 
 export default function DoctorProfileScreen() {
   const router = useRouter();
+  const [visibilityLoading, setVisibilityLoading] = useState(false);
+  const doctorProfile = useAuthStore((s) => s.doctorProfile);
+  const loadDoctorProfile = useAuthStore((s) => s.loadDoctorProfile);
+  const setDoctorProfile = useAuthStore((s) => s.setDoctorProfile);
+
+  useEffect(() => {
+    if (!doctorProfile) loadDoctorProfile();
+  }, []);
+
+  const handleToggleVisibility = useCallback(async () => {
+    if (visibilityLoading) return;
+    setVisibilityLoading(true);
+    try {
+      const updated = await doctorService.toggleVisibility();
+      setDoctorProfile(updated);
+    } catch {
+      Alert.alert("Error", "No se pudo cambiar la visibilidad del perfil.");
+    } finally {
+      setVisibilityLoading(false);
+    }
+  }, [visibilityLoading, setDoctorProfile]);
+
+  const isVisible = doctorProfile?.isVisible ?? true;
+
   const renderAction = useCallback(
     ({ item }: { item: typeof QUICK_ACTIONS[0] }) => (
       <TouchableOpacity
@@ -45,7 +71,38 @@ export default function DoctorProfileScreen() {
         contentContainerStyle={styles.list}
         showsVerticalScrollIndicator={false}
         ListHeaderComponent={
-          <Text style={styles.sectionTitle}>Accesos Rápidos</Text>
+          <>
+            <TouchableOpacity
+              style={[styles.actionCard, styles.visibilityCard]}
+              onPress={handleToggleVisibility}
+              disabled={visibilityLoading}
+              activeOpacity={0.7}
+            >
+              <View style={[styles.actionIcon, { backgroundColor: (isVisible ? "#4CB1B1" : "#94A3B8") + "15" }]}>
+                {visibilityLoading ? (
+                  <ActivityIndicator size={22} color={isVisible ? "#4CB1B1" : "#94A3B8"} />
+                ) : isVisible ? (
+                  <Eye size={22} color="#4CB1B1" strokeWidth={2.5} />
+                ) : (
+                  <EyeOff size={22} color="#94A3B8" strokeWidth={2.5} />
+                )}
+              </View>
+              <View style={styles.visibilityContent}>
+                <Text style={styles.actionText}>Visibilidad del Perfil</Text>
+                <Text style={styles.visibilityDescription}>
+                  {isVisible
+                    ? "Los pacientes pueden encontrarte en las búsquedas públicas."
+                    : "Tu perfil está oculto para los pacientes."}
+                </Text>
+              </View>
+              <View style={[styles.visibilityBadge, isVisible ? styles.visibleBadge : styles.hiddenBadge]}>
+                <Text style={[styles.visibilityBadgeText, isVisible ? styles.visibleBadgeText : styles.hiddenBadgeText]}>
+                  {isVisible ? "Visible" : "Oculto"}
+                </Text>
+              </View>
+            </TouchableOpacity>
+            <Text style={styles.sectionTitle}>Accesos Rápidos</Text>
+          </>
         }
       />
     </SafeAreaView>
@@ -90,9 +147,45 @@ const styles = StyleSheet.create({
     marginRight: 14,
   },
   actionText: {
-    flex: 1,
     fontSize: 15,
     fontWeight: "600",
     color: "#0F172A",
+  },
+  visibilityCard: {
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
+    marginBottom: 20,
+  },
+  visibilityContent: {
+    flex: 1,
+    marginRight: 10,
+  },
+  visibilityDescription: {
+    fontSize: 11,
+    color: "#94A3B8",
+    fontWeight: "500",
+    marginTop: 2,
+    lineHeight: 15,
+  },
+  visibilityBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+  visibleBadge: {
+    backgroundColor: "#DCFCE7",
+  },
+  hiddenBadge: {
+    backgroundColor: "#F1F5F9",
+  },
+  visibilityBadgeText: {
+    fontSize: 11,
+    fontWeight: "700",
+  },
+  visibleBadgeText: {
+    color: "#22C55E",
+  },
+  hiddenBadgeText: {
+    color: "#94A3B8",
   },
 });

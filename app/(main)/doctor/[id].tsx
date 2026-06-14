@@ -129,7 +129,7 @@ export default function DoctorDetailScreen() {
               <Text style={styles.sectionTitle}>Información Profesional</Text>
             </View>
             <InfoRow label="N° Licencia" value={doctor.licenseNumber || "—"} />
-            <InfoRow label="Precio Consulta" value={priceFormatted} />
+            {/* <InfoRow label="Precio Consulta" value={priceFormatted} /> */}
             <View style={styles.biographyContainer}>
               <Text style={styles.biographyLabel}>Biografía</Text>
               <Text style={styles.biographyText}>{doctor.biography || "Sin biografía"}</Text>

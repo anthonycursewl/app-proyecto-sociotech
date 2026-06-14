@@ -1,4 +1,4 @@
-import { CheckCheck, ChevronDown, ChevronLeft, Clock, DollarSign, FileText, HeartPulse, IdCard, Mail, Pencil, Phone, Plus, Stethoscope, Trash2, User, UserCircle } from "lucide-react-native";
+import { CheckCheck, ChevronDown, ChevronLeft, Clock, Eye, EyeOff, FileText, HeartPulse, IdCard, Mail, Pencil, Phone, Plus, Stethoscope, Trash2, User, UserCircle } from "lucide-react-native";
 import { StatusBar } from "expo-status-bar";
 import React, { useEffect, useRef, useState } from "react";
 import { ActivityIndicator, StyleSheet, TextInput, TouchableOpacity, View, Alert, ScrollView, Animated, Switch } from "react-native";
@@ -45,7 +45,7 @@ const emptyProfileForm = (user?: { firstName?: string; lastName?: string; email?
   phoneNumber: "",
   specialty: "",
   licenseNumber: "",
-  consultationPrice: "",
+  consultationPrice: "30.00",
   biography: "",
 });
 
@@ -61,13 +61,7 @@ const formatTimeInput = (text: string): string => {
   return `${digits.slice(0, 2)}:${digits.slice(2)}`;
 };
 
-const formatPriceInput = (text: string): string => {
-  const cleaned = text.replace(/[^0-9.]/g, "");
-  const parts = cleaned.split(".");
-  if (parts.length > 2) return parts[0] + "." + parts.slice(1).join("");
-  if (parts.length === 2 && parts[1].length > 2) return parts[0] + "." + parts[1].slice(0, 2);
-  return cleaned;
-};
+
 
 type SectionIcon = React.ComponentType<{
   size?: number;
@@ -117,6 +111,8 @@ export default function DoctorEditProfileScreen() {
   const [schedules, setSchedules] = useState<ScheduleType[]>([]);
   const [scheduleForm, setScheduleForm] = useState<ScheduleForm>(emptyScheduleForm());
   const [savingSchedule, setSavingSchedule] = useState(false);
+  const [isVisible, setIsVisible] = useState(true);
+  const [visibilityToggling, setVisibilityToggling] = useState(false);
 
   useEffect(() => {
     if (!loading && showSkeleton) {
@@ -146,6 +142,7 @@ export default function DoctorEditProfileScreen() {
           consultationPrice: profile.consultationPrice?.toFixed(2) ?? "",
           biography: profile.biography ?? "",
         });
+        setIsVisible(profile.isVisible);
         setMode("update");
         profileFound = true;
       } catch (err: any) {
@@ -178,10 +175,6 @@ export default function DoctorEditProfileScreen() {
 
   const handleSaveProfile = async () => {
     if (mode === "create") {
-      if (!form.consultationPrice) {
-        Alert.alert("Validación", "El precio de la consulta es obligatorio");
-        return;
-      }
       if (!form.biography.trim()) {
         Alert.alert("Validación", "La biografía es obligatoria");
         return;
@@ -295,6 +288,19 @@ export default function DoctorEditProfileScreen() {
       setSchedules(prev => prev.map(s => s.id === updated.id ? updated : s));
     } catch (err: any) {
       Alert.alert("Error", getApiErrorMessage(err) ?? "Error al actualizar el horario");
+    }
+  };
+
+  const handleToggleVisibility = async () => {
+    if (visibilityToggling) return;
+    setVisibilityToggling(true);
+    try {
+      const updated = await doctorService.toggleVisibility();
+      setIsVisible(updated.isVisible);
+    } catch {
+      Alert.alert("Error", "No se pudo cambiar la visibilidad del perfil.");
+    } finally {
+      setVisibilityToggling(false);
     }
   };
 
@@ -420,55 +426,90 @@ export default function DoctorEditProfileScreen() {
           <FormSection title="Información Profesional" icon={Stethoscope}>
             {renderPicker("Especialidad", form.specialty, "Seleccionar especialidad", <Stethoscope size={16} color="#94A3B8" strokeWidth={2} style={styles.fieldIcon} />, () => setSpecialtyPickerOpen(true), "Elige el área médica en la que te especializas. Los pacientes te buscarán por este campo.")}
             {renderInput("licenseNumber", "Número de Licencia", <IdCard size={16} color="#94A3B8" strokeWidth={2} style={styles.fieldIcon} />, "LIC-XXXXX", { helper: "Número de tu licencia médica o exequátur que te autoriza a ejercer. Aparece tal cual en tu documentación oficial." })}
-            <View style={styles.inputWrapper}>
-              <Text style={styles.fieldLabel}>Precio de Consulta ($)</Text>
-              <View style={styles.fieldContainer}>
-                <DollarSign size={16} color="#94A3B8" strokeWidth={2} style={styles.fieldIcon} />
-                <TextInput
-                  style={styles.fieldInput}
-                  value={form.consultationPrice}
-                  onChangeText={(v) => updateField("consultationPrice", formatPriceInput(v))}
-                  placeholder="150.00"
-                  placeholderTextColor="#C5CDD8"
-                  keyboardType="decimal-pad"
-                />
-              </View>
-              <Text style={styles.fieldHelper}>Costo en dólares por consulta. Usa punto (.) para los decimales, por ejemplo 150.00. Este monto se muestra al paciente al agendar.</Text>
-            </View>
             {renderInput("biography", "Biografía", <FileText size={16} color="#94A3B8" strokeWidth={2} style={styles.fieldIcon} />, "Cuéntanos sobre tu experiencia profesional...", { multiline: true, helper: "Descripción que verán los pacientes: tu experiencia, subespecialidades, idiomas, enfoques de tratamiento, etc." })}
           </FormSection>
 
           <FormSection title="Horarios" icon={Clock}>
-            <Text style={styles.fieldHelper}>Define los días y horas en que atiendes. Los pacientes solo podrán reservar citas dentro de estos horarios.</Text>
-            {schedules.length === 0 && !loading && (
-              <Text style={styles.emptyText}>No has configurado horarios aún</Text>
-            )}
-            {schedules.map((schedule) => (
-              <View key={schedule.id} style={styles.scheduleCard}>
-                <View style={styles.scheduleLeft}>
-                  <Text style={styles.scheduleDay}>{DAY_LABELS[schedule.dayOfWeek]}</Text>
-                  <Text style={styles.scheduleTime}>{schedule.startTime} - {schedule.endTime}</Text>
-                </View>
-                <View style={styles.scheduleActions}>
-                  <Switch
-                    value={schedule.isActive}
-                    onValueChange={() => handleToggleScheduleActive(schedule)}
-                    trackColor={{ false: "#E2E8F0", true: "#A7F3D0" }}
-                    thumbColor={schedule.isActive ? "#4CB1B1" : "#CBD5E1"}
-                  />
-                  <TouchableOpacity onPress={() => handleEditSchedule(schedule)} style={styles.scheduleEditBtn} activeOpacity={0.7}>
-                    <Pencil size={16} color="#94A3B8" strokeWidth={2} />
-                  </TouchableOpacity>
-                  <TouchableOpacity onPress={() => handleDeleteSchedule(schedule)} style={styles.scheduleDeleteBtn} activeOpacity={0.7}>
-                    <Trash2 size={16} color="#EF4444" strokeWidth={2} />
-                  </TouchableOpacity>
-                </View>
+            {mode === "create" ? (
+              <View style={styles.scheduleDisabledOverlay}>
+                <Clock size={28} color="#CBD5E1" strokeWidth={2} />
+                <Text style={styles.scheduleDisabledText}>
+                  Primero debes crear tu perfil profesional para configurar los horarios
+                </Text>
               </View>
-            ))}
-            <TouchableOpacity style={styles.addScheduleBtn} onPress={handleAddSchedule} activeOpacity={0.7}>
-              <Plus size={18} color="#4CB1B1" strokeWidth={2.5} />
-              <Text style={styles.addScheduleText}>Agregar Horario</Text>
-            </TouchableOpacity>
+            ) : (
+              <>
+                <Text style={styles.fieldHelper}>Define los días y horas en que atiendes. Los pacientes solo podrán reservar citas dentro de estos horarios.</Text>
+                {schedules.length === 0 && !loading && (
+                  <Text style={styles.emptyText}>No has configurado horarios aún</Text>
+                )}
+                {schedules.map((schedule) => (
+                  <View key={schedule.id} style={styles.scheduleCard}>
+                    <View style={styles.scheduleLeft}>
+                      <Text style={styles.scheduleDay}>{DAY_LABELS[schedule.dayOfWeek]}</Text>
+                      <Text style={styles.scheduleTime}>{schedule.startTime} - {schedule.endTime}</Text>
+                    </View>
+                    <View style={styles.scheduleActions}>
+                      <Switch
+                        value={schedule.isActive}
+                        onValueChange={() => handleToggleScheduleActive(schedule)}
+                        trackColor={{ false: "#E2E8F0", true: "#A7F3D0" }}
+                        thumbColor={schedule.isActive ? "#4CB1B1" : "#CBD5E1"}
+                      />
+                      <TouchableOpacity onPress={() => handleEditSchedule(schedule)} style={styles.scheduleEditBtn} activeOpacity={0.7}>
+                        <Pencil size={16} color="#94A3B8" strokeWidth={2} />
+                      </TouchableOpacity>
+                      <TouchableOpacity onPress={() => handleDeleteSchedule(schedule)} style={styles.scheduleDeleteBtn} activeOpacity={0.7}>
+                        <Trash2 size={16} color="#EF4444" strokeWidth={2} />
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                ))}
+                <TouchableOpacity style={styles.addScheduleBtn} onPress={handleAddSchedule} activeOpacity={0.7}>
+                  <Plus size={18} color="#4CB1B1" strokeWidth={2.5} />
+                  <Text style={styles.addScheduleText}>Agregar Horario</Text>
+                </TouchableOpacity>
+              </>
+            )}
+          </FormSection>
+
+          <FormSection title="Visibilidad del Perfil" icon={Eye}>
+            {mode === "create" ? (
+              <View style={styles.visibilityDisabled}>
+                <EyeOff size={28} color="#CBD5E1" strokeWidth={2} />
+                <Text style={styles.visibilityDisabledText}>
+                  Primero debes crear tu perfil profesional para gestionar la visibilidad
+                </Text>
+              </View>
+            ) : (
+              <>
+                <View style={styles.visibilityRow}>
+                  <View style={styles.visibilityInfo}>
+                    <Text style={styles.visibilityLabel}>
+                      {isVisible ? "Perfil visible" : "Perfil oculto"}
+                    </Text>
+                    <Text style={styles.visibilityDescription}>
+                      {isVisible
+                        ? "Los pacientes pueden encontrarte en las búsquedas públicas y agendar citas contigo."
+                        : "Tu perfil no aparece en las búsquedas públicas. Los pacientes no podrán agendar citas a través del sistema."}
+                    </Text>
+                  </View>
+                  <Switch
+                    value={isVisible}
+                    onValueChange={handleToggleVisibility}
+                    disabled={visibilityToggling}
+                    trackColor={{ false: "#E2E8F0", true: "#A7F3D0" }}
+                    thumbColor={visibilityToggling ? "#94A3B8" : isVisible ? "#4CB1B1" : "#CBD5E1"}
+                  />
+                </View>
+                {visibilityToggling && (
+                  <View style={styles.visibilityLoadingRow}>
+                    <ActivityIndicator size="small" color="#4CB1B1" />
+                    <Text style={styles.visibilityLoadingText}>Actualizando visibilidad...</Text>
+                  </View>
+                )}
+              </>
+            )}
           </FormSection>
 
           <TouchableOpacity style={[styles.saveButton, saving && { opacity: 0.7 }]} onPress={handleSaveProfile} disabled={saving} activeOpacity={0.85}>
@@ -852,6 +893,67 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "600",
     color: "#4CB1B1",
+  },
+
+  scheduleDisabledOverlay: {
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 32,
+    gap: 12,
+  },
+  scheduleDisabledText: {
+    fontSize: 14,
+    color: "#94A3B8",
+    textAlign: "center",
+    lineHeight: 20,
+    paddingHorizontal: 16,
+  },
+
+  visibilityDisabled: {
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 32,
+    gap: 12,
+  },
+  visibilityDisabledText: {
+    fontSize: 14,
+    color: "#94A3B8",
+    textAlign: "center",
+    lineHeight: 20,
+    paddingHorizontal: 16,
+  },
+  visibilityRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 12,
+  },
+  visibilityInfo: {
+    flex: 1,
+  },
+  visibilityLabel: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: "#0F172A",
+  },
+  visibilityDescription: {
+    fontSize: 12,
+    color: "#64748B",
+    fontWeight: "500",
+    marginTop: 4,
+    lineHeight: 17,
+  },
+  visibilityLoadingRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    paddingTop: 12,
+  },
+  visibilityLoadingText: {
+    fontSize: 12,
+    color: "#94A3B8",
+    fontWeight: "600",
   },
 
   saveButton: {

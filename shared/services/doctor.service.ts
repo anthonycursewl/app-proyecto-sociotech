@@ -96,6 +96,11 @@ export const doctorService = {
   getDoctorSchedules: (doctorId: string) =>
     HttpClient.get<DoctorSchedule[]>(`/doctor-schedules/doctor/${doctorId}`, {}, { requireAuth: true }),
 
+  // ── Visibility ──
+
+  toggleVisibility: () =>
+    HttpClient.put<DoctorProfileResponse>("/doctors/me/visibility", {}, { requireAuth: true }),
+
   // ── Public endpoints (requieren token, sin permiso especial) ──
 
   getAllPublic: (params?: { cursor?: string; limit?: number }) =>

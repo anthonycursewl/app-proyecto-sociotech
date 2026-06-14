@@ -66,11 +66,11 @@ export const PatientCard = ({ patient, onPress }: PatientCardProps) => {
         <View style={styles.contactRow}>
           <View style={styles.contactItem}>
             <Mail size={12} color="#94A3B8" strokeWidth={2} />
-            <Text style={styles.contactText}>{patient.email}</Text>
+            <Text style={styles.contactText} numberOfLines={1} ellipsizeMode="tail">{patient.email}</Text>
           </View>
           <View style={styles.contactItem}>
             <Phone size={12} color="#94A3B8" strokeWidth={2} />
-            <Text style={styles.contactText}>{patient.phone}</Text>
+            <Text style={styles.contactText} numberOfLines={1} ellipsizeMode="tail">{patient.phone}</Text>
           </View>
         </View>
       </View>

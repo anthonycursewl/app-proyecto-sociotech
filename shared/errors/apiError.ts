@@ -20,14 +20,14 @@ export function getApiErrorMessage(error: unknown): string | null {
   }
 
   if (error instanceof ApiError) {
-    if (error.message && error.message !== `API Error: ${error.status}`) {
+    if (error.message && error.message !== `Error de API: ${error.status}`) {
       return error.message;
     }
     return STATUS_MESSAGES[error.status] ?? `Error del servidor (${error.status}).`;
   }
 
   if (error instanceof Error) {
-    if (error.message.includes("timed out")) {
+    if (error.message.includes("tardó demasiado")) {
       return "La solicitud tardó demasiado. Revisa tu conexión.";
     }
     return error.message || "Ocurrió un error inesperado.";

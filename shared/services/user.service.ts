@@ -28,6 +28,10 @@ export interface AdminUsersListQuery {
   isActive?: boolean;
 }
 
+export interface UserProfileResponse {
+  user: AdminUserDetail;
+}
+
 export const userService = {
   listAdmin: (params?: AdminUsersListQuery) =>
     HttpClient.get<AdminUsersListResponse>(
@@ -47,6 +51,13 @@ export const userService = {
     HttpClient.put<{ user: AdminUserDetail }>(
       `/users/admin/${userId}/role`,
       { roleId },
+      { requireAuth: true },
+    ),
+
+  getProfile: (userId: string) =>
+    HttpClient.get<UserProfileResponse>(
+      `/users/profile/${userId}`,
+      {},
       { requireAuth: true },
     ),
 };

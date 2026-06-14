@@ -9,6 +9,7 @@ import { AdminUserListItem, userService } from "@/shared/services/user.service";
 import { colors } from "@/shared/theme/colors";
 import { useAuthStore } from "@/shared/zustand/auth/useAuthStore";
 import { StatusBar } from "expo-status-bar";
+import { useRouter } from "expo-router";
 import React, { useCallback, useMemo, useState } from "react";
 import { ActivityIndicator, Alert, StyleSheet, View } from "react-native";
 import { FlashList } from "@shopify/flash-list";
@@ -18,25 +19,20 @@ import { SafeAreaView } from "react-native-safe-area-context";
 function UserRowSkeleton() {
   return (
     <View style={styles.skeletonCard}>
-      <Skeleton width={48} height={48} borderRadius={24} />
-      <View style={{ flex: 1, marginLeft: 12, gap: 6 }}>
+      <Skeleton width={44} height={44} borderRadius={12} />
+      <View style={{ flex: 1, marginLeft: 12, gap: 10 }}>
         <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start" }}>
           <View style={{ flex: 1, gap: 4 }}>
-            <Skeleton width="55%" height={15} borderRadius={6} />
-            <Skeleton width="70%" height={12} borderRadius={6} />
+            <Skeleton width="50%" height={14} borderRadius={6} />
+            <Skeleton width="60%" height={11} borderRadius={6} />
           </View>
-          <Skeleton width={52} height={20} borderRadius={10} />
+          <Skeleton width={50} height={20} borderRadius={8} />
         </View>
-        <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginTop: 6 }}>
-          <Skeleton width={12} height={12} borderRadius={6} />
-          <Skeleton width="30%" height={12} borderRadius={6} />
-        </View>
-        <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: 6 }}>
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-            <Skeleton width={44} height={12} borderRadius={6} />
-            <Skeleton width={40} height={24} borderRadius={12} />
-          </View>
-          <Skeleton width={90} height={32} borderRadius={10} />
+        <View style={{ flexDirection: "row", alignItems: "center" }}>
+          <Skeleton width={70} height={22} borderRadius={7} />
+          <View style={{ flex: 1 }} />
+          <Skeleton width={40} height={24} borderRadius={12} />
+          <Skeleton width={50} height={26} borderRadius={8} style={{ marginLeft: 6 }} />
         </View>
       </View>
     </View>
@@ -66,6 +62,7 @@ function toListItem(user: {
 }
 
 export default function UsersScreen() {
+  const router = useRouter();
   const currentUser = useAuthStore((s) => s.user);
   const { canAccess } = usePermissions();
   const canToggle = canAccess("users:update");
@@ -146,10 +143,11 @@ export default function UsersScreen() {
       canAssignRole={canAssignRole}
       toggling={togglingId === item.id}
       assigningRole={assigningRole && roleModalUser?.id === item.id}
+      onPress={() => router.push({ pathname: "/admin/users/[id]", params: { id: item.id } })}
       onToggleActive={() => handleToggleActive(item)}
       onChangeRole={() => setRoleModalUser(item)}
     />
-  ), [handleToggleActive, roleModalUser, assigningRole, togglingId, canToggle, canAssignRole, currentUser]);
+  ), [router, handleToggleActive, roleModalUser, assigningRole, togglingId, canToggle, canAssignRole, currentUser]);
 
   if (loading) {
     return (
@@ -250,11 +248,13 @@ const styles = StyleSheet.create({
   },
   skeletonCard: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "flex-start",
     backgroundColor: colors.surface,
-    borderRadius: 16,
+    borderRadius: 18,
     padding: 14,
     marginBottom: 10,
+    borderWidth: 1,
+    borderColor: "#F1F5F9",
   },
   emptyContainer: { paddingVertical: 48, alignItems: "center" },
   emptyText: { fontSize: 15, color: colors.textMuted, fontWeight: "500" },

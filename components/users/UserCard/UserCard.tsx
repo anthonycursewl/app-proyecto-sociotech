@@ -13,6 +13,7 @@ export interface UserCardProps {
   canAssignRole: boolean;
   toggling?: boolean;
   assigningRole?: boolean;
+  onPress: () => void;
   onToggleActive: () => void;
   onChangeRole: () => void;
 }
@@ -27,6 +28,7 @@ export const UserCard = ({
   canAssignRole,
   toggling,
   assigningRole,
+  onPress,
   onToggleActive,
   onChangeRole,
 }: UserCardProps) => {
@@ -34,9 +36,13 @@ export const UserCard = ({
   const fullName = `${user.firstName} ${user.lastName}`.trim();
 
   return (
-    <View style={[styles.container, isSelf && styles.containerSelf]}>
-      <View style={styles.avatar}>
-        <Text style={styles.avatarText}>{initials}</Text>
+    <TouchableOpacity
+      style={[styles.container, isSelf && styles.containerSelf]}
+      onPress={onPress}
+      activeOpacity={0.85}
+    >
+      <View style={[styles.avatar, isSelf && styles.avatarSelf]}>
+        <Text style={[styles.avatarText, isSelf && styles.avatarTextSelf]}>{initials}</Text>
       </View>
 
       <View style={styles.content}>
@@ -55,53 +61,54 @@ export const UserCard = ({
           />
         </View>
 
-        <View style={styles.metaRow}>
-          <Shield size={12} color="#64748B" strokeWidth={2} />
-          <Text style={styles.roleText}>{formatRoleLabel(user.roleName)}</Text>
+        <View style={styles.bottomRow}>
+          <View style={styles.rolePill}>
+            <Shield size={10} color="#64748B" strokeWidth={2} />
+            <Text style={styles.rolePillText}>{formatRoleLabel(user.roleName)}</Text>
+          </View>
           {isSelf ? (
             <View style={styles.selfBadge}>
               <Text style={styles.selfBadgeText}>Tú</Text>
             </View>
           ) : null}
-        </View>
 
-        <View style={styles.actionsRow}>
-          {canToggle ? (
-            <View style={styles.toggleRow}>
-              <Text style={styles.toggleLabel}>Cuenta activa</Text>
-              {toggling ? (
-                <ActivityIndicator size="small" color="#64748B" />
-              ) : (
-                <Switch
-                  value={user.isActive}
-                  onValueChange={onToggleActive}
-                  disabled={isSelf || toggling}
-                  trackColor={{ false: "#E2E8F0", true: "#99F6E4" }}
-                  thumbColor={user.isActive ? "#0D9488" : "#F8FAFC"}
-                />
-              )}
+          {canToggle || canAssignRole ? (
+            <View style={styles.tray}>
+              {canToggle ? (
+                toggling ? (
+                  <ActivityIndicator size="small" color="#64748B" />
+                ) : (
+                  <Switch
+                    value={user.isActive}
+                    onValueChange={onToggleActive}
+                    disabled={isSelf || toggling}
+                    trackColor={{ false: "#E2E8F0", true: "#99F6E4" }}
+                    thumbColor={user.isActive ? "#0D9488" : "#F8FAFC"}
+                  />
+                )
+              ) : null}
+
+              {canAssignRole ? (
+                <TouchableOpacity
+                  style={[styles.roleButton, (isSelf || assigningRole) && styles.roleButtonDisabled]}
+                  onPress={onChangeRole}
+                  disabled={isSelf || assigningRole}
+                  activeOpacity={0.85}
+                >
+                  {assigningRole ? (
+                    <ActivityIndicator size="small" color="#475569" />
+                  ) : (
+                    <>
+                      <UserCog size={12} color="#475569" strokeWidth={2.5} />
+                      <Text style={styles.roleButtonText}>Rol</Text>
+                    </>
+                  )}
+                </TouchableOpacity>
+              ) : null}
             </View>
-          ) : null}
-
-          {canAssignRole ? (
-            <TouchableOpacity
-              style={[styles.roleButton, (isSelf || assigningRole) && styles.roleButtonDisabled]}
-              onPress={onChangeRole}
-              disabled={isSelf || assigningRole}
-              activeOpacity={0.85}
-            >
-              {assigningRole ? (
-                <ActivityIndicator size="small" color="#64748B" />
-              ) : (
-                <>
-                  <UserCog size={14} color="#64748B" strokeWidth={2.5} />
-                  <Text style={styles.roleButtonText}>Cambiar rol</Text>
-                </>
-              )}
-            </TouchableOpacity>
           ) : null}
         </View>
       </View>
-    </View>
+    </TouchableOpacity>
   );
 };

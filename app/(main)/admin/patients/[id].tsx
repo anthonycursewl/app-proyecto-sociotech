@@ -29,12 +29,104 @@ const formatDate = (iso: string) => {
   return d.toLocaleDateString("es-ES", { day: "numeric", month: "long", year: "numeric" });
 };
 
-const InfoRow = ({ label, value }: { label: string; value: string }) => (
+const InfoRow = React.memo(({ label, value }: { label: string; value: string }) => (
   <View style={styles.infoRow}>
     <Text style={styles.infoLabel}>{label}</Text>
     <Text style={styles.infoValue}>{value}</Text>
   </View>
-);
+));
+
+const FullProfileContent = React.memo(function FullProfileContent({
+  patient,
+  fullName,
+  genderLabel,
+  dob,
+}: {
+  patient: PatientResponse;
+  fullName: string;
+  genderLabel: string;
+  dob: string | null;
+}) {
+  const allergiesStr = patient.allergies?.length ? patient.allergies.join(", ") : "Ninguna";
+  const medicationsStr = patient.currentMedications?.length ? patient.currentMedications.join(", ") : "Ninguno";
+  const chronicDiseasesStr = patient.chronicDiseases?.length ? patient.chronicDiseases.join(", ") : "Ninguna";
+
+  return (
+    <ScrollView
+      style={styles.modalScroll}
+      contentContainerStyle={styles.modalContent}
+      showsVerticalScrollIndicator={false}
+      removeClippedSubviews
+    >
+      <View style={styles.modalHeader}>
+        <View style={styles.modalIcon}>
+          <UserCircle size={20} color="#0D9488" strokeWidth={2.5} />
+        </View>
+        <View style={{ flex: 1 }}>
+          <Text style={styles.modalTitle}>Perfil Completo</Text>
+          <Text style={styles.modalSubtitle}>{fullName}</Text>
+        </View>
+      </View>
+
+      <View style={styles.section}>
+        <View style={styles.sectionHeader}>
+          <UserCircle size={17} color="#0D9488" strokeWidth={2.5} />
+          <Text style={styles.sectionTitle}>Información Personal</Text>
+        </View>
+        <InfoRow label="Nombre Completo" value={fullName} />
+        <View style={styles.emailBlock}>
+          <Text style={styles.infoLabel}>Email</Text>
+          <Text style={styles.infoValue}>{patient.email ?? "—"}</Text>
+        </View>
+        <InfoRow label="Teléfono" value={patient.phone} />
+        {patient.cedula && <InfoRow label="Cédula" value={patient.cedula} />}
+        <InfoRow label="Género" value={genderLabel} />
+        <InfoRow
+          label="Fecha de Nacimiento"
+          value={
+            dob
+              ? new Date(patient.dateOfBirth).toLocaleDateString("es-ES", {
+                  day: "2-digit",
+                  month: "long",
+                  year: "numeric",
+                })
+              : "—"
+          }
+        />
+        {patient.occupation && (
+          <InfoRow label="Ocupación" value={patient.occupation} />
+        )}
+        {patient.civilStatus && (
+          <InfoRow label="Estado Civil" value={patient.civilStatus} />
+        )}
+        {patient.address && <InfoRow label="Dirección" value={patient.address} />}
+      </View>
+
+      <View style={styles.section}>
+        <View style={styles.sectionHeader}>
+          <HeartPulse size={17} color="#0D9488" strokeWidth={2.5} />
+          <Text style={styles.sectionTitle}>Información Médica</Text>
+        </View>
+        <InfoRow
+          label="Tipo de Sangre"
+          value={patient.bloodType || "No especificado"}
+        />
+        <InfoRow label="Alergias" value={allergiesStr} />
+        <InfoRow label="Medicamentos Actuales" value={medicationsStr} />
+        <InfoRow label="Enfermedades Crónicas" value={chronicDiseasesStr} />
+      </View>
+
+      <View style={styles.section}>
+        <View style={styles.sectionHeader}>
+          <Shield size={17} color="#0D9488" strokeWidth={2.5} />
+          <Text style={styles.sectionTitle}>Contacto de Emergencia</Text>
+        </View>
+        <InfoRow label="Nombre" value={patient.emergencyContact || "—"} />
+        <InfoRow label="Teléfono" value={patient.emergencyPhone || "—"} />
+      </View>
+    </ScrollView>
+  );
+});
 
 export default function PatientProfileScreen() {
   const router = useRouter();
@@ -220,6 +312,7 @@ export default function PatientProfileScreen() {
                   style={styles.tabBody}
                   contentContainerStyle={styles.tabBodyContent}
                   showsVerticalScrollIndicator={false}
+                  removeClippedSubviews
                 >
                   <View style={styles.section}>
                     <View style={styles.sectionHeader}>
@@ -227,7 +320,10 @@ export default function PatientProfileScreen() {
                       <Text style={styles.sectionTitle}>Información Personal</Text>
                     </View>
                     <InfoRow label="Nombre Completo" value={fullName} />
-                    <InfoRow label="Email" value={patient.email ?? "—"} />
+                    <View style={styles.emailBlock}>
+                      <Text style={styles.infoLabel}>Email</Text>
+                      <Text style={styles.infoValue}>{patient.email ?? "—"}</Text>
+                    </View>
                     <InfoRow label="Teléfono" value={patient.phone} />
                     {patient.cedula && <InfoRow label="Cédula" value={patient.cedula} />}
                     <InfoRow label="Género" value={genderLabel} />
@@ -280,96 +376,12 @@ export default function PatientProfileScreen() {
                   onClose={() => setFullProfileVisible(false)}
                   height={0.9}
                 >
-                  <ScrollView
-                    style={styles.modalScroll}
-                    contentContainerStyle={styles.modalContent}
-                    showsVerticalScrollIndicator={false}
-                  >
-                    <View style={styles.modalHeader}>
-                      <View style={styles.modalIcon}>
-                        <UserCircle size={20} color="#0D9488" strokeWidth={2.5} />
-                      </View>
-                      <View style={{ flex: 1 }}>
-                        <Text style={styles.modalTitle}>Perfil Completo</Text>
-                        <Text style={styles.modalSubtitle}>{fullName}</Text>
-                      </View>
-                    </View>
-
-                    <View style={styles.section}>
-                      <View style={styles.sectionHeader}>
-                        <UserCircle size={17} color="#0D9488" strokeWidth={2.5} />
-                        <Text style={styles.sectionTitle}>Información Personal</Text>
-                      </View>
-                      <InfoRow label="Nombre Completo" value={fullName} />
-                      <InfoRow label="Email" value={patient.email ?? "—"} />
-                      <InfoRow label="Teléfono" value={patient.phone} />
-                      {patient.cedula && <InfoRow label="Cédula" value={patient.cedula} />}
-                      <InfoRow label="Género" value={genderLabel} />
-                      <InfoRow
-                        label="Fecha de Nacimiento"
-                        value={
-                          dob
-                            ? new Date(patient.dateOfBirth).toLocaleDateString("es-ES", {
-                                day: "2-digit",
-                                month: "long",
-                                year: "numeric",
-                              })
-                            : "—"
-                        }
-                      />
-                      {patient.occupation && (
-                        <InfoRow label="Ocupación" value={patient.occupation} />
-                      )}
-                      {patient.civilStatus && (
-                        <InfoRow label="Estado Civil" value={patient.civilStatus} />
-                      )}
-                      {patient.address && <InfoRow label="Dirección" value={patient.address} />}
-                    </View>
-
-                    <View style={styles.section}>
-                      <View style={styles.sectionHeader}>
-                        <HeartPulse size={17} color="#0D9488" strokeWidth={2.5} />
-                        <Text style={styles.sectionTitle}>Información Médica</Text>
-                      </View>
-                      <InfoRow
-                        label="Tipo de Sangre"
-                        value={patient.bloodType || "No especificado"}
-                      />
-                      <InfoRow
-                        label="Alergias"
-                        value={
-                          patient.allergies?.length
-                            ? patient.allergies.join(", ")
-                            : "Ninguna"
-                        }
-                      />
-                      <InfoRow
-                        label="Medicamentos Actuales"
-                        value={
-                          patient.currentMedications?.length
-                            ? patient.currentMedications.join(", ")
-                            : "Ninguno"
-                        }
-                      />
-                      <InfoRow
-                        label="Enfermedades Crónicas"
-                        value={
-                          patient.chronicDiseases?.length
-                            ? patient.chronicDiseases.join(", ")
-                            : "Ninguna"
-                        }
-                      />
-                    </View>
-
-                    <View style={styles.section}>
-                      <View style={styles.sectionHeader}>
-                        <Shield size={17} color="#0D9488" strokeWidth={2.5} />
-                        <Text style={styles.sectionTitle}>Contacto de Emergencia</Text>
-                      </View>
-                      <InfoRow label="Nombre" value={patient.emergencyContact || "—"} />
-                      <InfoRow label="Teléfono" value={patient.emergencyPhone || "—"} />
-                    </View>
-                  </ScrollView>
+                  <FullProfileContent
+                    patient={patient}
+                    fullName={fullName}
+                    genderLabel={genderLabel}
+                    dob={dob}
+                  />
                 </BottomSheetModal>
               </>
             ) : loading ? (
@@ -383,6 +395,7 @@ export default function PatientProfileScreen() {
                 style={styles.tabBody}
                 contentContainerStyle={styles.tabBodyContent}
                 showsVerticalScrollIndicator={false}
+                removeClippedSubviews
               >
                 {records.map((r) => (
                   <MedicalRecordListItem
@@ -671,6 +684,12 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: "#FAFAFA",
     gap: 12,
+  },
+  emailBlock: {
+    paddingVertical: 7,
+    borderBottomWidth: 1,
+    borderBottomColor: "#FAFAFA",
+    gap: 2,
   },
   infoLabel: {
     fontSize: 13,

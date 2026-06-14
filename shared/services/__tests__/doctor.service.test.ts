@@ -23,6 +23,7 @@ const buildDetailResponse = (overrides: Partial<DoctorDetailResponse> = {}): Doc
   consultationPrice: 1500,
   phoneNumber: "+18095551111",
   isActive: true,
+  isVisible: true,
   biography: null,
   schedules: [],
   createdAt: "2026-01-01T00:00:00.000Z",

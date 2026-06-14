@@ -6,7 +6,7 @@ const BASE_URL = __DEV__
 
 if (!BASE_URL) {
     const envType = __DEV__ ? 'EXPO_PUBLIC_API_URL_DEV' : 'EXPO_PUBLIC_API_URL_PROD';
-    throw new Error(`Missing ${envType} environment variable. Check your .env file.`);
+    throw new Error(`Falta la variable de entorno ${envType}. Revisa tu archivo .env.`);
 }
 
 export interface RequestOptions extends RequestInit {
@@ -167,7 +167,7 @@ export class HttpClient {
                     response = await execute(newToken);
                 } catch (err) {
                     this.isRefreshing = false;
-                    this.notifySubscribers(null, err instanceof Error ? err : new Error('Session refresh failed'));
+                    this.notifySubscribers(null, err instanceof Error ? err : new Error('Error al renovar la sesión'));
                     await this.clearTokens();
                     this.onSessionExpired?.();
                     throw new SessionExpiredError();
@@ -178,7 +178,7 @@ export class HttpClient {
                 const errorData = await response.json().catch(() => ({})) as ApiErrorResponse;
                 throw new ApiError(
                     response.status,
-                    errorData.message || `API Error: ${response.status}`,
+                    errorData.message || `Error de API: ${response.status}`,
                     errorData
                 );
             }
@@ -215,7 +215,7 @@ export class HttpClient {
 
         } catch (error: any) {
             if (error.name === 'AbortError') {
-                throw new Error(`Request timed out after ${timeout}ms`);
+                throw new Error(`La solicitud tardó demasiado después de ${timeout}ms`);
             }
             if (error instanceof ApiError) throw error;
             console.error(`[HttpClient] Request to ${endpoint} failed:`, error.message);

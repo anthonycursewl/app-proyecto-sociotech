@@ -12,6 +12,7 @@ const buildDoctor = (overrides: Partial<DoctorBase> = {}): DoctorBase => ({
   consultationPrice: 1500,
   phoneNumber: "+18095551111",
   isActive: true,
+  isVisible: true,
   createdAt: "2026-01-01T00:00:00.000Z",
   updatedAt: "2026-01-01T00:00:00.000Z",
   ...overrides,
