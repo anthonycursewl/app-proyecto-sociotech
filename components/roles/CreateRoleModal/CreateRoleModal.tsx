@@ -8,6 +8,7 @@ import {
   Modal,
   PanResponder,
   Pressable,
+  ScrollView,
   StatusBar,
   StyleSheet,
   TextInput,
@@ -181,37 +182,40 @@ export const CreateRoleModal = ({
             </TouchableOpacity>
           </View>
 
-          <View style={styles.content}>
-            <View style={styles.field}>
-              <Text style={styles.label}>Nombre *</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="Ej: RECEPCIONISTA"
-                placeholderTextColor="#94A3B8"
-                value={name}
-                onChangeText={setName}
-                autoCapitalize="characters"
-                editable={!creating}
-              />
-              <Text style={styles.helper}>Nombre único que identifica al rol. Se convertirá a mayúsculas automáticamente. Ejemplos: RECEPCIONISTA, ENFERMERA, CAJERO.</Text>
-            </View>
 
-            <View style={styles.field}>
-              <Text style={styles.label}>Descripción (opcional)</Text>
-              <TextInput
-                style={[styles.input, styles.textArea]}
-                placeholder="Descripción del rol..."
-                placeholderTextColor="#94A3B8"
-                value={description}
-                onChangeText={setDescription}
-                multiline
-                numberOfLines={3}
-                textAlignVertical="top"
-                editable={!creating}
-              />
-              <Text style={styles.helper}>Explica brevemente las responsabilidades de este rol para que otros administradores entiendan su propósito.</Text>
+          <ScrollView>
+            <View style={styles.content}>
+              <View style={styles.field}>
+                <Text style={styles.label}>Nombre *</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Ej: RECEPCIONISTA"
+                  placeholderTextColor="#94A3B8"
+                  value={name}
+                  onChangeText={setName}
+                  autoCapitalize="characters"
+                  editable={!creating}
+                />
+                <Text style={styles.helper}>Nombre único que identifica al rol. Se convertirá a mayúsculas automáticamente. Ejemplos: RECEPCIONISTA, ENFERMERA, CAJERO.</Text>
+              </View>
+
+              <View style={styles.field}>
+                <Text style={styles.label}>Descripción (opcional)</Text>
+                <TextInput
+                  style={[styles.input, styles.textArea]}
+                  placeholder="Descripción del rol..."
+                  placeholderTextColor="#94A3B8"
+                  value={description}
+                  onChangeText={setDescription}
+                  multiline
+                  numberOfLines={3}
+                  textAlignVertical="top"
+                  editable={!creating}
+                />
+                <Text style={styles.helper}>Explica brevemente las responsabilidades de este rol para que otros administradores entiendan su propósito.</Text>
+              </View>
             </View>
-          </View>
+          </ScrollView>
 
           <View style={styles.footer}>
             <CustomButton
@@ -313,7 +317,7 @@ const styles = StyleSheet.create({
   footer: {
     flexDirection: "row",
     gap: 12,
-    paddingHorizontal: 20,
+    paddingHorizontal: 19,
     paddingBottom: 32,
   },
   cancelButton: {
