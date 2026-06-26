@@ -37,7 +37,7 @@ export default function PatientRecordsScreen() {
   const user = useAuthStore((state) => state.user);
   const { records, loading, refreshing, error, refresh, reload } = useMyMedicalRecords();
 
-  const userName = user ? `${user.firstName} ${user.lastName}` : "Paciente";
+  const userName = user ? `${user.firstName ?? ""} ${user.lastName ?? ""}`.trim() || "Paciente" : "Paciente";
 
   const renderItem = useCallback(
     ({ item }: { item: import("@/shared/services/medicalRecord.service").MedicalRecordResponse }) => (

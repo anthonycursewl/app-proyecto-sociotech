@@ -53,7 +53,7 @@ export const ManageDoctorsHeader = ({ title = "Doctores", onSearch, metrics, act
 
         <View style={styles.bottomRow}>
           <Text style={styles.title}>{title}</Text>
-          <Text style={styles.count}>{metrics ? `${metrics.totalActive + metrics.totalInactive} doctores` : ""}</Text>
+          <Text style={styles.count}>{metrics ? `${metrics.total} doctores` : ""}</Text>
         </View>
 
         <View style={styles.filterRow}>
@@ -73,18 +73,18 @@ export const ManageDoctorsHeader = ({ title = "Doctores", onSearch, metrics, act
 
         <View style={styles.statsRow}>
           <View style={styles.statItem}>
-            <Text style={styles.statValue}>{metrics?.totalActive ?? 0}</Text>
+            <Text style={styles.statValue}>{metrics?.active ?? 0}</Text>
             <Text style={styles.statLabel}>Activos</Text>
           </View>
           <View style={styles.statDivider} />
           <View style={styles.statItem}>
-            <Text style={styles.statValue}>{metrics?.totalInactive ?? 0}</Text>
+            <Text style={styles.statValue}>{metrics?.inactive ?? 0}</Text>
             <Text style={styles.statLabel}>Inactivos</Text>
           </View>
           <View style={styles.statDivider} />
           <View style={styles.statItem}>
-            <Text style={styles.statValue}>{metrics?.totalPatients ?? 0}</Text>
-            <Text style={styles.statLabel}>Pacientes</Text>
+            <Text style={styles.statValue}>{metrics?.visible ?? 0}</Text>
+            <Text style={styles.statLabel}>Visibles</Text>
           </View>
         </View>
       </View>

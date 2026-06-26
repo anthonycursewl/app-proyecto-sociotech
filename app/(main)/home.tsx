@@ -44,7 +44,7 @@ export default function HomeScreen() {
       <Header
         userName={userName}
         onLogout={handleLogout}
-        onNotifications={() => console.log("Notificaciones")}
+        onNotifications={() => router.navigate("/(main)/notifications")}
         role={role ?? ""}
       />
       <View style={styles.content}>

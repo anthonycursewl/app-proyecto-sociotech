@@ -2,11 +2,11 @@ import { ClipboardList, FileCheck, FileEdit } from "lucide-react-native";
 import { ListErrorState } from "@/components/common/ListErrorState";
 import { Skeleton } from "@/components/common/Skeleton";
 import { Text } from "@/components/common/SText";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
 import { useRouter } from "expo-router";
 import { useAuthStore } from "@/shared/zustand/auth/useAuthStore";
-import React, { useCallback, useMemo } from "react";
+import React, { useCallback, useEffect, useMemo } from "react";
 import { StyleSheet, View } from "react-native";
 import { FlashList } from "@shopify/flash-list";
 import { MedicalRecordListItem } from "@/components/medical-records/MedicalRecordListItem";
@@ -35,12 +35,18 @@ function RecordSkeleton() {
 
 export default function AdminRecordsScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const doctorProfile = useAuthStore((s) => s.doctorProfile);
+  const loadDoctorProfile = useAuthStore((s) => s.loadDoctorProfile);
   const { records, loading, refreshing, error, refresh, reload } =
     useMyCreatedMedicalRecords(doctorProfile?.id ?? null);
 
+  useEffect(() => {
+    loadDoctorProfile();
+  }, [loadDoctorProfile]);
+
   const doctorName = doctorProfile
-    ? `${doctorProfile.firstName} ${doctorProfile.lastName}`.trim()
+    ? `${doctorProfile.firstName ?? ""} ${doctorProfile.lastName ?? ""}`.trim() || null
     : null;
 
   const signedCount = useMemo(() => records.filter((r) => r.isSigned).length, [records]);
@@ -57,46 +63,12 @@ export default function AdminRecordsScreen() {
     [router],
   );
 
-  const headerComponent = useMemo(() => (
-    <View style={styles.headerSection}>
-      <Text style={styles.title}>Historias Clínicas</Text>
-      {doctorName && <Text style={styles.subtitle}>{doctorName}</Text>}
-
-      {records.length > 0 && (
-        <View style={styles.statsRow}>
-          <View style={styles.statCard}>
-            <View style={[styles.statIconWrap, { backgroundColor: "#F0FDFA" }]}>
-              <ClipboardList size={14} color="#0D9488" strokeWidth={2.2} />
-            </View>
-            <Text style={styles.statValue}>{records.length}</Text>
-            <Text style={styles.statLabel}>Total</Text>
-          </View>
-          <View style={styles.statCard}>
-            <View style={[styles.statIconWrap, { backgroundColor: "#ECFDF5" }]}>
-              <FileCheck size={14} color="#059669" strokeWidth={2.2} />
-            </View>
-            <Text style={styles.statValue}>{signedCount}</Text>
-            <Text style={styles.statLabel}>Firmadas</Text>
-          </View>
-          <View style={styles.statCard}>
-            <View style={[styles.statIconWrap, { backgroundColor: "#F1F5F9" }]}>
-              <FileEdit size={14} color="#94A3B8" strokeWidth={2.2} />
-            </View>
-            <Text style={styles.statValue}>{draftCount}</Text>
-            <Text style={styles.statLabel}>Borradores</Text>
-          </View>
-        </View>
-      )}
-    </View>
-  ), [records.length, signedCount, draftCount, doctorName]);
-
   if (loading) {
     return (
       <SafeAreaView style={styles.container} edges={["bottom", "left", "right"]}>
         <StatusBar style="dark" />
-        <View style={styles.headerSection}>
+        <View style={[styles.headerSection, { paddingTop: insets.top + 4 }]}>
           <Text style={styles.title}>Historias Clínicas</Text>
-          {doctorName && <Text style={styles.subtitle}>{doctorName}</Text>}
           <View style={styles.statsRow}>
             {[0, 1, 2].map((i) => (
               <View key={i} style={styles.skeletonStat}>
@@ -122,9 +94,8 @@ export default function AdminRecordsScreen() {
     return (
       <SafeAreaView style={styles.container} edges={["bottom", "left", "right"]}>
         <StatusBar style="dark" />
-        <View style={styles.headerSection}>
+        <View style={[styles.headerSection, { paddingTop: insets.top + 4 }]}>
           <Text style={styles.title}>Historias Clínicas</Text>
-          {doctorName && <Text style={styles.subtitle}>{doctorName}</Text>}
         </View>
         <ListErrorState message={error} onRetry={reload} />
       </SafeAreaView>
@@ -134,6 +105,36 @@ export default function AdminRecordsScreen() {
   return (
     <SafeAreaView style={styles.container} edges={["bottom", "left", "right"]}>
       <StatusBar style="dark" />
+      <View style={[styles.headerSection, { paddingTop: insets.top + 4 }]}>
+        <Text style={styles.title}>Historias Clínicas</Text>
+        {doctorName && <Text style={styles.subtitle}>{doctorName}</Text>}
+
+        {records.length > 0 && (
+          <View style={styles.statsRow}>
+            <View style={styles.statCard}>
+              <View style={[styles.statIconWrap, { backgroundColor: "#F0FDFA" }]}>
+                <ClipboardList size={14} color="#0D9488" strokeWidth={2.2} />
+              </View>
+              <Text style={styles.statValue}>{records.length}</Text>
+              <Text style={styles.statLabel}>Total</Text>
+            </View>
+            <View style={styles.statCard}>
+              <View style={[styles.statIconWrap, { backgroundColor: "#ECFDF5" }]}>
+                <FileCheck size={14} color="#059669" strokeWidth={2.2} />
+              </View>
+              <Text style={styles.statValue}>{signedCount}</Text>
+              <Text style={styles.statLabel}>Firmadas</Text>
+            </View>
+            <View style={styles.statCard}>
+              <View style={[styles.statIconWrap, { backgroundColor: "#F1F5F9" }]}>
+                <FileEdit size={14} color="#94A3B8" strokeWidth={2.2} />
+              </View>
+              <Text style={styles.statValue}>{draftCount}</Text>
+              <Text style={styles.statLabel}>Borradores</Text>
+            </View>
+          </View>
+        )}
+      </View>
       <FlashList
         data={records}
         renderItem={renderItem}
@@ -142,7 +143,6 @@ export default function AdminRecordsScreen() {
         refreshing={refreshing}
         onRefresh={refresh}
         showsVerticalScrollIndicator={false}
-        ListHeaderComponent={headerComponent}
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
             <View style={styles.emptyIcon}>
@@ -171,7 +171,6 @@ const styles = StyleSheet.create({
   },
   headerSection: {
     paddingHorizontal: 20,
-    paddingTop: 8,
     paddingBottom: 12,
   },
   title: {

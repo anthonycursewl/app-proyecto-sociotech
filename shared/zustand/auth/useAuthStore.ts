@@ -170,10 +170,9 @@ export const useAuthStore = create<AuthState>((set, get) => {
             const result = await runAction(async () => {
                 const current = get().user;
                 if (!current) return false;
-                const updatedUser = { ...current, ...data };
-                const response = await authService.updateUser(updatedUser);
+                const response = await authService.updateUser({ ...current, ...data });
                 if (!response) return false;
-                set({ user: response });
+                set({ user: mapAuthUser(response.user) });
                 return true;
             });
             return result === true;

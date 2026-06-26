@@ -27,6 +27,7 @@ import { useCanCancelAnyAppointment, useCanCreateMedicalRecords, useCanManageApp
 import { appointmentService } from "@/shared/services/appointment.service";
 import { medicalRecordService } from "@/shared/services/medicalRecord.service";
 import { pdfService } from "@/shared/services/pdf.service";
+import { formatToAMPM } from "@/shared/utils/date.utils";
 import { colors } from "@/shared/theme/colors";
 
 const STATUS_META: Record<
@@ -249,7 +250,7 @@ export default function AdminAppointmentDetailScreen() {
                 <Text style={styles.heroDateMonth}>{date.month}</Text>
               </View>
               <View style={styles.heroTimeBlock}>
-                <Text style={styles.heroTime}>{appointment.timeSlot}</Text>
+                <Text style={styles.heroTime}>{formatToAMPM(appointment.timeSlot)}</Text>
                 <Text style={styles.heroDuration}>
                   {appointment.service?.durationMin ?? appointment.durationMinutes} min
                 </Text>

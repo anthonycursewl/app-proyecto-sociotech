@@ -67,7 +67,7 @@ export const authService = {
     HttpClient.get<MeResponse>("/auth/me", {}, { requireAuth: true }),
 
   updateUser: (user: User) =>
-    HttpClient.put<User>("/auth/user", user, { requireAuth: true }),
+    HttpClient.put<{ user: AuthUser }>("/auth/user", user, { requireAuth: true }),
 
   sendVerificationCode: (data: SendVerificationCodeRequest) =>
     HttpClient.post<ApiMessageResponse>("/auth/send-verification-code", data),

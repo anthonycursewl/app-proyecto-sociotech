@@ -1,11 +1,15 @@
-import { Calendar, ChevronLeft, ClipboardList, Expand, FileDown, FileText, HeartPulse, Mail, Phone, Plus, RefreshCw, Shield, UserCircle } from "lucide-react-native";
+import { BottomSheetModal } from "@/components/common/BottomSheetModal";
 import { ListErrorState } from "@/components/common/ListErrorState";
 import { Text } from "@/components/common/SText";
-import { BottomSheetModal } from "@/components/common/BottomSheetModal";
+import { MedicalRecordListItem } from "@/components/medical-records/MedicalRecordListItem";
 import { PatientDetailSkeleton } from "@/components/patients/PatientDetailSkeleton";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { StatusBar } from "expo-status-bar";
+import { useMedicalRecordsByPatient } from "@/shared/hooks/useMedicalRecordsByPatient";
+import { PatientResponse, patientService } from "@/shared/services/patient.service";
+import { pdfService } from "@/shared/services/pdf.service";
+import { colors } from "@/shared/theme/colors";
 import { useLocalSearchParams, useRouter } from "expo-router";
+import { StatusBar } from "expo-status-bar";
+import { Calendar, ChevronLeft, ClipboardList, Expand, FileDown, FileText, HeartPulse, Mail, Phone, Plus, RefreshCw, Shield, UserCircle } from "lucide-react-native";
 import React, { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
@@ -14,11 +18,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { MedicalRecordListItem } from "@/components/medical-records/MedicalRecordListItem";
-import { useMedicalRecordsByPatient } from "@/shared/hooks/useMedicalRecordsByPatient";
-import { patientService, PatientResponse } from "@/shared/services/patient.service";
-import { pdfService } from "@/shared/services/pdf.service";
-import { colors } from "@/shared/theme/colors";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 type TabKey = "perfil" | "historial";
 
@@ -224,7 +224,7 @@ export default function PatientProfileScreen() {
                 activeOpacity={0.8}
               >
                 <Plus size={16} color="#FFFFFF" strokeWidth={2.5} />
-                <Text style={styles.createHcButtonText}>Añadir registro</Text>
+                <Text style={styles.createHcButtonText}>Nueva Historia C.</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={styles.downloadHistoryButton}

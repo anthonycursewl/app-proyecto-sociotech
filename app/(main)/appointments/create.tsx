@@ -1,7 +1,7 @@
 import { CalendarCheck, CalendarClock, CalendarDays, CalendarSync, Check, CheckCircle, ChevronDown, ChevronLeft, Clock, Edit3, FileText, Info, LayoutList, MessageSquare, Package, Search, Stethoscope } from "lucide-react-native";
 import { StatusBar } from "expo-status-bar";
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { ActivityIndicator, Animated, StyleSheet, TextInput, TouchableOpacity, View, Alert, ScrollView } from "react-native";
+import { ActivityIndicator, Animated, KeyboardAvoidingView, Platform, StyleSheet, TextInput, TouchableOpacity, View, Alert, ScrollView } from "react-native";
 import { FlashList } from "@shopify/flash-list";
 import { Text } from "@/components/common/SText"
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -10,6 +10,7 @@ import { appointmentService } from "@/shared/services/appointment.service";
 import { invalidate, setCached } from "@/shared/cache/appointmentCache";
 import { doctorService, DoctorBase, DoctorSchedule } from "@/shared/services/doctor.service";
 import { serviceService, ServiceResponse } from "@/shared/services/service.service";
+import { formatToAMPM } from "@/shared/utils/date.utils";
 import { SkeletonLayout } from "@/components/common/Skeleton";
 import { BottomSheetModal } from "@/components/common/BottomSheetModal";
 import { BookingCalendar } from "@/components/appointments/BookingCalendar";
@@ -284,8 +285,8 @@ export default function CreateAppointmentScreen() {
                   <SkeletonLayout.Block height={80} borderRadius={10} />
                 </SkeletonLayout.Section>
               </View>
-            </ScrollView>
-          </Animated.View>
+        </ScrollView>
+      </Animated.View>
         </SkeletonLayout>
       </SafeAreaView>
     );
@@ -311,8 +312,9 @@ export default function CreateAppointmentScreen() {
         </View>
       )}
 
+      <KeyboardAvoidingView behavior="padding" keyboardVerticalOffset={Platform.OS === "ios" ? 100 : 0} style={{ flex: 1 }}>
       <Animated.View style={{ flex: 1, opacity: contentOpacity }}>
-        <ScrollView ref={scrollRef} style={styles.scrollView} showsVerticalScrollIndicator={false}>
+        <ScrollView ref={scrollRef} style={styles.scrollView} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
           <View style={styles.form}>
             <TouchableOpacity style={styles.doctorSelectorCard} onPress={() => setDoctorPickerOpen(true)} activeOpacity={0.7}>
               {selectedDoctor ? (
@@ -479,7 +481,7 @@ export default function CreateAppointmentScreen() {
                                   style={{ marginRight: 4 }}
                                 />
                                 <Text style={[styles.slotText, selected && styles.slotTextSelected]}>
-                                  {slot}
+                                  {formatToAMPM(slot)}
                                 </Text>
                               </TouchableOpacity>
                             );
@@ -561,6 +563,7 @@ export default function CreateAppointmentScreen() {
           </View>
         </ScrollView>
       </Animated.View>
+      </KeyboardAvoidingView>
 
       <BottomSheetModal
         visible={doctorPickerOpen}

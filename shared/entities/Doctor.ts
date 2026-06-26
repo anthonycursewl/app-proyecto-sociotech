@@ -49,10 +49,11 @@ export interface ListDoctorResponse {
 }
 
 export interface DoctorMetrics {
-  totalActive: number;
-  totalInactive: number;
-  totalPatients: number;
-  updatedAt: string;
+  total: number;
+  active: number;
+  inactive: number;
+  visible: number;
+  notVisible: number;
 }
 
 export interface DoctorListQuery {

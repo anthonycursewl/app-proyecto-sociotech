@@ -44,3 +44,13 @@ export function isSameMonth(year1: number, month1: number, year2: number, month2
 export function isPastISO(iso: string): boolean {
   return iso < todayISO();
 }
+
+export function formatToAMPM(time: string): string {
+  const parts = time.split(":");
+  const hours = parseInt(parts[0], 10);
+  const minutes = parts[1];
+  if (isNaN(hours) || !minutes) return time;
+  const period = hours >= 12 ? "PM" : "AM";
+  const h12 = hours % 12 || 12;
+  return `${h12}:${minutes} ${period}`;
+}

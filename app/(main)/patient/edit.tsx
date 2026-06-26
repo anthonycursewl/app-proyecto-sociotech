@@ -1,7 +1,7 @@
 import { Briefcase, Cake, CheckCheck, ChevronDown, ChevronLeft, Contact, Droplets, Heart, HeartPulse, Mail, MapPin, Minus, Phone, PhoneCall, Pill, Shield, ShieldAlert, User, UserCheck, UserCircle } from "lucide-react-native";
 import { StatusBar } from "expo-status-bar";
 import React, { useEffect, useRef, useState } from "react";
-import { ActivityIndicator, StyleSheet, TextInput, TouchableOpacity, View, Alert, ScrollView, Animated } from "react-native";
+import { ActivityIndicator, KeyboardAvoidingView, Platform, StyleSheet, TextInput, TouchableOpacity, View, Alert, ScrollView, Animated } from "react-native";
 import { Text } from "@/components/common/SText"
 import { SafeAreaView } from "react-native-safe-area-context";
 import { BottomSheetModal } from "@/components/common/BottomSheetModal";
@@ -380,7 +380,12 @@ export default function PatientEditScreen() {
       </View>
 
       <Animated.View style={{ flex: 1, opacity: contentOpacity }}>
-      <ScrollView ref={scrollRef} style={styles.scrollView} showsVerticalScrollIndicator={false}>
+      <KeyboardAvoidingView
+        behavior="padding"
+        keyboardVerticalOffset={Platform.OS === "ios" ? 8 : 0}
+        style={{ flex: 1 }}
+      >
+      <ScrollView ref={scrollRef} style={styles.scrollView} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
         <View style={styles.form}>
           <FormSection title="Información Personal" icon={UserCircle}>
             <View style={styles.row}>
@@ -478,6 +483,7 @@ export default function PatientEditScreen() {
           </TouchableOpacity>
         </View>
       </ScrollView>
+      </KeyboardAvoidingView>
       </Animated.View>
 
       <BottomSheetModal visible={bloodPickerOpen} onClose={() => setBloodPickerOpen(false)} height={0.45}>

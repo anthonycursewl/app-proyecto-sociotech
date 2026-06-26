@@ -10,6 +10,7 @@ import {
   Keyboard,
   KeyboardAvoidingView,
   Platform,
+  ScrollView,
   StyleSheet,
   TextInput,
   TouchableOpacity,
@@ -144,7 +145,12 @@ export default function ForgotPasswordScreen() {
           keyboardVerticalOffset={Platform.OS === "ios" ? 8 : 0}
         >
           <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-            <View style={styles.inner}>
+            <ScrollView
+              contentContainerStyle={styles.inner}
+              keyboardShouldPersistTaps="handled"
+              keyboardDismissMode="interactive"
+              showsVerticalScrollIndicator={false}
+            >
               <Animated.View
                 entering={FadeInUp.duration(600).springify()}
                 style={styles.header}
@@ -454,7 +460,7 @@ export default function ForgotPasswordScreen() {
                   </TouchableOpacity>
                 </View>
               </Animated.View>
-            </View>
+            </ScrollView>
           </TouchableWithoutFeedback>
         </KeyboardAvoidingView>
       </SafeAreaView>
@@ -470,7 +476,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   inner: {
-    flex: 1,
+    flexGrow: 1,
     justifyContent: "center",
   },
   header: {

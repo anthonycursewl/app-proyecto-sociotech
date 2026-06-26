@@ -16,6 +16,7 @@ import { pdfService } from "@/shared/services/pdf.service";
 import { setCached } from "@/shared/cache/appointmentCache";
 import { useCanCancelOwnAppointment, useCanUpdateOwnAppointment } from "@/shared/permissions/capabilities";
 import { mapToAdminAppointmentData } from "@/shared/mappers/appointment.mapper";
+import { formatToAMPM } from "@/shared/utils/date.utils";
 import { colors } from "@/shared/theme/colors";
 
 const STATUS_META: Record<
@@ -168,7 +169,7 @@ export default function PatientAppointmentDetailScreen() {
                 <Text style={styles.heroDateMonth}>{date.month}</Text>
               </View>
               <View style={styles.heroTimeBlock}>
-                <Text style={styles.heroTime}>{appointment.timeSlot}</Text>
+                <Text style={styles.heroTime}>{formatToAMPM(appointment.timeSlot)}</Text>
                 <Text style={styles.heroDuration}>
                   {appointment.service?.durationMin ?? appointment.durationMinutes} min
                 </Text>

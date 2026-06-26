@@ -20,6 +20,7 @@ import {
   Keyboard,
   KeyboardAvoidingView,
   Platform,
+  ScrollView,
   StyleSheet,
   TextInput,
   TouchableOpacity,
@@ -212,11 +213,17 @@ export default function RegisterScreen() {
 
       <SafeAreaView style={styles.safe}>
         <KeyboardAvoidingView
-          behavior={Platform.OS === "ios" ? "padding" : undefined}
+          behavior="padding"
+          keyboardVerticalOffset={Platform.OS === "ios" ? 8 : 0}
           style={{ flex: 1 }}
         >
           <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-            <View style={styles.inner}>
+            <ScrollView
+              contentContainerStyle={styles.inner}
+              keyboardShouldPersistTaps="handled"
+              keyboardDismissMode="interactive"
+              showsVerticalScrollIndicator={false}
+            >
               <Animated.View
                 entering={FadeInUp.duration(600).springify()}
                 style={styles.header}
@@ -762,7 +769,7 @@ export default function RegisterScreen() {
                   </Text>
                 </View>
               </Animated.View>
-            </View>
+            </ScrollView>
           </TouchableWithoutFeedback>
         </KeyboardAvoidingView>
       </SafeAreaView>
@@ -778,7 +785,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   inner: {
-    flex: 1,
+    flexGrow: 1,
     justifyContent: "center",
   },
   header: {
