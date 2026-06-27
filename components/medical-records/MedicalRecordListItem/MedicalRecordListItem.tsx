@@ -1,6 +1,7 @@
 import { Calendar, CheckCircle, ChevronRight, FileText, Pill, Stethoscope, User } from "lucide-react-native";
 import React from "react";
 import { StyleSheet, TouchableOpacity, View } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
 import { Text } from "@/components/common/SText";
 import { MedicalRecordResponse } from "@/shared/services/medicalRecord.service";
 import { colors } from "@/shared/theme/colors";
@@ -39,8 +40,6 @@ export const MedicalRecordListItem = ({
       activeOpacity={0.7}
       disabled={!onPress}
     >
-      <View style={[styles.accentBar, record.isSigned ? styles.accentSigned : styles.accentDraft]} />
-
       <View style={styles.content}>
         <View style={styles.topRow}>
           <View style={styles.iconWrap}>
@@ -55,10 +54,15 @@ export const MedicalRecordListItem = ({
             ) : null}
           </View>
           {record.isSigned ? (
-            <View style={styles.signedBadge}>
-              <CheckCircle size={10} color="#059669" strokeWidth={2.5} />
+            <LinearGradient
+              colors={["#059669", "rgba(5, 150, 105, 0)"]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={styles.signedBadge}
+            >
+              <CheckCircle size={10} color="#FFFFFF" strokeWidth={2.5} />
               <Text style={styles.signedText}>Firmada</Text>
-            </View>
+            </LinearGradient>
           ) : (
             <View style={styles.draftBadge}>
               <Text style={styles.draftText}>Borrador</Text>
@@ -113,22 +117,12 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     marginBottom: 10,
     borderWidth: 1,
-    borderColor: "#F1F5F9",
+    borderColor: "#E2E8F0",
     overflow: "hidden",
-  },
-  accentBar: {
-    width: 3.5,
-  },
-  accentSigned: {
-    backgroundColor: "#059669",
-  },
-  accentDraft: {
-    backgroundColor: "#CBD5E1",
   },
   content: {
     flex: 1,
     padding: 14,
-    paddingLeft: 12,
     gap: 8,
   },
   topRow: {

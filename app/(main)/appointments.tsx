@@ -1,25 +1,25 @@
 import { AppointmentCard, AppointmentData } from "@/components/appointments/AppointmentCard";
 import { AppointmentsHeader } from "@/components/appointments/AppointmentsHeader";
-import { FloatingActionButton } from "@/components/common/FloatingActionButton";
 import { FilterChips } from "@/components/common/FilterChips";
+import { FloatingActionButton } from "@/components/common/FloatingActionButton";
 import { ListErrorState } from "@/components/common/ListErrorState";
 import { Skeleton } from "@/components/common/Skeleton";
+import { Text } from "@/components/common/SText";
 import { useAppointmentsList } from "@/shared/hooks/useAppointmentsList";
 import { AppointmentFilter } from "@/shared/services/appointment.service";
 import { colors } from "@/shared/theme/colors";
 import { useAuthStore } from "@/shared/zustand/auth/useAuthStore";
-import { StatusBar } from "expo-status-bar";
-import { useRouter } from "expo-router";
-import React, { useCallback, useEffect } from "react";
-import { InteractionManager, StyleSheet, View } from "react-native";
 import { FlashList } from "@shopify/flash-list";
-import { Text } from "@/components/common/SText";
+import { useRouter } from "expo-router";
+import { StatusBar } from "expo-status-bar";
+import React, { useCallback, useEffect } from "react";
+import { StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 const FILTER_OPTIONS: { value: AppointmentFilter; label: string }[] = [
   { value: "upcoming", label: "Próximas" },
   { value: "pending", label: "Pendientes" },
-  { value: "history", label: "Historial" },
+  { value: "all", label: "Historial" },
 ];
 
 function FilterChipsSkeleton() {
@@ -65,9 +65,15 @@ export default function PatientAppointmentsScreen() {
     useAppointmentsList("own", "upcoming");
 
   useEffect(() => {
-    InteractionManager.runAfterInteractions(() => {
-      router.prefetch("/(main)/appointments/create");
-    });
+    const callback = () => router.prefetch("/(main)/appointments/create");
+
+    if (typeof requestIdleCallback === "function") {
+      const id = requestIdleCallback(callback);
+      return () => cancelIdleCallback(id);
+    }
+
+    const timeoutId = setTimeout(callback, 50);
+    return () => clearTimeout(timeoutId);
   }, [router]);
 
   const handleAppointmentPress = useCallback(
@@ -134,7 +140,7 @@ export default function PatientAppointmentsScreen() {
           title="Mis Citas"
           count={`${appointments.length} citas`}
         >
-          <FilterChips options={FILTER_OPTIONS} value={filter} onChange={setFilter} />
+          <FilterChips options={FILTER_OPTIONS} value={filter || undefined} onChange={setFilter} />
         </AppointmentsHeader>
         <FlashList
           data={appointments as AppointmentData[]}

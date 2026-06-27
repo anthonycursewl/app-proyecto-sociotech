@@ -3,7 +3,7 @@ import { StatusBar } from "expo-status-bar";
 import React, { useCallback, useEffect, useState } from "react";
 import { ActivityIndicator, StyleSheet, TouchableOpacity, View } from "react-native";
 import { Text } from "@/components/common/SText";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { MedicalRecordView } from "@/components/medical-records/MedicalRecordView";
 import { ListErrorState } from "@/components/common/ListErrorState";
@@ -13,6 +13,7 @@ import { colors } from "@/shared/theme/colors";
 export default function PatientMedicalRecordDetailScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
+  const insets = useSafeAreaInsets();
   const [record, setRecord] = useState<MedicalRecordResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

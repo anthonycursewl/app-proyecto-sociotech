@@ -1,18 +1,18 @@
+import { Text } from "@/components/common/SText";
 import React from "react";
 import { Pressable, ScrollView, View } from "react-native";
-import { Text } from "@/components/common/SText";
 import { styles } from "./FilterChips.styles";
 
 export interface FilterOption<T extends string> {
-  value: T;
+  value: T | undefined;
   label: string;
   count?: number;
 }
 
 interface FilterChipsProps<T extends string> {
   options: FilterOption<T>[];
-  value: T;
-  onChange: (value: T) => void;
+  value: T | undefined;
+  onChange: (value: T | undefined) => void;
 }
 
 export function FilterChips<T extends string>({
@@ -32,7 +32,7 @@ export function FilterChips<T extends string>({
         return (
           <Pressable
             key={option.value}
-            onPress={() => onChange(option.value)}
+            onPress={() => onChange(option.value as T)}
             style={({ pressed }) => [
               styles.chip,
               isActive && styles.chipActive,

@@ -1,6 +1,7 @@
 import { CheckCircle, ClipboardList, FileDown, FileText, HeartPulse, PenLine, Stethoscope } from "lucide-react-native";
 import React from "react";
 import { ActivityIndicator, ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
 import { Text } from "@/components/common/SText";
 import { VitalSignsView } from "@/components/medical-records/VitalSignsView";
 import { PrescriptionList } from "@/components/medical-records/PrescriptionList";
@@ -64,13 +65,18 @@ export const MedicalRecordView = ({ record, canSign = false, onSign }: MedicalRe
       showsVerticalScrollIndicator={false}
     >
       {record.isSigned && (
-        <View style={styles.signedBadge}>
-          <CheckCircle size={14} color={colors.accent} strokeWidth={2.5} />
+        <LinearGradient
+          colors={["#059669", "rgba(5, 150, 105, 0.85)"]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+          style={styles.signedBadge}
+        >
+          <CheckCircle size={14} color="#FFFFFF" strokeWidth={2.5} />
           <Text style={styles.signedText}>Firmada</Text>
           {record.signedAt && (
             <Text style={styles.signedDate}>{formatDate(record.signedAt)}</Text>
           )}
-        </View>
+        </LinearGradient>
       )}
 
       <View style={styles.section}>
@@ -174,104 +180,122 @@ export const MedicalRecordView = ({ record, canSign = false, onSign }: MedicalRe
 const styles = StyleSheet.create({
   scroll: {
     flex: 1,
+    backgroundColor: "#F9FAFB",
   },
   scrollContent: {
-    paddingHorizontal: 16,
-    paddingTop: 8,
+    paddingHorizontal: 20,
+    paddingTop: 16,
+    paddingBottom: 32,
   },
   signedBadge: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 6,
-    backgroundColor: "#F0FDFA",
-    borderRadius: 10,
-    padding: 10,
-    marginBottom: 12,
+    gap: 8,
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    marginBottom: 20,
+    elevation: 5,
   },
   signedText: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: "700",
-    color: colors.accent,
+    color: "#FFFFFF",
+    letterSpacing: -0.2,
   },
   signedDate: {
-    fontSize: 11,
-    color: colors.textSecondary,
+    fontSize: 12,
+    color: "rgba(255, 255, 255, 0.85)",
     fontWeight: "500",
     marginLeft: "auto",
+    fontVariant: ["tabular-nums"],
   },
   section: {
-    backgroundColor: colors.surface,
-    borderRadius: 14,
-    padding: 16,
-    marginBottom: 12,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 16,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: "#E8EDF2",
+    shadowColor: "#0F172A",
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.06,
+    shadowRadius: 12,
+    elevation: 3,
   },
   sectionHeader: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
-    marginBottom: 10,
+    gap: 10,
+    marginBottom: 14,
+    marginTop: 4,
   },
   sectionTitle: {
-    fontSize: 13,
-    fontWeight: "700",
+    fontSize: 15,
+    fontWeight: "800",
     color: colors.textPrimary,
-    letterSpacing: -0.1,
+    letterSpacing: -0.3,
+    flex: 1,
   },
   bodyText: {
-    fontSize: 14,
+    fontSize: 15,
     color: colors.textSecondary,
-    lineHeight: 20,
+    lineHeight: 22,
     fontWeight: "500",
+    marginTop: 8,
   },
   tagRow: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 6,
-    marginTop: 10,
+    gap: 8,
+    marginTop: 12,
   },
   tag: {
     backgroundColor: "#F0FDFA",
-    borderRadius: 6,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderWidth: 1,
+    borderColor: colors.accent + "30",
   },
   tagText: {
-    fontSize: 11,
+    fontSize: 12,
     color: colors.accent,
-    fontWeight: "600",
+    fontWeight: "700",
   },
   codeRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
-    marginTop: 10,
-    paddingTop: 10,
+    gap: 10,
+    marginTop: 14,
+    paddingTop: 14,
     borderTopWidth: 1,
-    borderTopColor: colors.border,
+    borderTopColor: "#F1F5F9",
   },
   codeLabel: {
-    fontSize: 11,
+    fontSize: 12,
     color: colors.textMuted,
     fontWeight: "600",
     textTransform: "uppercase",
-    letterSpacing: 0.4,
+    letterSpacing: 0.5,
   },
   codeValue: {
-    fontSize: 13,
+    fontSize: 14,
     color: colors.accent,
     fontWeight: "700",
     fontVariant: ["tabular-nums"],
   },
   metaRow: {
-    marginTop: 4,
-    marginBottom: 12,
+    marginTop: 8,
+    marginBottom: 16,
     paddingHorizontal: 4,
-    gap: 4,
+    gap: 6,
+    borderTopWidth: 1,
+    borderTopColor: "#F1F5F9",
+    paddingTop: 12,
   },
   metaText: {
-    fontSize: 11,
+    fontSize: 12,
     color: colors.textMuted,
     fontWeight: "500",
   },
@@ -279,16 +303,21 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    gap: 8,
-    backgroundColor: colors.surface,
-    borderRadius: 12,
-    paddingVertical: 14,
-    marginTop: 4,
-    borderWidth: 1,
-    borderColor: colors.accent,
+    gap: 10,
+    backgroundColor: "#F8FAFC",
+    borderRadius: 14,
+    paddingVertical: 18,
+    marginTop: 8,
+    borderWidth: 2,
+    borderColor: colors.accent + "40",
+    shadowColor: colors.accent,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 4,
   },
   downloadButtonText: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: "700",
     color: colors.accent,
     letterSpacing: 0.2,
@@ -297,22 +326,28 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    gap: 8,
+    gap: 10,
     backgroundColor: colors.accent,
-    borderRadius: 12,
-    paddingVertical: 14,
-    marginTop: 4,
+    borderRadius: 14,
+    paddingVertical: 18,
+    marginTop: 12,
+    shadowColor: colors.accent,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.25,
+    shadowRadius: 16,
+    elevation: 6,
   },
   signButtonDisabled: {
     opacity: 0.6,
+    shadowOpacity: 0.1,
   },
   signButtonText: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: "700",
-    color: colors.surface,
+    color: "#FFFFFF",
     letterSpacing: 0.2,
   },
   footerSpacer: {
-    height: 32,
+    height: 40,
   },
 });

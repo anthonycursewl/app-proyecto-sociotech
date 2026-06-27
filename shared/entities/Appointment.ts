@@ -82,4 +82,4 @@ export interface CancelAppointmentData {
   reason?: string;
 }
 
-export type AppointmentFilter = "all" | "pending" | "upcoming" | "history";
+export type AppointmentFilter = "all" | "pending" | "upcoming" | "history" | undefined;

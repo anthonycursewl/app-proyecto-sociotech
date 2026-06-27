@@ -1,6 +1,7 @@
 import React, { useMemo } from "react";
 import { TouchableOpacity, View } from "react-native";
 import { Text } from "@/components/common/SText";
+import { formatToAMPM } from "@/shared/utils/date.utils";
 import { styles } from "./AppointmentCard.styles";
 
 export interface AppointmentData {
@@ -80,10 +81,10 @@ export const AppointmentCard = React.memo(function AppointmentCard({ appointment
         </View>
 
         <View style={styles.headerMain}>
-          <View style={styles.timeRow}>
-            <Text style={[styles.time, isExpired && styles.timeMuted]}>{appointment.time}</Text>
-            <Text style={styles.duration}>{appointment.durationMin} min</Text>
-          </View>
+        <View style={styles.timeRow}>
+          <Text style={[styles.time, isExpired && styles.timeMuted]}>{formatToAMPM(appointment.time)}</Text>
+          <Text style={styles.duration}>{appointment.durationMin} min</Text>
+        </View>
           <View style={styles.statusRow}>
             <View style={[styles.statusDot, dotStyle]} />
             <Text style={[styles.statusLabel, labelStyle]}>

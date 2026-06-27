@@ -1,30 +1,29 @@
-import { HttpClient } from "@/shared/http/http.client";
 import type {
-  AppointmentStatus,
-  AppointmentCancellation,
-  DoctorSummary,
-  ServiceSummary,
-  PatientSummaryDto,
-  Appointment,
-  AvailableSlotsResponse,
-  MonthlyAvailabilityResponse,
-  CreateAppointmentData,
-  CancelAppointmentData,
-  AppointmentFilter,
+    Appointment,
+    AppointmentCancellation,
+    AppointmentFilter,
+    AppointmentStatus,
+    AvailableSlotsResponse,
+    CancelAppointmentData,
+    CreateAppointmentData,
+    DoctorSummary,
+    MonthlyAvailabilityResponse,
+    PatientSummaryDto,
+    ServiceSummary,
 } from "@/shared/entities/Appointment";
+import { HttpClient } from "@/shared/http/http.client";
 
 export type {
-  AppointmentStatus,
-  AppointmentCancellation,
-  DoctorSummary,
-  ServiceSummary,
-  PatientSummaryDto,
-  Appointment,
-  AvailableSlotsResponse,
-  MonthlyAvailabilityResponse,
-  CreateAppointmentData,
-  CancelAppointmentData,
-  AppointmentFilter,
+    Appointment, AppointmentCancellation, AppointmentFilter, AppointmentStatus, AvailableSlotsResponse, CancelAppointmentData, CreateAppointmentData, DoctorSummary, MonthlyAvailabilityResponse, PatientSummaryDto, ServiceSummary
+};
+
+const buildAppointmentParams = (filter?: AppointmentFilter, doctorId?: string) => {
+  const params: Record<string, unknown> = {};
+  if (doctorId) params.doctorId = doctorId;
+  if (filter && filter !== "all" && filter !== "history") {
+    params.filter = filter;
+  }
+  return params;
 };
 
 export const appointmentService = {
@@ -48,14 +47,14 @@ export const appointmentService = {
   getMyAppointments: (filter: AppointmentFilter = "upcoming") =>
     HttpClient.get<Appointment[]>(
       "/appointments/me",
-      { filter },
+      buildAppointmentParams(filter),
       { requireAuth: true },
     ),
 
   getAll: (filter: AppointmentFilter = "upcoming", doctorId?: string) =>
     HttpClient.get<Appointment[]>(
       "/appointments",
-      { filter, ...(doctorId ? { doctorId } : {}) },
+      buildAppointmentParams(filter, doctorId),
       { requireAuth: true },
     ),
 
