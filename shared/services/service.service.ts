@@ -30,9 +30,16 @@ export const serviceService = {
     ),
 
   getByDoctorPublic: (doctorId: string) =>
-    HttpClient.get<ServiceResponse[]>(
+    HttpClient.get<PaginatedServiceResponse>(
       "/public/services",
-      { doctorId },
+      { doctorId, limit: 1000 },
+      { requireAuth: true },
+    ),
+
+  getByDoctorPublicPaginated: (doctorId: string, params?: { cursor?: string; limit?: number }) =>
+    HttpClient.get<PaginatedServiceResponse>(
+      "/public/services",
+      { doctorId, limit: params?.limit ?? 20, ...(params?.cursor ? { cursor: params.cursor } : {}) },
       { requireAuth: true },
     ),
 

@@ -70,10 +70,43 @@ describe("serviceService.getAllPublic", () => {
 });
 
 describe("serviceService.getByDoctorPublic", () => {
-  it("GETs /public/services with doctorId param", async () => {
-    mockedHttp.get.mockResolvedValueOnce([]);
-    await serviceService.getByDoctorPublic("d-1");
-    expect(mockedHttp.get).toHaveBeenCalledWith("/public/services", { doctorId: "d-1" }, { requireAuth: true });
+  it("GETs /public/services with doctorId param and returns paginated response", async () => {
+    const paginated = { data: [buildService()], nextCursor: null };
+    mockedHttp.get.mockResolvedValueOnce(paginated);
+    const result = await serviceService.getByDoctorPublic("d-1");
+    expect(mockedHttp.get).toHaveBeenCalledWith(
+      "/public/services",
+      { doctorId: "d-1", limit: 1000 },
+      { requireAuth: true },
+    );
+    expect(result.data.length).toBe(1);
+    expect(result.nextCursor).toBeNull();
+  });
+});
+
+describe("serviceService.getByDoctorPublicPaginated", () => {
+  it("GETs /public/services with doctorId and limit for first page", async () => {
+    const paginated = { data: [buildService()], nextCursor: "cursor-abc" };
+    mockedHttp.get.mockResolvedValueOnce(paginated);
+    const result = await serviceService.getByDoctorPublicPaginated("d-1", { limit: 20 });
+    expect(mockedHttp.get).toHaveBeenCalledWith(
+      "/public/services",
+      { doctorId: "d-1", limit: 20 },
+      { requireAuth: true },
+    );
+    expect(result.data.length).toBe(1);
+    expect(result.nextCursor).toBe("cursor-abc");
+  });
+
+  it("passes cursor for subsequent pages", async () => {
+    const paginated = { data: [buildService()], nextCursor: null };
+    mockedHttp.get.mockResolvedValueOnce(paginated);
+    await serviceService.getByDoctorPublicPaginated("d-1", { cursor: "cursor-abc", limit: 20 });
+    expect(mockedHttp.get).toHaveBeenCalledWith(
+      "/public/services",
+      { doctorId: "d-1", cursor: "cursor-abc", limit: 20 },
+      { requireAuth: true },
+    );
   });
 });
 

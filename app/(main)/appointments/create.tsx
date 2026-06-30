@@ -1,20 +1,20 @@
-import { CalendarCheck, CalendarClock, CalendarDays, CalendarSync, Check, CheckCircle, ChevronDown, ChevronLeft, Clock, Edit3, FileText, Info, LayoutList, MessageSquare, Package, Search, Stethoscope } from "lucide-react-native";
-import { StatusBar } from "expo-status-bar";
-import React, { useEffect, useMemo, useRef, useState } from "react";
-import { ActivityIndicator, Animated, KeyboardAvoidingView, Platform, StyleSheet, TextInput, TouchableOpacity, View, Alert, ScrollView } from "react-native";
-import { FlashList } from "@shopify/flash-list";
-import { Text } from "@/components/common/SText"
-import { SafeAreaView } from "react-native-safe-area-context";
-import { useRouter, useLocalSearchParams } from "expo-router";
-import { appointmentService } from "@/shared/services/appointment.service";
-import { invalidate, setCached } from "@/shared/cache/appointmentCache";
-import { doctorService, DoctorBase, DoctorSchedule } from "@/shared/services/doctor.service";
-import { serviceService, ServiceResponse } from "@/shared/services/service.service";
-import { formatToAMPM } from "@/shared/utils/date.utils";
-import { SkeletonLayout } from "@/components/common/Skeleton";
-import { BottomSheetModal } from "@/components/common/BottomSheetModal";
-import { BookingCalendar } from "@/components/appointments/BookingCalendar";
 import { AppointmentSection } from "@/components/appointments/AppointmentSection";
+import { BookingCalendar } from "@/components/appointments/BookingCalendar";
+import { BottomSheetModal } from "@/components/common/BottomSheetModal";
+import { SkeletonLayout } from "@/components/common/Skeleton";
+import { Text } from "@/components/common/SText";
+import { invalidate, setCached } from "@/shared/cache/appointmentCache";
+import { appointmentService } from "@/shared/services/appointment.service";
+import { DoctorBase, DoctorSchedule, doctorService } from "@/shared/services/doctor.service";
+import { ServiceResponse, serviceService } from "@/shared/services/service.service";
+import { formatToAMPM } from "@/shared/utils/date.utils";
+import { FlashList } from "@shopify/flash-list";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import { StatusBar } from "expo-status-bar";
+import { CalendarCheck, CalendarClock, CalendarDays, CalendarSync, Check, CheckCircle, ChevronDown, ChevronLeft, Clock, Edit3, FileText, Info, MessageSquare, Package, Search, Stethoscope } from "lucide-react-native";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { ActivityIndicator, Alert, Animated, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, TextInput, TouchableOpacity, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 type MonthAvailability = {
   year: number;
@@ -41,6 +41,8 @@ export default function CreateAppointmentScreen() {
 
   const [services, setServices] = useState<ServiceResponse[]>([]);
   const [loadingServices, setLoadingServices] = useState(false);
+  const [loadingMoreServices, setLoadingMoreServices] = useState(false);
+  const [servicesCursor, setServicesCursor] = useState<string | null>(null);
   const [selectedService, setSelectedService] = useState<ServiceResponse | null>(null);
   const [servicePickerOpen, setServicePickerOpen] = useState(false);
   const [, setDoctorSchedules] = useState<DoctorSchedule[]>([]);
@@ -53,6 +55,8 @@ export default function CreateAppointmentScreen() {
   const [reason, setReason] = useState("");
   const [notes, setNotes] = useState("");
 
+  const [serviceSearch, setServiceSearch] = useState("");
+
   const now = new Date();
   const [calendarYear, setCalendarYear] = useState(now.getFullYear());
   const [calendarMonth, setCalendarMonth] = useState(now.getMonth() + 1);
@@ -62,14 +66,6 @@ export default function CreateAppointmentScreen() {
   const monthCacheRef = useRef<Map<string, MonthAvailability>>(new Map());
   const monthRequestIdRef = useRef(0);
   const slotsRequestIdRef = useRef(0);
-
-  const previewServices = useMemo(() => {
-    if (!selectedService) return services.slice(0, 3);
-    const others = services
-      .filter((s) => s.id !== selectedService.id)
-      .slice(0, 2);
-    return [selectedService, ...others];
-  }, [services, selectedService]);
 
   useEffect(() => {
     if (!loading && showSkeleton) {
@@ -115,23 +111,44 @@ export default function CreateAppointmentScreen() {
     monthCacheRef.current.clear();
     setCalendarYear(today.getFullYear());
     setCalendarMonth(today.getMonth() + 1);
+    setServices([]);
+    setServicesCursor(null);
     setLoadingServices(true);
     (async () => {
       try {
-        const [schedules, doctorServices] = await Promise.all([
+        const [schedules, paginated] = await Promise.all([
           doctorService.getSchedulesPublic(selectedDoctor.id),
-          serviceService.getByDoctorPublic(selectedDoctor.id),
+          serviceService.getByDoctorPublicPaginated(selectedDoctor.id, { limit: 20 }),
         ]);
         setDoctorSchedules(schedules);
-        setServices(doctorServices.filter((s) => s.isActive));
+        setServices(paginated.data.filter((s) => s.isActive));
+        setServicesCursor(paginated.nextCursor);
       } catch {
         setDoctorSchedules([]);
         setServices([]);
+        setServicesCursor(null);
       } finally {
         setLoadingServices(false);
       }
     })();
   }, [selectedDoctor]);
+
+  const loadMoreServices = async () => {
+    if (!selectedDoctor || !servicesCursor || loadingMoreServices) return;
+    setLoadingMoreServices(true);
+    try {
+      const paginated = await serviceService.getByDoctorPublicPaginated(selectedDoctor.id, {
+        cursor: servicesCursor,
+        limit: 20,
+      });
+      setServices((prev) => [...prev, ...paginated.data.filter((s) => s.isActive)]);
+      setServicesCursor(paginated.nextCursor);
+    } catch {
+      // silently fail
+    } finally {
+      setLoadingMoreServices(false);
+    }
+  };
 
   const isoDate = useMemo(() => selectedDate ?? "", [selectedDate]);
 
@@ -351,48 +368,43 @@ export default function CreateAppointmentScreen() {
 
             {selectedDoctor && (
               <AppointmentSection title="Servicio" icon={Package}>
-                <Text style={styles.fieldHelper}>Selecciona el tipo de consulta que necesitas. Cada servicio tiene una duración definida por el doctor.</Text>
                 {loadingServices ? (
                   <ActivityIndicator style={{ paddingVertical: 16 }} color="#4CB1B1" />
                 ) : services.length === 0 ? (
                   <Text style={styles.emptyText}>Este doctor no tiene servicios disponibles</Text>
                 ) : (
-                  <View style={styles.serviceScroll}>
-                    {previewServices.map((svc) => {
-                      const selected = selectedService?.id === svc.id;
-                      return (
-                        <TouchableOpacity
-                          key={svc.id}
-                          style={[styles.serviceOption, selected && styles.serviceOptionSelected]}
-                          onPress={() => setSelectedService(svc)}
-                          activeOpacity={0.7}
-                        >
-                          <View style={[styles.serviceDot, selected && styles.serviceDotSelected]} />
-                          <View style={styles.serviceInfo}>
-                            <Text style={[styles.serviceName, selected && styles.serviceNameSelected]} numberOfLines={1}>
-                              {svc.name}
-                            </Text>
-                            <Text style={styles.serviceMeta}>
-                              {svc.durationMin} min
-                            </Text>
+                  <>
+                    <Text style={styles.fieldHelper}>Selecciona el tipo de consulta que necesitas. Cada servicio tiene una duración definida por el doctor.</Text>
+                    <TouchableOpacity
+                      style={styles.doctorSelectorCard}
+                      onPress={() => setServicePickerOpen(true)}
+                      activeOpacity={0.7}
+                    >
+                      {selectedService ? (
+                        <>
+                          <View style={styles.doctorSelectorAvatar}>
+                            <Package size={22} color="#4CB1B1" strokeWidth={2} />
                           </View>
-                          {selected && <Check size={16} color="#FFFFFF" strokeWidth={3} />}
-                        </TouchableOpacity>
-                      );
-                    })}
-                    {services.length > 3 && (
-                      <TouchableOpacity
-                        style={styles.viewAllButton}
-                        onPress={() => setServicePickerOpen(true)}
-                        activeOpacity={0.7}
-                      >
-                        <LayoutList size={14} color="#4CB1B1" strokeWidth={2.5} />
-                        <Text style={styles.viewAllText}>
-                          Ver todos ({services.length})
-                        </Text>
-                      </TouchableOpacity>
-                    )}
-                  </View>
+                          <View style={styles.doctorSelectorInfo}>
+                            <Text style={styles.doctorSelectorName}>{selectedService.name}</Text>
+                            <Text style={styles.doctorSelectorSpecialty}>{selectedService.durationMin} min</Text>
+                          </View>
+                          <ChevronDown size={18} color="#94A3B8" strokeWidth={2} />
+                        </>
+                      ) : (
+                        <>
+                          <View style={[styles.doctorSelectorAvatar, styles.doctorSelectorAvatarEmpty]}>
+                            <Package size={22} color="#94A3B8" strokeWidth={2} />
+                          </View>
+                          <View style={styles.doctorSelectorInfo}>
+                            <Text style={styles.doctorSelectorPlaceholder}>Seleccionar Servicio</Text>
+                            <Text style={styles.doctorSelectorHint}>Toca para elegir un servicio</Text>
+                          </View>
+                          <ChevronDown size={18} color="#94A3B8" strokeWidth={2} />
+                        </>
+                      )}
+                    </TouchableOpacity>
+                  </>
                 )}
               </AppointmentSection>
             )}
@@ -611,22 +623,51 @@ export default function CreateAppointmentScreen() {
 
       <BottomSheetModal
         visible={servicePickerOpen}
-        onClose={() => setServicePickerOpen(false)}
+        onClose={() => { setServicePickerOpen(false); setServiceSearch(""); }}
         height={0.75}
       >
         <Text style={styles.pickerTitle}>Seleccionar Servicio</Text>
-        <Text style={styles.pickerSubtitle}>
-          {services.length} servicios disponibles
-        </Text>
-        {services.length === 0 ? (
+        <View style={styles.pickerSearchRow}>
+          <Search size={16} color="#94A3B8" strokeWidth={2} />
+          <TextInput
+            style={styles.pickerSearchInput}
+            placeholder="Buscar servicio..."
+            placeholderTextColor="#C5CDD8"
+            value={serviceSearch}
+            onChangeText={setServiceSearch}
+          />
+        </View>
+        {loadingServices && services.length === 0 ? (
+          <ActivityIndicator size="large" color="#4CB1B1" style={{ paddingVertical: 40 }} />
+        ) : services.length === 0 ? (
           <Text style={styles.emptyDoctors}>No hay servicios disponibles</Text>
         ) : (
           <FlashList
-            data={services}
+            data={(() => {
+              const q = serviceSearch.trim().toLowerCase();
+              if (!q) return services;
+              return services.filter(
+                (s) =>
+                  s.name.toLowerCase().includes(q) ||
+                  (s.description && s.description.toLowerCase().includes(q)),
+              );
+            })()}
             keyExtractor={(item) => item.id}
             style={styles.pickerList}
             contentContainerStyle={styles.servicePickerList}
             showsVerticalScrollIndicator
+            onEndReached={serviceSearch.trim() ? undefined : loadMoreServices}
+            onEndReachedThreshold={0.3}
+            ListFooterComponent={
+              loadingMoreServices ? (
+                <ActivityIndicator size="small" color="#4CB1B1" style={{ paddingVertical: 12 }} />
+              ) : null
+            }
+            ListEmptyComponent={
+              serviceSearch.trim() ? (
+                <Text style={styles.emptyDoctors}>No se encontraron servicios con ese nombre</Text>
+              ) : null
+            }
             renderItem={({ item }) => {
               const selected = selectedService?.id === item.id;
               return (
@@ -716,13 +757,6 @@ const styles = StyleSheet.create({
 
   emptyText: { fontSize: 14, color: "#94A3B8", fontWeight: "500", textAlign: "center", paddingVertical: 16 },
 
-  serviceScroll: {
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
-    overflow: "hidden",
-    padding: 4,
-  },
   serviceOption: {
     flexDirection: "row", alignItems: "center",
     paddingVertical: 12, paddingHorizontal: 14,
@@ -730,12 +764,6 @@ const styles = StyleSheet.create({
     overflow: "hidden",
   },
   serviceOptionSelected: { backgroundColor: "#F0FDF9", borderWidth: 1, borderColor: "#4CB1B1" },
-  viewAllButton: {
-    flexDirection: "row", alignItems: "center", justifyContent: "center",
-    gap: 6, paddingVertical: 10, marginTop: 4,
-    borderTopWidth: 1, borderTopColor: "#F1F5F9",
-  },
-  viewAllText: { fontSize: 13, fontWeight: "600", color: "#4CB1B1" },
   servicePickerList: { paddingBottom: 8, gap: 4 },
   serviceDot: {
     width: 10, height: 10, borderRadius: 5,
@@ -749,7 +777,7 @@ const styles = StyleSheet.create({
 
   inputWrapper: { marginBottom: 14 },
   fieldLabel: { fontSize: 12, fontWeight: "600", color: "#64748B", marginBottom: 5, letterSpacing: 0.2 },
-  fieldHelper: { fontSize: 11, color: "#94A3B8", marginTop: 4, lineHeight: 15, paddingHorizontal: 2 },
+  fieldHelper: { fontSize: 11, color: "#94A3B8", marginTop: 4, lineHeight: 15, paddingHorizontal: 2, paddingBottom: 10 },
   inputRow: {
     flexDirection: "row", alignItems: "center",
     backgroundColor: "#F8FAFC", borderRadius: 12, paddingHorizontal: 12,
