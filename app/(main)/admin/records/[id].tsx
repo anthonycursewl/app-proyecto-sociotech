@@ -50,7 +50,6 @@ export default function AdminMedicalRecordDetailScreen() {
       chiefComplaint: string;
       symptoms: string[];
       diagnosis: string;
-      diagnosisCode?: string;
       treatment: string;
       notes: string;
       vitalSigns?: VitalSignsData;
@@ -121,7 +120,6 @@ export default function AdminMedicalRecordDetailScreen() {
               chiefComplaint: record.chiefComplaint,
               symptoms: record.symptoms.join(", "),
               diagnosis: record.diagnosis,
-              diagnosisCode: record.diagnosisCode ?? undefined,
               treatment: record.treatment,
               notes: record.notes,
               vitalSigns: {

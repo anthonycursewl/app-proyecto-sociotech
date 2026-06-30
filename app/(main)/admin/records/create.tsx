@@ -1,14 +1,14 @@
-import { ChevronLeft } from "lucide-react-native";
+import { Text } from "@/components/common/SText";
+import { MedicalRecordForm } from "@/components/medical-records/MedicalRecordForm";
+import { doctorService } from "@/shared/services/doctor.service";
+import { medicalRecordService, PrescriptionData, VitalSignsData } from "@/shared/services/medicalRecord.service";
+import { useAuthStore } from "@/shared/zustand/auth/useAuthStore";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
+import { ChevronLeft } from "lucide-react-native";
 import React, { useCallback, useEffect, useState } from "react";
 import { ActivityIndicator, StyleSheet, TouchableOpacity, View } from "react-native";
-import { Text } from "@/components/common/SText";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useLocalSearchParams, useRouter } from "expo-router";
-import { MedicalRecordForm } from "@/components/medical-records/MedicalRecordForm";
-import { medicalRecordService, VitalSignsData, PrescriptionData } from "@/shared/services/medicalRecord.service";
-import { doctorService } from "@/shared/services/doctor.service";
-import { useAuthStore } from "@/shared/zustand/auth/useAuthStore";
 
 export default function MedicalRecordCreateScreen() {
   const router = useRouter();
@@ -43,7 +43,6 @@ export default function MedicalRecordCreateScreen() {
       chiefComplaint: string;
       symptoms: string[];
       diagnosis: string;
-      diagnosisCode?: string;
       treatment: string;
       notes: string;
       vitalSigns?: VitalSignsData;

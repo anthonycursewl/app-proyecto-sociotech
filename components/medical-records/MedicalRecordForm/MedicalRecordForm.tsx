@@ -1,17 +1,16 @@
-import { AlertCircle } from "lucide-react-native";
-import React, { useState } from "react";
-import { ActivityIndicator, ScrollView, StyleSheet, TextInput, TouchableOpacity, View } from "react-native";
 import { Text } from "@/components/common/SText";
-import { VitalSignsForm } from "@/components/medical-records/VitalSignsForm";
 import { PrescriptionForm } from "@/components/medical-records/PrescriptionForm";
 import { PrescriptionList } from "@/components/medical-records/PrescriptionList";
+import { VitalSignsForm } from "@/components/medical-records/VitalSignsForm";
 import { PrescriptionData, VitalSignsData } from "@/shared/services/medicalRecord.service";
+import { AlertCircle } from "lucide-react-native";
+import React, { useEffect, useState } from "react";
+import { ActivityIndicator, Keyboard, ScrollView, StyleSheet, TextInput, TouchableOpacity, View } from "react-native";
 
 interface FormState {
   chiefComplaint: string;
   symptoms: string;
   diagnosis: string;
-  diagnosisCode: string;
   treatment: string;
   notes: string;
   vitalSigns: VitalSignsData;
@@ -25,7 +24,6 @@ interface MedicalRecordFormProps {
     chiefComplaint: string;
     symptoms: string[];
     diagnosis: string;
-    diagnosisCode?: string;
     treatment: string;
     notes: string;
     vitalSigns?: VitalSignsData;
@@ -44,7 +42,6 @@ export const MedicalRecordForm = ({
     chiefComplaint: initialData?.chiefComplaint ?? "",
     symptoms: Array.isArray(initialData?.symptoms) ? initialData.symptoms.join(", ") : "",
     diagnosis: initialData?.diagnosis ?? "",
-    diagnosisCode: initialData?.diagnosisCode ?? "",
     treatment: initialData?.treatment ?? "",
     notes: initialData?.notes ?? "",
     vitalSigns: initialData?.vitalSigns ?? {},
@@ -65,7 +62,6 @@ export const MedicalRecordForm = ({
         chiefComplaint: form.chiefComplaint.trim(),
         symptoms: form.symptoms.split(",").map((s) => s.trim()).filter(Boolean),
         diagnosis: form.diagnosis.trim(),
-        diagnosisCode: form.diagnosisCode.trim() || undefined,
         treatment: form.treatment.trim(),
         notes: form.notes.trim(),
         vitalSigns: Object.keys(form.vitalSigns).length > 0 ? form.vitalSigns : undefined,
@@ -79,13 +75,25 @@ export const MedicalRecordForm = ({
   };
 
   const isMutating = submitting || loading;
+  const [keyboardOpen, setKeyboardOpen] = useState(false);
+
+  useEffect(() => {
+    const show = Keyboard.addListener("keyboardDidShow", () => setKeyboardOpen(true));
+    const hide = Keyboard.addListener("keyboardDidHide", () => setKeyboardOpen(false));
+    return () => {
+      show.remove();
+      hide.remove();
+    };
+  }, []);
 
   return (
     <ScrollView
       style={styles.scroll}
-      contentContainerStyle={styles.scrollContent}
+      contentContainerStyle={[styles.scrollContent, keyboardOpen && styles.scrollContentKeyboard]}
+      keyboardDismissMode="interactive"
       showsVerticalScrollIndicator={false}
       keyboardShouldPersistTaps="handled"
+      nestedScrollEnabled
     >
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Datos de consulta</Text>
@@ -137,17 +145,6 @@ export const MedicalRecordForm = ({
             placeholderTextColor="#D1D5DB"
             multiline
             numberOfLines={3}
-          />
-        </View>
-        <View style={styles.field}>
-          <Text style={styles.fieldLabel}>Código CIE-10 (opcional)</Text>
-          <TextInput
-            style={styles.input}
-            value={form.diagnosisCode}
-            onChangeText={(v) => setForm({ ...form, diagnosisCode: v })}
-            placeholder="Ej: J03.9"
-            placeholderTextColor="#D1D5DB"
-            autoCapitalize="characters"
           />
         </View>
       </View>
@@ -206,7 +203,6 @@ export const MedicalRecordForm = ({
         )}
       </TouchableOpacity>
 
-      <View style={styles.footerSpacer} />
     </ScrollView>
   );
 };
@@ -218,6 +214,9 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingHorizontal: 16,
     paddingTop: 8,
+  },
+  scrollContentKeyboard: {
+    paddingBottom: 300,
   },
   section: {
     backgroundColor: "#FFFFFF",
@@ -292,6 +291,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     paddingVertical: 14,
     marginTop: 4,
+    marginBottom: 24,
   },
   submitButtonDisabled: {
     opacity: 0.6,
@@ -301,8 +301,5 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     color: "#FFFFFF",
     letterSpacing: 0.2,
-  },
-  footerSpacer: {
-    height: 32,
   },
 });
