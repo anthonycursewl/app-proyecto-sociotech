@@ -1,13 +1,17 @@
 import { Plus } from "lucide-react-native";
 import React from "react";
 import { StyleSheet, TouchableOpacity } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+
 interface FloatingActionButtonProps {
   onPress: () => void;
 }
 
 export const FloatingActionButton = ({ onPress }: FloatingActionButtonProps) => {
+  const insets = useSafeAreaInsets();
+
   return (
-    <TouchableOpacity style={styles.fab} onPress={onPress} activeOpacity={0.85}>
+    <TouchableOpacity style={[styles.fab, { bottom: 24 + insets.bottom }]} onPress={onPress} activeOpacity={0.85}>
       <Plus size={24} color="#FFFFFF" strokeWidth={3} />
     </TouchableOpacity>
   );
@@ -16,7 +20,6 @@ export const FloatingActionButton = ({ onPress }: FloatingActionButtonProps) => 
 const styles = StyleSheet.create({
   fab: {
     position: "absolute",
-    bottom: 24,
     right: 24,
     width: 56,
     height: 56,

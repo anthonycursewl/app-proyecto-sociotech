@@ -10,6 +10,7 @@ import {
   StyleSheet,
   View,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const { height: SCREEN_HEIGHT } = Dimensions.get("window");
 const DRAG_THRESHOLD = 60;
@@ -37,6 +38,7 @@ export const BottomSheetModal = ({
   const [isVisible, setIsVisible] = useState(false);
   const [animating, setAnimating] = useState(false);
   const onCloseRef = useLatest(onClose);
+  const insets = useSafeAreaInsets();
 
   const sheetHeight = resolveSheetHeight(height);
 
@@ -118,7 +120,11 @@ export const BottomSheetModal = ({
         <Animated.View
           style={[
             styles.sheet,
-            { height: sheetHeight, transform: [{ translateY: slideY }, { scale: sheetScale }] },
+            {
+              height: sheetHeight,
+              paddingBottom: 28 + insets.bottom,
+              transform: [{ translateY: slideY }, { scale: sheetScale }],
+            },
           ]}
         >
           <View style={styles.dragArea} {...panResponder.panHandlers}>
@@ -142,7 +148,6 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     paddingHorizontal: 20,
-    paddingBottom: 28,
     zIndex: 1,
   },
   dragArea: {

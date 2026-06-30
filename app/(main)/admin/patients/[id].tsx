@@ -18,7 +18,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 
 type TabKey = "perfil" | "historial";
 
@@ -135,6 +135,7 @@ export default function PatientProfileScreen() {
   const [fullProfileVisible, setFullProfileVisible] = useState(false);
   const [patient, setPatient] = useState<PatientResponse | null>(null);
   const [downloading, setDownloading] = useState(false);
+  const insets = useSafeAreaInsets();
 
   const handleDownloadHistory = useCallback(async () => {
     if (!patient || downloading) return;
@@ -360,7 +361,7 @@ export default function PatientProfileScreen() {
 
                 </ScrollView>
 
-                <View style={styles.fadeContainer} pointerEvents="box-none">
+                <View style={[styles.fadeContainer, { paddingBottom: 28 + insets.bottom }]} pointerEvents="box-none">
                   <TouchableOpacity
                     style={styles.seeMoreButton}
                     onPress={() => setFullProfileVisible(true)}
@@ -596,7 +597,6 @@ const styles = StyleSheet.create({
     right: 0,
     bottom: 0,
     alignItems: "center",
-    paddingBottom: 28,
   },
   seeMoreButton: {
     flexDirection: "row",

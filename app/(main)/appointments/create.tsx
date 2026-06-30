@@ -413,16 +413,12 @@ export default function CreateAppointmentScreen() {
                       }
                     }}
                     onNextMonth={() => {
-                      const today = new Date();
-                      const next = calendarMonth === 12
-                        ? { year: calendarYear + 1, month: 1 }
-                        : { year: calendarYear, month: calendarMonth + 1 };
-                      if (next.year > today.getFullYear() ||
-                          (next.year === today.getFullYear() && next.month > today.getMonth() + 1)) {
-                        return;
+                      if (calendarMonth === 12) {
+                        setCalendarYear((y) => y + 1);
+                        setCalendarMonth(1);
+                      } else {
+                        setCalendarMonth((m) => m + 1);
                       }
-                      setCalendarYear(next.year);
-                      setCalendarMonth(next.month);
                     }}
                     onGoToday={() => {
                       const today = new Date();
@@ -433,14 +429,7 @@ export default function CreateAppointmentScreen() {
                     onSelectDate={(iso) => { setSelectedDate(iso); setSelectedSlot(null); }}
                     availabilityMap={monthAvailability}
                     loadingMonth={loadingMonth}
-                    canGoNext={(() => {
-                      const today = new Date();
-                      const currentNext = calendarMonth === 12
-                        ? { year: calendarYear + 1, month: 1 }
-                        : { year: calendarYear, month: calendarMonth + 1 };
-                      return currentNext.year < today.getFullYear() ||
-                        (currentNext.year === today.getFullYear() && currentNext.month <= today.getMonth() + 1);
-                    })()}
+                    canGoNext={true}
                   />
 
                   {selectedDate && (
