@@ -12,8 +12,8 @@ import { FlashList } from "@shopify/flash-list";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { CalendarCheck, CalendarClock, CalendarDays, CalendarSync, Check, CheckCircle, ChevronDown, ChevronLeft, Clock, Edit3, FileText, Info, MessageSquare, Package, Search, Stethoscope } from "lucide-react-native";
-import React, { useEffect, useMemo, useRef, useState } from "react";
-import { ActivityIndicator, Alert, Animated, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, TextInput, TouchableOpacity, View } from "react-native";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { ActivityIndicator, Alert, Animated, FlatList, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, TextInput, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 type MonthAvailability = {
@@ -590,6 +590,7 @@ export default function CreateAppointmentScreen() {
             keyExtractor={(item) => item.id}
             style={styles.pickerList}
             contentContainerStyle={styles.pickerListContent}
+            ItemSeparatorComponent={() => <View style={styles.pickerSeparator} />}
             renderItem={({ item }) => {
               const selected = selectedDoctor?.id === item.id;
               return (
@@ -626,71 +627,77 @@ export default function CreateAppointmentScreen() {
         onClose={() => { setServicePickerOpen(false); setServiceSearch(""); }}
         height={0.75}
       >
-        <Text style={styles.pickerTitle}>Seleccionar Servicio</Text>
-        <View style={styles.pickerSearchRow}>
-          <Search size={16} color="#94A3B8" strokeWidth={2} />
-          <TextInput
-            style={styles.pickerSearchInput}
-            placeholder="Buscar servicio..."
-            placeholderTextColor="#C5CDD8"
-            value={serviceSearch}
-            onChangeText={setServiceSearch}
-          />
+        <View style={styles.pickerFlex}>
+          <Text style={styles.pickerTitle}>Seleccionar Servicio</Text>
+          <View style={styles.pickerSearchRow}>
+            <Search size={16} color="#94A3B8" strokeWidth={2} />
+            <TextInput
+              style={styles.pickerSearchInput}
+              placeholder="Buscar servicio..."
+              placeholderTextColor="#C5CDD8"
+              value={serviceSearch}
+              onChangeText={setServiceSearch}
+            />
+          </View>
+          {loadingServices && services.length === 0 ? (
+            <ActivityIndicator size="large" color="#4CB1B1" style={{ paddingVertical: 40 }} />
+          ) : services.length === 0 ? (
+            <Text style={styles.emptyDoctors}>No hay servicios disponibles</Text>
+          ) : (
+            <FlatList
+              data={(() => {
+                const q = serviceSearch.trim().toLowerCase();
+                if (!q) return services;
+                return services.filter(
+                  (s) =>
+                    s.name.toLowerCase().includes(q) ||
+                    (s.description && s.description.toLowerCase().includes(q)),
+                );
+              })()}
+              keyExtractor={(item) => item.id}
+              style={styles.pickerList}
+              contentContainerStyle={styles.servicePickerList}
+              showsVerticalScrollIndicator
+              removeClippedSubviews={false}
+              onEndReached={serviceSearch.trim() ? undefined : loadMoreServices}
+              onEndReachedThreshold={0.3}
+              ItemSeparatorComponent={() => <View style={styles.servicePickerSeparator} />}
+              ListFooterComponent={
+                loadingMoreServices ? (
+                  <ActivityIndicator size="small" color="#4CB1B1" style={{ paddingVertical: 12 }} />
+                ) : null
+              }
+              ListEmptyComponent={
+                serviceSearch.trim() ? (
+                  <Text style={styles.emptyDoctors}>No se encontraron servicios con ese nombre</Text>
+                ) : null
+              }
+              renderItem={({ item }) => {
+                const selected = selectedService?.id === item.id;
+                return (
+                  <TouchableOpacity
+                    style={[styles.serviceOption, selected && styles.serviceOptionSelected]}
+                    onPress={() => { setSelectedService(item); setServicePickerOpen(false); }}
+                    activeOpacity={0.7}
+                  >
+                    <View style={styles.serviceOptionRow}>
+                      <View style={[styles.serviceDot, selected && styles.serviceDotSelected]} />
+                      <View style={styles.serviceInfo}>
+                        <Text style={[styles.serviceName, selected && styles.serviceNameSelected]} numberOfLines={1}>
+                          {item.name}
+                        </Text>
+                        <Text style={styles.serviceMeta}>
+                          {item.durationMin} min
+                        </Text>
+                      </View>
+                    </View>
+                    {selected && <Check size={16} color="#4CB1B1" strokeWidth={3} />}
+                  </TouchableOpacity>
+                );
+              }}
+            />
+          )}
         </View>
-        {loadingServices && services.length === 0 ? (
-          <ActivityIndicator size="large" color="#4CB1B1" style={{ paddingVertical: 40 }} />
-        ) : services.length === 0 ? (
-          <Text style={styles.emptyDoctors}>No hay servicios disponibles</Text>
-        ) : (
-          <FlashList
-            data={(() => {
-              const q = serviceSearch.trim().toLowerCase();
-              if (!q) return services;
-              return services.filter(
-                (s) =>
-                  s.name.toLowerCase().includes(q) ||
-                  (s.description && s.description.toLowerCase().includes(q)),
-              );
-            })()}
-            keyExtractor={(item) => item.id}
-            style={styles.pickerList}
-            contentContainerStyle={styles.servicePickerList}
-            showsVerticalScrollIndicator
-            onEndReached={serviceSearch.trim() ? undefined : loadMoreServices}
-            onEndReachedThreshold={0.3}
-            ListFooterComponent={
-              loadingMoreServices ? (
-                <ActivityIndicator size="small" color="#4CB1B1" style={{ paddingVertical: 12 }} />
-              ) : null
-            }
-            ListEmptyComponent={
-              serviceSearch.trim() ? (
-                <Text style={styles.emptyDoctors}>No se encontraron servicios con ese nombre</Text>
-              ) : null
-            }
-            renderItem={({ item }) => {
-              const selected = selectedService?.id === item.id;
-              return (
-                <TouchableOpacity
-                  style={[styles.serviceOption, selected && styles.serviceOptionSelected]}
-                  onPress={() => { setSelectedService(item); setServicePickerOpen(false); }}
-                  activeOpacity={0.7}
-                >
-                  <View style={[styles.serviceDot, selected && styles.serviceDotSelected]} />
-                  <View style={styles.serviceInfo}>
-                    <Text style={[styles.serviceName, selected && styles.serviceNameSelected]} numberOfLines={1}>
-                      {item.name}
-                    </Text>
-                    <Text style={styles.serviceMeta}>
-                      {item.durationMin} min
-                    </Text>
-                  </View>
-                  {selected && <Check size={16} color="#FFFFFF" strokeWidth={3} />}
-                </TouchableOpacity>
-              );
-            }}
-          />
-        )}
       </BottomSheetModal>
     </SafeAreaView>
   );
@@ -758,13 +765,17 @@ const styles = StyleSheet.create({
   emptyText: { fontSize: 14, color: "#94A3B8", fontWeight: "500", textAlign: "center", paddingVertical: 16 },
 
   serviceOption: {
-    flexDirection: "row", alignItems: "center",
+    flexDirection: "row", alignItems: "center", justifyContent: "space-between",
     paddingVertical: 12, paddingHorizontal: 14,
     borderRadius: 10,
     overflow: "hidden",
   },
+  serviceOptionRow: {
+    flexDirection: "row", alignItems: "center", flex: 1,
+  },
   serviceOptionSelected: { backgroundColor: "#F0FDF9", borderWidth: 1, borderColor: "#4CB1B1" },
-  servicePickerList: { paddingBottom: 8, gap: 4 },
+  servicePickerList: { paddingBottom: 8 },
+  servicePickerSeparator: { height: 4 },
   serviceDot: {
     width: 10, height: 10, borderRadius: 5,
     backgroundColor: "#E2E8F0", marginRight: 12,
@@ -836,7 +847,9 @@ const styles = StyleSheet.create({
   submitText: { fontSize: 15, fontWeight: "700", color: "#FFFFFF" },
 
   pickerList: { flex: 1, marginTop: 4 },
-  pickerListContent: { paddingBottom: 8, gap: 4 },
+  pickerFlex: { flex: 1 },
+  pickerListContent: { paddingBottom: 8 },
+  pickerSeparator: { height: 4 },
   pickerTitle: { fontSize: 18, fontWeight: "800", color: "#0F172A", textAlign: "center", marginBottom: 4 },
   pickerSubtitle: { fontSize: 13, color: "#94A3B8", fontWeight: "500", textAlign: "center", marginBottom: 16 },
   pickerSearchRow: {
