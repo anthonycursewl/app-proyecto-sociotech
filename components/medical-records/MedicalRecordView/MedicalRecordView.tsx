@@ -3,6 +3,7 @@ import React from "react";
 import { ActivityIndicator, ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Text } from "@/components/common/SText";
+import { BottomSheetModal } from "@/components/common/BottomSheetModal";
 import { VitalSignsView } from "@/components/medical-records/VitalSignsView";
 import { PrescriptionList } from "@/components/medical-records/PrescriptionList";
 import { MedicalRecordResponse } from "@/shared/services/medicalRecord.service";
@@ -29,15 +30,22 @@ const formatDate = (iso: string) => {
 
 export const MedicalRecordView = ({ record, canSign = false, onSign }: MedicalRecordViewProps) => {
   const [signing, setSigning] = React.useState(false);
+  const [showSignModal, setShowSignModal] = React.useState(false);
 
-  const handleSign = async () => {
+  const handleConfirmSign = async () => {
     if (!onSign) return;
     setSigning(true);
     try {
       await onSign();
+      setShowSignModal(false);
     } finally {
       setSigning(false);
     }
+  };
+
+  const handleCloseModal = () => {
+    if (signing) return;
+    setShowSignModal(false);
   };
 
   const vitalSigns = {
@@ -59,6 +67,7 @@ export const MedicalRecordView = ({ record, canSign = false, onSign }: MedicalRe
   }));
 
   return (
+    <View style={styles.flex}>
     <ScrollView
       style={styles.scroll}
       contentContainerStyle={styles.scrollContent}
@@ -156,28 +165,117 @@ export const MedicalRecordView = ({ record, canSign = false, onSign }: MedicalRe
 
       {canSign && !record.isSigned && (
         <TouchableOpacity
-          style={[styles.signButton, signing && styles.signButtonDisabled]}
-          onPress={handleSign}
-          disabled={signing}
+          style={styles.signButton}
+          onPress={() => setShowSignModal(true)}
           activeOpacity={0.8}
         >
-          {signing ? (
-            <ActivityIndicator color={colors.surface} />
-          ) : (
-            <>
-              <PenLine size={16} color={colors.surface} strokeWidth={2.5} />
-              <Text style={styles.signButtonText}>Firmar historia clínica</Text>
-            </>
-          )}
+          <PenLine size={16} color={colors.surface} strokeWidth={2.5} />
+          <Text style={styles.signButtonText}>Firmar historia clínica</Text>
         </TouchableOpacity>
       )}
 
       <View style={styles.footerSpacer} />
     </ScrollView>
+
+    <BottomSheetModal visible={showSignModal} onClose={handleCloseModal} height={480}>
+      <View style={styles.modalContent}>
+        <View style={styles.modalHeader}>
+          <View style={styles.modalIconWrap}>
+            <PenLine size={22} color="#0D9488" strokeWidth={2.5} />
+          </View>
+          <Text style={styles.modalTitle}>Firmar historia clínica</Text>
+        </View>
+
+        <Text style={styles.modalSubtitle}>
+          Al firmar, confirmas que toda la información registrada es correcta y completa.
+          Esta acción no se puede deshacer.
+        </Text>
+
+        <ScrollView
+          style={styles.modalScrollArea}
+          contentContainerStyle={styles.modalScrollContent}
+          showsVerticalScrollIndicator={false}
+        >
+          <View style={styles.modalDetailRow}>
+            <FileText size={14} color="#0D9488" strokeWidth={2.5} />
+            <View style={styles.modalDetailTextBlock}>
+              <Text style={styles.modalDetailLabel}>Motivo de consulta</Text>
+              <Text style={styles.modalDetailValue} numberOfLines={2}>
+                {record.chiefComplaint}
+              </Text>
+            </View>
+          </View>
+
+          <View style={styles.modalDetailDivider} />
+
+          <View style={styles.modalDetailRow}>
+            <Stethoscope size={14} color="#0D9488" strokeWidth={2.5} />
+            <View style={styles.modalDetailTextBlock}>
+              <Text style={styles.modalDetailLabel}>Diagnóstico</Text>
+              <Text style={styles.modalDetailValue} numberOfLines={2}>
+                {record.diagnosis}
+              </Text>
+            </View>
+          </View>
+
+          <View style={styles.modalDetailDivider} />
+
+          <View style={styles.modalDetailRow}>
+            <ClipboardList size={14} color="#0D9488" strokeWidth={2.5} />
+            <View style={styles.modalDetailTextBlock}>
+              <Text style={styles.modalDetailLabel}>Prescripciones</Text>
+              <Text style={styles.modalDetailValue}>
+                {record.prescriptions.length > 0
+                  ? `${record.prescriptions.length} medicamento(s)`
+                  : "Ninguna"}
+              </Text>
+            </View>
+          </View>
+        </ScrollView>
+
+        {signing && (
+          <View style={styles.modalSigningOverlay}>
+            <ActivityIndicator size="large" color="#0D9488" />
+            <Text style={styles.modalSigningText}>Firmando...</Text>
+          </View>
+        )}
+
+        <View style={styles.modalActions}>
+          <TouchableOpacity
+            style={styles.modalCancelButton}
+            onPress={handleCloseModal}
+            disabled={signing}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.modalCancelText}>Cancelar</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.modalConfirmButton, signing && styles.modalConfirmButtonDisabled]}
+            onPress={handleConfirmSign}
+            disabled={signing}
+            activeOpacity={0.8}
+          >
+            {signing ? (
+              <ActivityIndicator color="#FFFFFF" />
+            ) : (
+              <>
+                <CheckCircle size={16} color="#FFFFFF" strokeWidth={2.5} />
+                <Text style={styles.modalConfirmText}>Sí, firmar</Text>
+              </>
+            )}
+          </TouchableOpacity>
+        </View>
+      </View>
+    </BottomSheetModal>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
+  flex: {
+    flex: 1,
+  },
   scroll: {
     flex: 1,
     backgroundColor: "#F9FAFB",
@@ -337,10 +435,6 @@ const styles = StyleSheet.create({
     shadowRadius: 16,
     elevation: 6,
   },
-  signButtonDisabled: {
-    opacity: 0.6,
-    shadowOpacity: 0.1,
-  },
   signButtonText: {
     fontSize: 15,
     fontWeight: "700",
@@ -349,5 +443,113 @@ const styles = StyleSheet.create({
   },
   footerSpacer: {
     height: 40,
+  },
+  modalContent: {
+    flex: 1,
+    paddingTop: 4,
+  },
+  modalHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    marginBottom: 10,
+  },
+  modalIconWrap: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    backgroundColor: "#F0FDFA",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: "#111827",
+    letterSpacing: -0.3,
+  },
+  modalSubtitle: {
+    fontSize: 13,
+    color: "#6B7280",
+    lineHeight: 18,
+    marginBottom: 18,
+  },
+  modalScrollArea: {
+    flex: 1,
+    marginBottom: 8,
+  },
+  modalScrollContent: {
+    paddingBottom: 4,
+  },
+  modalDetailRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  modalDetailTextBlock: {
+    flex: 1,
+  },
+  modalDetailLabel: {
+    fontSize: 11,
+    color: "#9CA3AF",
+    fontWeight: "600",
+    textTransform: "uppercase",
+    letterSpacing: 0.6,
+    marginBottom: 2,
+  },
+  modalDetailValue: {
+    fontSize: 14,
+    color: "#111827",
+    fontWeight: "600",
+  },
+  modalDetailDivider: {
+    height: 1,
+    backgroundColor: "#F0F0F0",
+    marginVertical: 12,
+    marginLeft: 26,
+  },
+  modalSigningOverlay: {
+    alignItems: "center",
+    gap: 8,
+    marginBottom: 16,
+  },
+  modalSigningText: {
+    fontSize: 13,
+    color: "#0D9488",
+    fontWeight: "600",
+  },
+  modalActions: {
+    gap: 10,
+    marginTop: "auto",
+  },
+  modalCancelButton: {
+    paddingVertical: 14,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#E5E7EB",
+    alignItems: "center",
+  },
+  modalCancelText: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#374151",
+  },
+  modalConfirmButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    paddingVertical: 14,
+    borderRadius: 12,
+    backgroundColor: "#0D9488",
+  },
+  modalConfirmButtonDisabled: {
+    opacity: 0.6,
+  },
+  modalConfirmText: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: "#FFFFFF",
+    letterSpacing: 0.2,
   },
 });
