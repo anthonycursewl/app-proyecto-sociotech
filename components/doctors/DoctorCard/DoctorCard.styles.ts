@@ -75,21 +75,6 @@ export const styles = StyleSheet.create({
   inactiveText: {
     color: "#94A3B8",
   },
-  statsRow: {
-    flexDirection: "row",
-    gap: 16,
-    marginBottom: 8,
-  },
-  stat: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-  },
-  statText: {
-    fontSize: 12,
-    color: "#64748B",
-    fontWeight: "500",
-  },
   contactRow: {
     flexDirection: "row",
     gap: 12,

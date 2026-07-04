@@ -11,7 +11,5 @@ export function mapToDoctorData(item: DoctorBase): DoctorData {
     email: item.email ?? "—",
     phone: item.phoneNumber ?? "—",
     status: item.isActive ? "active" : "inactive",
-    patientsCount: 0,
-    todayAppointments: 0,
   };
 }

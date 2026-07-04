@@ -47,7 +47,7 @@ export const NoShowAppointmentModal = ({
   };
 
   return (
-    <BottomSheetModal visible={visible} onClose={handleClose} height={340}>
+    <BottomSheetModal visible={visible} onClose={handleClose} height={380}>
       <View style={styles.content}>
         <View style={styles.iconWrap}>
           <UserX size={28} color="#6B7280" strokeWidth={2} />

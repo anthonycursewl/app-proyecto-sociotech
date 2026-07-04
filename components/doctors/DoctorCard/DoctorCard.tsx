@@ -1,4 +1,4 @@
-import { CalendarClock, ChevronRight, Mail, Phone, Users } from "lucide-react-native";
+import { ChevronRight, Mail, Phone } from "lucide-react-native";
 import React from "react";
 import { TouchableOpacity, View } from "react-native";
 import { Text } from "@/components/common/SText"
@@ -11,8 +11,6 @@ export interface DoctorData {
   email: string;
   phone: string;
   status: "active" | "inactive";
-  patientsCount: number;
-  todayAppointments: number;
 }
 
 interface DoctorCardProps {
@@ -47,17 +45,6 @@ export const DoctorCard = ({ doctor, onPress }: DoctorCardProps) => {
             <Text style={[styles.statusText, doctor.status === "active" ? styles.activeText : styles.inactiveText]}>
               {doctor.status === "active" ? "Activo" : "Inactivo"}
             </Text>
-          </View>
-        </View>
-
-        <View style={styles.statsRow}>
-          <View style={styles.stat}>
-            <Users size={12} color="#94A3B8" strokeWidth={2} />
-            <Text style={styles.statText}>{doctor.patientsCount} pacientes</Text>
-          </View>
-          <View style={styles.stat}>
-            <CalendarClock size={12} color="#94A3B8" strokeWidth={2} />
-            <Text style={styles.statText}>{doctor.todayAppointments} citas hoy</Text>
           </View>
         </View>
 

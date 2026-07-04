@@ -77,16 +77,6 @@ describe("mapToDoctorData", () => {
   });
 
   describe("computed defaults", () => {
-    it("always returns 0 for patientsCount (computed separately)", () => {
-      const result = mapToDoctorData(buildDoctor());
-      expect(result.patientsCount).toBe(0);
-    });
-
-    it("always returns 0 for todayAppointments (computed separately)", () => {
-      const result = mapToDoctorData(buildDoctor());
-      expect(result.todayAppointments).toBe(0);
-    });
-
     it("preserves the id from the source", () => {
       const result = mapToDoctorData(buildDoctor({ id: "doctor-42" }));
       expect(result.id).toBe("doctor-42");

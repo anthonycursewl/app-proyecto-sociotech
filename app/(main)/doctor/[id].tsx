@@ -71,10 +71,7 @@ export default function DoctorDetailScreen() {
     );
   }
 
-  const DAY_LABELS = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
-
   const fullName = `${doctor.firstName} ${doctor.lastName}`.trim() || "Doctor";
-  const priceFormatted = doctor.consultationPrice?.toLocaleString("es-ES", { style: "currency", currency: "VES" }) ?? "—";
   const InfoRow = ({ label, value }: { label: string; value: string }) => (
     <View style={styles.infoRow}>
       <Text style={styles.infoLabel}>{label}</Text>
@@ -142,23 +139,31 @@ export default function DoctorDetailScreen() {
               <Text style={styles.sectionTitle}>Horarios de Atención</Text>
             </View>
             {doctor.schedules && doctor.schedules.length > 0 ? (
-              doctor.schedules.map((sched) => (
-                <View key={sched.id} style={styles.scheduleRow}>
-                  <View style={[styles.scheduleBadge, sched.isActive ? styles.scheduleActive : styles.scheduleInactive]}>
-                    <Text style={[styles.scheduleDayText, sched.isActive ? styles.scheduleDayActive : styles.scheduleDayInactive]}>
-                      {DAY_LABELS[sched.dayOfWeek] ?? "—"}
-                    </Text>
-                  </View>
-                  <Text style={[styles.scheduleTime, !sched.isActive && styles.scheduleTimeInactive]}>
-                    {sched.startTime} - {sched.endTime}
-                  </Text>
-                  {!sched.isActive && (
-                    <View style={styles.inactiveTag}>
-                      <Text style={styles.inactiveTagText}>Inactivo</Text>
+              <View style={styles.scheduleGrid}>
+                {[0, 1, 2, 3, 4, 5, 6].map((dayIndex) => {
+                  const daySchedules = doctor.schedules.filter((s) => s.dayOfWeek === dayIndex);
+                  const activeSchedule = daySchedules.find((s) => s.isActive);
+                  return (
+                    <View
+                      key={dayIndex}
+                      style={[styles.scheduleDayCard, !activeSchedule && styles.scheduleDayCardMuted]}
+                    >
+                      <Text style={[styles.scheduleDayLabel, activeSchedule && styles.scheduleDayLabelActive]}>
+                        {["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"][dayIndex]}
+                      </Text>
+                      {activeSchedule ? (
+                        <Text style={styles.scheduleDayTime}>
+                          {activeSchedule.startTime} - {activeSchedule.endTime}
+                        </Text>
+                      ) : daySchedules.length > 0 ? (
+                        <Text style={styles.scheduleDayMuted}>Inactivo</Text>
+                      ) : (
+                        <Text style={styles.scheduleDayMuted}>—</Text>
+                      )}
                     </View>
-                  )}
-                </View>
-              ))
+                  );
+                })}
+              </View>
             ) : (
               <View style={styles.noSchedules}>
                 <AlertTriangle size={28} color="#F59E0B" strokeWidth={1.5} />
@@ -283,35 +288,47 @@ const styles = StyleSheet.create({
   biographyLabel: { fontSize: 13, color: "#64748B", fontWeight: "500", marginBottom: 6 },
   biographyText: { fontSize: 13, color: "#0F172A", fontWeight: "500", lineHeight: 20 },
 
-  scheduleRow: {
+  scheduleGrid: {
     flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: "#FAFAFA",
-    gap: 12,
+    flexWrap: "wrap",
+    gap: 8,
   },
-  scheduleBadge: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 8,
-    minWidth: 80,
-    alignItems: "center",
-  },
-  scheduleActive: { backgroundColor: "#DCFCE7" },
-  scheduleInactive: { backgroundColor: "#F1F5F9" },
-  scheduleDayText: { fontSize: 12, fontWeight: "600" },
-  scheduleDayActive: { color: "#22C55E" },
-  scheduleDayInactive: { color: "#94A3B8" },
-  scheduleTime: { fontSize: 13, fontWeight: "600", color: "#0F172A" },
-  scheduleTimeInactive: { color: "#94A3B8" },
-  inactiveTag: {
-    backgroundColor: "#F1F5F9",
+  scheduleDayCard: {
+    width: "30.5%",
+    backgroundColor: "#F0FDFA",
+    borderRadius: 12,
+    paddingVertical: 12,
     paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 6,
+    alignItems: "center",
+    gap: 4,
+    borderWidth: 1,
+    borderColor: "#CCFBF1",
   },
-  inactiveTagText: { fontSize: 10, fontWeight: "600", color: "#94A3B8" },
+  scheduleDayCardMuted: {
+    backgroundColor: "#F8FAFC",
+    borderColor: "#F1F5F9",
+  },
+  scheduleDayLabel: {
+    fontSize: 11,
+    fontWeight: "700",
+    color: "#94A3B8",
+    textTransform: "uppercase",
+    letterSpacing: 0.3,
+  },
+  scheduleDayLabelActive: {
+    color: "#0D9488",
+  },
+  scheduleDayTime: {
+    fontSize: 10,
+    fontWeight: "600",
+    color: "#0F172A",
+    textAlign: "center",
+  },
+  scheduleDayMuted: {
+    fontSize: 10,
+    fontWeight: "500",
+    color: "#CBD5E1",
+  },
 
   noSchedules: {
     alignItems: "center",
