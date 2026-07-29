@@ -124,12 +124,12 @@ export default function AdminMedicalRecordDetailScreen() {
               notes: record.notes,
               vitalSigns: {
                 bloodPressure: record.bloodPressure ?? undefined,
-                heartRate: record.heartRate ?? undefined,
-                temperature: record.temperature ?? undefined,
-                weight: record.weight ?? undefined,
-                height: record.height ?? undefined,
-                respiratoryRate: record.respiratoryRate ?? undefined,
-                oxygenSaturation: record.oxygenSaturation ?? undefined,
+                heartRate: record.heartRate != null && Number.isFinite(record.heartRate) ? record.heartRate : undefined,
+                temperature: record.temperature != null && Number.isFinite(record.temperature) ? record.temperature : undefined,
+                weight: record.weight != null && Number.isFinite(record.weight) ? record.weight : undefined,
+                height: record.height != null && Number.isFinite(record.height) ? record.height : undefined,
+                respiratoryRate: record.respiratoryRate != null && Number.isFinite(record.respiratoryRate) ? record.respiratoryRate : undefined,
+                oxygenSaturation: record.oxygenSaturation != null && Number.isFinite(record.oxygenSaturation) ? record.oxygenSaturation : undefined,
               },
               prescriptions: record.prescriptions.map((p) => ({
                 medicationName: p.medicationName,

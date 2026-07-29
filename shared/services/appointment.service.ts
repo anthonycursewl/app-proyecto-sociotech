@@ -20,9 +20,16 @@ export type {
 const buildAppointmentParams = (filter?: AppointmentFilter, doctorId?: string) => {
   const params: Record<string, unknown> = {};
   if (doctorId) params.doctorId = doctorId;
-  if (filter && filter !== "all" && filter !== "history") {
-    params.filter = filter;
+
+  switch (filter) {
+    case "upcoming":
+      params.filter = "upcoming";
+      break;
+    case "pending":
+      params.filter = "pending";
+      break;
   }
+
   return params;
 };
 

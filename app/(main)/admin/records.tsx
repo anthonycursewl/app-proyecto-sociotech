@@ -39,7 +39,7 @@ export default function AdminRecordsScreen() {
   const doctorProfile = useAuthStore((s) => s.doctorProfile);
   const loadDoctorProfile = useAuthStore((s) => s.loadDoctorProfile);
   const { records, loading, refreshing, error, refresh, reload } =
-    useMyCreatedMedicalRecords(doctorProfile?.id ?? null);
+    useMyCreatedMedicalRecords();
 
   useEffect(() => {
     loadDoctorProfile();

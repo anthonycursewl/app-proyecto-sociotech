@@ -20,7 +20,6 @@ const FILTER_OPTIONS: { value: AppointmentFilter; label: string }[] = [
   { value: "upcoming", label: "Próximas" },
   { value: "all", label: "Todas" },
   { value: "pending", label: "Pendientes" },
-  { value: "history", label: "Historial" },
 ];
 
 type AdminFilter = AppointmentFilter | "mine";
@@ -174,7 +173,6 @@ export default function AdminAppointmentsScreen() {
             <Text style={styles.emptyText}>
               {activeChip === "upcoming" && "No hay citas próximas en los siguientes 7 días"}
               {activeChip === "pending" && "No hay citas pendientes de confirmar"}
-              {activeChip === "history" && "No hay citas pasadas en el historial"}
               {activeChip === "all" && "No se encontraron citas"}
               {activeChip === "mine" && "No tienes citas asignadas"}
             </Text>

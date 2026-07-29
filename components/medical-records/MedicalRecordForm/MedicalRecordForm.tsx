@@ -7,6 +7,18 @@ import { AlertCircle } from "lucide-react-native";
 import React, { useEffect, useState } from "react";
 import { ActivityIndicator, Keyboard, ScrollView, StyleSheet, TextInput, TouchableOpacity, View } from "react-native";
 
+function sanitizeVitalSigns(vs: VitalSignsData): VitalSignsData {
+  const result: VitalSignsData = {};
+  for (const key of Object.keys(vs) as (keyof VitalSignsData)[]) {
+    const v = vs[key];
+    if (v === undefined || v === null) continue;
+    if (typeof v === "number" && !isFinite(v)) continue;
+    if (typeof v === "string" && v.trim() === "") continue;
+    (result as Record<string, unknown>)[key] = v;
+  }
+  return result;
+}
+
 interface FormState {
   chiefComplaint: string;
   symptoms: string;
@@ -38,15 +50,15 @@ export const MedicalRecordForm = ({
   onSubmit,
   submitLabel = "Guardar historia clínica",
 }: MedicalRecordFormProps) => {
-  const [form, setForm] = useState<FormState>({
+  const [form, setForm] = useState<FormState>(() => ({
     chiefComplaint: initialData?.chiefComplaint ?? "",
     symptoms: Array.isArray(initialData?.symptoms) ? initialData.symptoms.join(", ") : "",
     diagnosis: initialData?.diagnosis ?? "",
     treatment: initialData?.treatment ?? "",
     notes: initialData?.notes ?? "",
-    vitalSigns: initialData?.vitalSigns ?? {},
+    vitalSigns: initialData?.vitalSigns ? sanitizeVitalSigns(initialData.vitalSigns) : {},
     prescriptions: initialData?.prescriptions ?? [],
-  });
+  }));
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -64,7 +76,7 @@ export const MedicalRecordForm = ({
         diagnosis: form.diagnosis.trim(),
         treatment: form.treatment.trim(),
         notes: form.notes.trim(),
-        vitalSigns: Object.keys(form.vitalSigns).length > 0 ? form.vitalSigns : undefined,
+        vitalSigns: Object.keys(form.vitalSigns).length > 0 ? sanitizeVitalSigns(form.vitalSigns) : undefined,
         prescriptions: form.prescriptions.length > 0 ? form.prescriptions : undefined,
       });
     } catch (err) {

@@ -83,10 +83,10 @@ describe("appointmentService.getMyAppointments", () => {
 
   it("passes through the filter param when provided", async () => {
     mockedHttp.get.mockResolvedValueOnce([]);
-    await appointmentService.getMyAppointments("history");
+    await appointmentService.getMyAppointments("pending");
     expect(mockedHttp.get).toHaveBeenCalledWith(
       "/appointments/me",
-      { filter: "history" },
+      { filter: "pending" },
       { requireAuth: true },
     );
   });

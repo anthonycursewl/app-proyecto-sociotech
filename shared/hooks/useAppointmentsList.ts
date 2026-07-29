@@ -9,7 +9,7 @@ import {
   appointmentService,
   AppointmentFilter,
 } from "@/shared/services/appointment.service";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 export type AppointmentsListMode = "own" | "manage";
 
@@ -20,20 +20,34 @@ export function useAppointmentsList(mode: AppointmentsListMode, defaultFilter: A
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<AppointmentFilter>(defaultFilter);
+  const fetchIdRef = useRef(0);
+  const initialisedRef = useRef(false);
+
+  useEffect(() => {
+    if (!initialisedRef.current) {
+      initialisedRef.current = true;
+      return;
+    }
+    setFilter(defaultFilter);
+  }, [defaultFilter]);
 
   const fetchAppointments = useCallback(async (activeFilter: AppointmentFilter) => {
+    const id = ++fetchIdRef.current;
     try {
       if (mode === "own") {
         const res = await appointmentService.getMyAppointments(activeFilter);
+        if (id !== fetchIdRef.current) return;
         const mapped = (Array.isArray(res) ? res : []).map(mapToAppointmentData);
         setAppointments(mapped);
       } else {
         const res = await appointmentService.getAll(activeFilter, doctorId);
+        if (id !== fetchIdRef.current) return;
         const mapped = (Array.isArray(res) ? res : []).map(mapToAdminAppointmentData);
         setAdminAppointments(mapped);
       }
       setError(null);
     } catch (err) {
+      if (id !== fetchIdRef.current) return;
       setError(getApiErrorMessage(err));
     }
   }, [mode, doctorId]);
@@ -45,11 +59,6 @@ export function useAppointmentsList(mode: AppointmentsListMode, defaultFilter: A
       setLoading(false);
     })();
   }, [fetchAppointments, filter]);
-
-  const handleFilterChange = useCallback((newFilter: AppointmentFilter) => {
-    if (newFilter === filter) return;
-    setFilter(newFilter);
-  }, [filter]);
 
   const refresh = useCallback(async () => {
     setRefreshing(true);
@@ -71,7 +80,7 @@ export function useAppointmentsList(mode: AppointmentsListMode, defaultFilter: A
     refreshing,
     error,
     filter,
-    setFilter: handleFilterChange,
+    setFilter,
     refresh,
     reload,
   };

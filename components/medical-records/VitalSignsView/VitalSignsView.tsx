@@ -1,21 +1,20 @@
-import React from "react";
-import { StyleSheet, View } from "react-native";
 import { Text } from "@/components/common/SText";
 import { VitalSignsData } from "@/shared/services/medicalRecord.service";
 import { colors } from "@/shared/theme/colors";
+import React from "react";
+import { StyleSheet, View } from "react-native";
 
 interface VitalSignsViewProps {
   vitalSigns: VitalSignsData;
 }
 
-const LABELS: Record<keyof VitalSignsData, string> = {
+const LABELS: Partial<Record<keyof VitalSignsData, string>> = {
   bloodPressure: "Presión arterial",
   heartRate: "Frec. cardíaca",
   temperature: "Temperatura",
   weight: "Peso",
   height: "Altura",
   respiratoryRate: "Frec. respiratoria",
-  oxygenSaturation: "Sat. O2",
 };
 
 const SUFFIX: Partial<Record<keyof VitalSignsData, string>> = {
@@ -24,12 +23,11 @@ const SUFFIX: Partial<Record<keyof VitalSignsData, string>> = {
   weight: " kg",
   height: " cm",
   respiratoryRate: " rpm",
-  oxygenSaturation: " %",
 };
 
 export const VitalSignsView = ({ vitalSigns }: VitalSignsViewProps) => {
   const entries = (Object.keys(LABELS) as (keyof VitalSignsData)[]).filter(
-    (k) => vitalSigns[k] !== undefined && vitalSigns[k] !== null && vitalSigns[k] !== "",
+    (k) => vitalSigns[k] !== undefined && vitalSigns[k] !== null && vitalSigns[k] !== "" && !(typeof vitalSigns[k] === "number" && isNaN(vitalSigns[k])),
   );
 
   if (entries.length === 0) {

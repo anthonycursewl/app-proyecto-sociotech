@@ -31,7 +31,16 @@ const formatDate = (iso: string) => {
 export const MedicalRecordView = ({ record, canSign = false, onSign }: MedicalRecordViewProps) => {
   const [signing, setSigning] = React.useState(false);
   const [showSignModal, setShowSignModal] = React.useState(false);
+  const [downloading, setDownloading] = React.useState(false);
 
+  const handleDownloadClinicalHistory = async () => {
+    setDownloading(true);
+    try {
+      await pdfService.downloadClinicalHistory(record.patientId);
+    } finally {
+      setDownloading(false);
+    }
+  };
   const handleConfirmSign = async () => {
     if (!onSign) return;
     setSigning(true);
@@ -50,12 +59,12 @@ export const MedicalRecordView = ({ record, canSign = false, onSign }: MedicalRe
 
   const vitalSigns = {
     bloodPressure: record.bloodPressure ?? undefined,
-    heartRate: record.heartRate ?? undefined,
-    temperature: record.temperature ?? undefined,
-    weight: record.weight ?? undefined,
-    height: record.height ?? undefined,
-    respiratoryRate: record.respiratoryRate ?? undefined,
-    oxygenSaturation: record.oxygenSaturation ?? undefined,
+    heartRate: record.heartRate != null && Number.isFinite(record.heartRate) ? record.heartRate : undefined,
+    temperature: record.temperature != null && Number.isFinite(record.temperature) ? record.temperature : undefined,
+    weight: record.weight != null && Number.isFinite(record.weight) ? record.weight : undefined,
+    height: record.height != null && Number.isFinite(record.height) ? record.height : undefined,
+    respiratoryRate: record.respiratoryRate != null && Number.isFinite(record.respiratoryRate) ? record.respiratoryRate : undefined,
+    oxygenSaturation: record.oxygenSaturation != null && Number.isFinite(record.oxygenSaturation) ? record.oxygenSaturation : undefined,
   };
 
   const prescriptions = record.prescriptions.map((p) => ({
@@ -152,7 +161,23 @@ export const MedicalRecordView = ({ record, canSign = false, onSign }: MedicalRe
         )}
       </View>
 
-      {prescriptions.length > 0 && record.isSigned && (
+      {record.isSigned && (
+        <TouchableOpacity
+          style={[styles.downloadButton, downloading && styles.downloadButtonDisabled]}
+          onPress={handleDownloadClinicalHistory}
+          disabled={downloading}
+          activeOpacity={0.8}
+        >
+          {downloading ? (
+            <ActivityIndicator size="small" color={colors.accent} />
+          ) : (
+            <FileDown size={16} color={colors.accent} strokeWidth={2.5} />
+          )}
+          <Text style={styles.downloadButtonText}>Descargar historia clínica</Text>
+        </TouchableOpacity>
+      )}
+
+      {record.isSigned && prescriptions.length > 0 && (
         <TouchableOpacity
           style={styles.downloadButton}
           onPress={() => pdfService.downloadPrescription(record.id)}
@@ -419,6 +444,9 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     color: colors.accent,
     letterSpacing: 0.2,
+  },
+  downloadButtonDisabled: {
+    opacity: 0.6,
   },
   signButton: {
     flexDirection: "row",

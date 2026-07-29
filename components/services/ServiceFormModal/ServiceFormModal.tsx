@@ -52,12 +52,24 @@ export const ServiceFormModal = ({ visible, editingService, onClose, onSaved }: 
       return;
     }
 
+    const duration = form.durationMin ? parseInt(form.durationMin, 10) : undefined;
+    if (duration !== undefined) {
+      if (duration < 10) {
+        Alert.alert("Validación", "La duración mínima es de 10 minutos");
+        return;
+      }
+      if (duration > 180) {
+        Alert.alert("Validación", "La duración máxima es de 3 horas (180 minutos)");
+        return;
+      }
+    }
+
     setSaving(true);
     try {
       const payload = {
         name: form.name.trim(),
         description: form.description.trim() || undefined,
-        durationMin: form.durationMin ? parseInt(form.durationMin, 10) : undefined,
+        durationMin: duration,
         price: DEFAULT_PRICE,
       };
 
@@ -130,13 +142,21 @@ export const ServiceFormModal = ({ visible, editingService, onClose, onSaved }: 
             <TextInput
               style={styles.input}
               value={form.durationMin}
-              onChangeText={(v) => updateField("durationMin", v.replace(/[^0-9]/g, ""))}
+              onChangeText={(v) => {
+                const cleaned = v.replace(/[^0-9]/g, "");
+                const num = parseInt(cleaned, 10);
+                if (!isNaN(num) && num > 180) {
+                  updateField("durationMin", "180");
+                } else {
+                  updateField("durationMin", cleaned);
+                }
+              }}
               placeholder="30"
               placeholderTextColor="#C5CDD8"
               keyboardType="number-pad"
             />
           </View>
-          <Text style={styles.helper}>Duración estimada en minutos. Ejemplos: 30, 45, 60. Se usará para calcular los espacios de cita disponibles.</Text>
+          <Text style={styles.helper}>Duración estimada en minutos. Mínimo 10 min, máximo 3 horas (180 min). Se usará para calcular los espacios de cita disponibles.</Text>
         </View>
 
         <TouchableOpacity

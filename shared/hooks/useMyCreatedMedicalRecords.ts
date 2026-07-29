@@ -2,7 +2,7 @@ import { getApiErrorMessage } from "@/shared/errors/apiError";
 import { medicalRecordService, MedicalRecordResponse } from "@/shared/services/medicalRecord.service";
 import { useCallback, useEffect, useRef, useState } from "react";
 
-export function useMyCreatedMedicalRecords(doctorId: string | null) {
+export function useMyCreatedMedicalRecords() {
   const [records, setRecords] = useState<MedicalRecordResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -10,12 +10,11 @@ export function useMyCreatedMedicalRecords(doctorId: string | null) {
   const fetchedRef = useRef(false);
 
   const fetch = useCallback(async (isRefresh: boolean) => {
-    if (!doctorId) return;
     if (isRefresh) setRefreshing(true);
     else setLoading(true);
     setError(null);
     try {
-      const res = await medicalRecordService.getByDoctor(doctorId);
+      const res = await medicalRecordService.getAll();
       setRecords(res);
       fetchedRef.current = true;
     } catch (err) {
@@ -24,7 +23,7 @@ export function useMyCreatedMedicalRecords(doctorId: string | null) {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [doctorId]);
+  }, []);
 
   useEffect(() => {
     fetch(false);

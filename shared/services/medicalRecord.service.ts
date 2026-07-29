@@ -27,6 +27,9 @@ export const medicalRecordService = {
   getById: (id: string) =>
     HttpClient.get<MedicalRecordResponse>(`/medical-records/${id}`, {}, { requireAuth: true }),
 
+  getAll: () =>
+    HttpClient.get<MedicalRecordResponse[]>("/medical-records", {}, { requireAuth: true }),
+
   getByPatient: (patientId: string) =>
     HttpClient.get<MedicalRecordResponse[]>(`/medical-records/patient/${patientId}`, {}, { requireAuth: true }),
 
