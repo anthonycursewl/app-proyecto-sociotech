@@ -83,6 +83,6 @@ export const appointmentService = {
   markNoShow: (id: string) =>
     HttpClient.put<Appointment>(`/appointments/${id}/no-show`, undefined, { requireAuth: true }),
 
-  reschedule: (id: string, scheduledAt: string) =>
-    HttpClient.put<Appointment>(`/appointments/${id}/reschedule`, { scheduledAt }, { requireAuth: true }),
+  reschedule: (id: string, data: { scheduledAt: string; reason?: string; notes?: string }) =>
+    HttpClient.put<Appointment>(`/appointments/${id}/reschedule`, data, { requireAuth: true }),
 };

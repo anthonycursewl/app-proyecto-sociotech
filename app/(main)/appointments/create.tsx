@@ -241,7 +241,11 @@ export default function CreateAppointmentScreen() {
       };
 
       if (isReschedule && params.rescheduleId) {
-        const updated = await appointmentService.reschedule(params.rescheduleId, payload.scheduledAt);
+        const updated = await appointmentService.reschedule(params.rescheduleId, {
+          scheduledAt: payload.scheduledAt,
+          reason: payload.reason,
+          notes: payload.notes,
+        });
         invalidate(params.rescheduleId);
         setCached(updated);
         Alert.alert("Éxito", "Cita reagendada correctamente", [

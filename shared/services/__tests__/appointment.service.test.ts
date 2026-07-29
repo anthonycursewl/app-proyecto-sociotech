@@ -214,13 +214,21 @@ describe("appointmentService.markNoShow", () => {
 });
 
 describe("appointmentService.reschedule", () => {
-  it("PUTs /appointments/:id/reschedule with the new scheduledAt", async () => {
+  it("PUTs /appointments/:id/reschedule with scheduledAt, reason, and notes", async () => {
     mockedHttp.put.mockResolvedValueOnce({} as any);
-    await appointmentService.reschedule("apt1", "2026-07-01T10:00:00.000Z");
+    await appointmentService.reschedule("apt1", {
+      scheduledAt: "2026-07-01T10:00:00.000Z",
+      reason: "Cambio de horario",
+      notes: "Preferencia turno mañana",
+    });
 
     expect(mockedHttp.put).toHaveBeenCalledWith(
       "/appointments/apt1/reschedule",
-      { scheduledAt: "2026-07-01T10:00:00.000Z" },
+      {
+        scheduledAt: "2026-07-01T10:00:00.000Z",
+        reason: "Cambio de horario",
+        notes: "Preferencia turno mañana",
+      },
       { requireAuth: true },
     );
   });
